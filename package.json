@@ -1,0 +1,45 @@
+{
+  "name": "area-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for the Area project",
+  "homepage": "https://github.com/mbarleon-org/Area-Frontend#readme",
+  "bugs": {
+    "url": "https://github.com/mbarleon-org/Area-Frontend/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mbarleon-org/Area-Frontend.git"
+  },
+  "license": "MIT",
+  "author": "Area Team at mbarleon-org",
+  "type": "module",
+  "main": "src/main.tsx",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "npm run build && vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.38.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "@vitejs/plugin-react-swc": "^3.11.0",
+    "electron": "^39.0.0",
+    "eslint": "^9.38.0",
+    "globals": "^16.4.0",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.12"
+  }
+}
