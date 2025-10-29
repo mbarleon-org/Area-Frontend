@@ -17,7 +17,7 @@ function createWindow() {
   // Load the app
   const startUrl = isDev
     ? 'http://localhost:3001'
-    : `file://${path.join(__dirname, '../dist/index.html')}`;
+    : `file://${path.join(__dirname, '../dist/public/index.html')}`;
     mainWindow.loadURL(startUrl);
 
   // Open the DevTools in development
