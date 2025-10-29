@@ -49,3 +49,4 @@ temp/
 !CODEOWNERS
 node_modules/
 dist/
+!Dockerfile
