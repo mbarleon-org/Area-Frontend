@@ -21,6 +21,7 @@ const styles: { [k: string]: React.CSSProperties } = {
     justifyContent: "center",
     padding: 0,
     margin: 0,
+    paddingLeft: "80px",
     backgroundColor: "#151316ff",
     color: "#fff",
   },
