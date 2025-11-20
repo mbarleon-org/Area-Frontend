@@ -4,6 +4,7 @@ import Home from "../../pages/Home";
 import Dashboard from "../../pages/Dashboard";
 import Apps from "../../pages/Apps";
 import Explore from "../../pages/Explore";
+import Login from "../../pages/Login"
 
 interface Router {
   path: string;
@@ -39,6 +40,13 @@ const ROUTES: Router[] = [
     path: "/explore",
     element: <Explore />,
     label: "Explore",
+    navbar: true,
+    security: "public",
+  },
+  {
+    path: "/login",
+    element: <Login />,
+    label: "Login",
     navbar: true,
     security: "public",
   },
