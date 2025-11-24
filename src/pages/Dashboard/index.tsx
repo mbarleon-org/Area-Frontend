@@ -21,7 +21,7 @@ const Dashboard: React.FC = () => {
           </NavLink>
         </div>
 
-        <h2 style={styles.title}>Automatisations</h2>
+        <h2 style={styles.title}>Automations</h2>
 
         <div style={styles.column}>
           {automations.map(a => (
@@ -31,7 +31,7 @@ const Dashboard: React.FC = () => {
                 <div style={{ ...styles.status, ...(a.status === 'OK' ? styles.statusOk : a.status === 'Running' ? styles.statusRunning : styles.statusError) }}>{a.status}</div>
               </div>
               <div style={styles.cardBody}>{a.desc}</div>
-              <div style={styles.cardFooter}>Dernier run: {a.lastRun}</div>
+              <div style={styles.cardFooter}>Last run: {a.lastRun}</div>
             </div>
           ))}
         </div>
