@@ -2,7 +2,7 @@ import React from "react";
 import "../../index.css";
 import Navbar from "../../components/Navbar";
 
-const Login: React.FC = () => {
+const Register: React.FC = () => {
   React.useEffect(() => {
     document.body.style.margin = "0";
     document.body.style.padding = "0";
@@ -15,8 +15,18 @@ const Login: React.FC = () => {
       <div style={styles.container}>
         <div style={styles.cardContainer}>
           <div style={styles.card}>
-            <div style={styles.Login}>
-              <h2>Login</h2>
+            <div style={styles.Register}>
+              <h2>Register</h2>
+                <input
+                type="Full name"
+                placeholder="Enter your full name"
+                style={styles.input}
+                />
+                <input
+                type="user name"
+                placeholder="Enter your user name"
+                style={styles.input}
+                />
               <input
                 type="email"
                 placeholder="Enter your email"
@@ -27,9 +37,8 @@ const Login: React.FC = () => {
                 placeholder="Enter your password"
                 style={styles.input}
                 />
-                <a style={styles.forgot}>Forgot password ?</a>
                 <button style={styles.button}>
-                  Login
+                  Register
                 </button>
                 <div style={styles.divider}>
                   <span style={styles.dividerText}>Or continue with</span>
@@ -48,7 +57,7 @@ const Login: React.FC = () => {
                     <svg viewBox="0 0 24 24" style={{width:"24px",height:"24px"}} xmlns="http://www.w3.org/2000/svg"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#00a4ef" d="M13 1h10v10H13z"/><path fill="#7fba00" d="M1 13h10v10H1z"/><path fill="#ffb900" d="M13 13h10v10H13z"/></svg>
                   </button>
                 </div>
-                <a href="/register" className="register" style={styles.register}>Don't have an account</a>
+                <a href="/login" className="login" style={styles.login}>Already have an account</a>
             </div>
           </div>
         </div>
@@ -79,7 +88,7 @@ const styles: { [k: string]: React.CSSProperties } = {
     padding: "40px",
     minWidth: "400px",
   },
-  Login: {
+  Register: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -96,10 +105,6 @@ const styles: { [k: string]: React.CSSProperties } = {
     backgroundColor: "#161616ff",
     color: "#fff",
   },
-  forgot: {
-    color: "#fff",
-    cursor: "pointer",
-  },
   button: {
     width: "300px",
     padding: "12px",
@@ -110,7 +115,7 @@ const styles: { [k: string]: React.CSSProperties } = {
     color: "#fff",
     cursor: "pointer",
   },
-  register: {
+  login: {
     color: "#fff",
   },
   divider: {
@@ -147,4 +152,4 @@ const styles: { [k: string]: React.CSSProperties } = {
   },
 };
 
-export default Login;
+export default Register;
