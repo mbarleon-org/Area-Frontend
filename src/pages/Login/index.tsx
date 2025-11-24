@@ -2,16 +2,16 @@ import React from "react";
 import "../../index.css";
 import Navbar from "../../components/Navbar";
 
-const Home: React.FC = () => {
-  return (
+const Login: React.FC = () => {
+  return(
     <>
       <Navbar />
       <div style={styles.container}>
-        <h2>Welcome to the AREA Home Page</h2>
+        <h2>Welcome to the AREA Login Page</h2>
       </div>
     </>
-  );
-};
+  )
+}
 
 const styles: { [k: string]: React.CSSProperties } = {
   container: {
@@ -27,4 +27,4 @@ const styles: { [k: string]: React.CSSProperties } = {
   },
 };
 
-export default Home;
+export default Login;
