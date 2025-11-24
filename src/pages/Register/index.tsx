@@ -7,6 +7,11 @@ const Register: React.FC = () => {
     document.body.style.margin = "0";
     document.body.style.padding = "0";
     document.body.style.backgroundColor = "#151316ff";
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = "auto";
+    };
   }, []);
 
   return(
@@ -69,16 +74,18 @@ const Register: React.FC = () => {
 const styles: { [k: string]: React.CSSProperties } = {
   container: {
     minHeight: "100vh",
+    maxHeight: "100vh",
     backgroundColor: "#151316ff",
     margin: "0",
     padding: "0",
+    overflow: "hidden",
   },
   cardContainer: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     marginLeft: "10vh",
-    marginTop: "20vh",
+    marginTop: "10vh",
     padding: "20px",
   },
   card: {
