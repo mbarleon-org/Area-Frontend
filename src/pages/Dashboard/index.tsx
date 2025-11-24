@@ -46,6 +46,7 @@ const styles: { [k: string]: React.CSSProperties } = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'flex-start',
+    gap: '20px',
     marginTop: "40px",
     backgroundColor: '#151316ff',
     color: '#fff',
