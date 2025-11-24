@@ -18,4 +18,4 @@ RUN npm install --no-audit --prefer-offline || npm install
 COPY . .
 RUN npm run build
 
-ENTRYPOINT npx serve -s dist/
+ENTRYPOINT ["sh", "-c", "npx serve -s /app/dist/"]
