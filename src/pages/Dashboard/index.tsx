@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import '../../index.css';
 import Navbar from '../../components/Navbar';
+import AppLink from '../../components/Link';
 
 const Dashboard: React.FC = () => {
   const [automations] = useState([
@@ -15,9 +16,9 @@ const Dashboard: React.FC = () => {
 
       <div style={styles.container}>
         <div style={styles.header}>
-          <a href="/automations" style={{ textDecoration: 'none' }}>
+          <AppLink href="/automations" style={{ textDecoration: 'none' }}>
             <button style={styles.addButton}>+ New automation</button>
-          </a>
+          </AppLink>
         </div>
 
         <h2 style={styles.title}>Automations</h2>
@@ -58,7 +59,7 @@ const styles: { [k: string]: React.CSSProperties } = {
     width: '100%',
     display: 'flex',
     justifyContent: 'flex-start',
-    marginLeft: '250px',
+    marginLeft: 0,
     marginBottom: 12,
   },
   addButton: {

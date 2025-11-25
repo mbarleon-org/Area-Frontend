@@ -1,29 +1,30 @@
 {
-    "compilerOptions": {
-        "target": "esnext",
-        "module": "esnext",
-        "jsx": "react-native",
-        "moduleResolution": "node",
-        "baseUrl": ".",
-        "paths": {
-            "@area/ui/*": [
-                "../packages/ui/src/*"
-            ],
-            "@area/src/*": [
-                "../src/*"
-            ]
-        },
-        "types": [
-            "react",
-            "react-native"
-        ],
-        "allowJs": true,
-        "strict": false,
-        "esModuleInterop": true,
-        "skipLibCheck": true
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "jsx": "react-native",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@area/ui/*": [
+        "../packages/ui/src/*"
+      ],
+      "@area/src/*": [
+        "../src/*"
+      ]
     },
-    "include": [
-        "**/*.ts",
-        "**/*.tsx"
-    ]
+    "types": [
+      "react",
+      "react-native"
+    ],
+    "allowJs": true,
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "extends": "expo/tsconfig.base"
 }
