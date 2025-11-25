@@ -12,7 +12,7 @@ const Canvas: React.FC = () => {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
 
-  type NodeItem = { id: string; x: number; y: number; width: number; height: number; label?: string };
+  type NodeItem = { id: string; x: number; y: number; width?: number; height?: number; label?: string };
   const [nodes, setNodes] = useState<NodeItem[]>([]);
 
   const gridPx = 24;
@@ -151,8 +151,8 @@ const Canvas: React.FC = () => {
             key={n.id}
             pos={{ x: n.x, y: n.y }}
             setPos={(p) => setNodes(ns => ns.map(item => item.id === n.id ? { ...item, x: p.x, y: p.y } : item))}
-            width={n.width}
-            height={n.height}
+            width={n.width || 96}
+            height={n.height || 96}
             scale={scale}
             offset={offset}
             gridPx={gridPx}

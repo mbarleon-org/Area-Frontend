@@ -18,7 +18,7 @@ const computeSnapOffset = (worldSize: number, gridPx: number) => {
   return (cells % 2 === 0) ? 0 : gridPx / 2;
 };
 
-const Node: React.FC<NodeProps> = ({ pos, setPos, width, height, scale, offset, gridPx, label }) => {
+const Node: React.FC<NodeProps> = ({ pos, setPos, width = 96, height = 96, scale, offset, gridPx, label }) => {
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const pointerOffset = useRef({ x: 0, y: 0 });
