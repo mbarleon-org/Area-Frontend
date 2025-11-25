@@ -56,6 +56,8 @@ const ROUTES: Router[] = [
     path: "/register",
     element: <Register />,
     label: "Register",
+    navbar: true,
+    security: "public",
   },
   {
     path: "/automations",
