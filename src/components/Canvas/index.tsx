@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import Node from "./Node";
+import EditMenu from "./EditMenu";
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
@@ -16,6 +17,8 @@ const Canvas: React.FC = () => {
   const [nodes, setNodes] = useState<NodeItem[]>([]);
 
   const gridPx = 24;
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const computeSnapOffset = (worldSize: number, gridPx: number) => {
     const cells = Math.round(worldSize / gridPx);
@@ -40,6 +43,10 @@ const Canvas: React.FC = () => {
     const id = `n${Date.now()}`;
     setNodes(ns => [...ns, { id, x, y, width: w, height: h, label: 'Node' }] );
   }, [offset.x, offset.y, scale, gridPx]);
+
+  const handleCanvasClick = useCallback(() => {
+    setSelectedId(null);
+  }, []);
 
   const onDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     dragging.current = true;
@@ -145,12 +152,13 @@ const Canvas: React.FC = () => {
       onTouchMove={onMove}
   onTouchEnd={onUp}
     >
-  <div style={canvasStyle} onDoubleClick={handleAddNode}>
+  <div style={canvasStyle} onClick={handleCanvasClick} onDoubleClick={handleAddNode}>
         {nodes.map(n => (
           <Node
             key={n.id}
             pos={{ x: n.x, y: n.y }}
             setPos={(p) => setNodes(ns => ns.map(item => item.id === n.id ? { ...item, x: p.x, y: p.y } : item))}
+            onSelect={() => setSelectedId(n.id)}
             width={n.width || 96}
             height={n.height || 96}
             scale={scale}
@@ -160,6 +168,7 @@ const Canvas: React.FC = () => {
           />
         ))}
       </div>
+      {selectedId && <EditMenu />}
     </div>
   );
 };
