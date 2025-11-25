@@ -7,6 +7,7 @@ const Canvas: React.FC = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
+  const initialPosSet = useRef(false);
 
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
@@ -64,6 +65,19 @@ const Canvas: React.FC = () => {
     el.addEventListener('wheel', wheel, { passive: false });
     return () => el.removeEventListener('wheel', wheel as EventListener);
   }, [scale, setScale]);
+
+  useEffect(() => {
+    if (initialPosSet.current) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const worldX = Math.round((cx - offset.x) / scale);
+    const worldY = Math.round((cy - offset.y) / scale);
+    setRectPos({ x: worldX, y: worldY });
+    initialPosSet.current = true;
+  }, []);
 
   const bgSize1 = `${gridPx * scale}px ${gridPx * scale}px`;
   const bgSize2 = `${gridPx * 8 * scale}px ${gridPx * 8 * scale}px`;
