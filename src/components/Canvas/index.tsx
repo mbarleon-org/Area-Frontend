@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import Node from "./Node";
 import EditMenu from "./EditMenu";
+import CenterControl from "./CenterControl";
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
@@ -167,6 +168,14 @@ const Canvas: React.FC = () => {
             label={n.label}
           />
         ))}
+        <CenterControl
+          containerRef={containerRef}
+          offset={offset}
+          setOffset={setOffset}
+          scale={scale}
+          setScale={setScale}
+          nodes={nodes}
+        />
       </div>
       {selectedId && <EditMenu />}
     </div>
