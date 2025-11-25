@@ -12,6 +12,11 @@ const Canvas: React.FC = () => {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
 
+  const offsetRef = useRef(offset);
+  const scaleRef = useRef(scale);
+  useEffect(() => { offsetRef.current = offset; }, [offset]);
+  useEffect(() => { scaleRef.current = scale; }, [scale]);
+
   const [rectPos, setRectPos] = useState({ x: 0, y: 0 });
 
   const gridPx = 24;
@@ -41,6 +46,147 @@ const Canvas: React.FC = () => {
   const onUp = useCallback(() => {
     dragging.current = false;
   }, []);
+
+  const [showCenter, setShowCenter] = useState(false);
+
+  type NodeItem = { x: number; y: number; width?: number; height?: number };
+
+  const recenter = useCallback((nodes?: NodeItem[]) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+
+    const items = (nodes && nodes.length > 0)
+      ? nodes
+      : [{ x: rectPos.x, y: rectPos.y, width: 96, height: 96 }];
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const n of items) {
+      minX = Math.min(minX, n.x);
+      minY = Math.min(minY, n.y);
+      maxX = Math.max(maxX, n.x + (n.width ?? 0));
+      maxY = Math.max(maxY, n.y + (n.height ?? 0));
+    }
+
+    if (!isFinite(minX)) {
+      setOffset({ x: cx, y: cy });
+      return;
+    }
+
+    const bboxW = Math.max(1, maxX - minX);
+    const bboxH = Math.max(1, maxY - minY);
+    const padding = 120;
+
+    const fitsHoriz = bboxW * scale <= (rect.width - padding);
+    const fitsVert = bboxH * scale <= (rect.height - padding);
+    const centerWorldX = (minX + maxX) / 2;
+    const centerWorldY = (minY + maxY) / 2;
+
+    if (fitsHoriz && fitsVert) {
+      const targetOffset = { x: cx - centerWorldX * scale, y: cy - centerWorldY * scale };
+      animateCenterAndZoom(targetOffset, scale);
+      return;
+    }
+
+    const minScale = 0.2;
+    const maxScale = 3;
+    const scaleX = (rect.width - padding) / bboxW;
+    const scaleY = (rect.height - padding) / bboxH;
+    const targetScale = Math.max(minScale, Math.min(maxScale, Math.min(scaleX, scaleY)));
+
+    const targetOffset = { x: cx - centerWorldX * targetScale, y: cy - centerWorldY * targetScale };
+    animateCenterAndZoom(targetOffset, targetScale);
+  }, [rectPos, scale, setOffset, setScale]);
+
+  const animateCenterAndZoom = useCallback((targetOffset: { x: number; y: number }, targetScale: number) => {
+    const duration = 350;
+    const startOffset = { ...offsetRef.current };
+    const startScale = scaleRef.current;
+    const start = performance.now();
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const ease = 0.5 - 0.5 * Math.cos(Math.PI * t);
+      setOffset({
+        x: startOffset.x + (targetOffset.x - startOffset.x) * ease,
+        y: startOffset.y + (targetOffset.y - startOffset.y) * ease,
+      });
+      setScale(startScale + (targetScale - startScale) * ease);
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, []);
+
+  useEffect(() => {
+    const update = () => {
+      const el = containerRef.current;
+      if (!el) {
+        setShowCenter(false);
+        return;
+      }
+
+      const paddingPxSmall = 80;
+      const paddingPxLarge = 220;
+      const nodeW = 96;
+      const nodeH = 96;
+
+      const rect = el.getBoundingClientRect();
+
+      const viewWorldW = rect.width / scale;
+      const viewWorldH = rect.height / scale;
+
+      const paddingWorldSmallW = paddingPxSmall / scale;
+      const paddingWorldSmallH = paddingPxSmall / scale;
+      const paddingWorldLargeW = paddingPxLarge / scale;
+      const paddingWorldLargeH = paddingPxLarge / scale;
+
+      const minX = rectPos.x - nodeW / 2;
+      const maxX = rectPos.x + nodeW / 2;
+      const minY = rectPos.y - nodeH / 2;
+      const maxY = rectPos.y + nodeH / 2;
+
+      const bboxW = maxX - minX;
+      const bboxH = maxY - minY;
+
+      const fitsSmallHoriz = bboxW <= (viewWorldW - paddingWorldSmallW);
+      const fitsSmallVert = bboxH <= (viewWorldH - paddingWorldSmallH);
+
+      const fitsLargeHoriz = bboxW <= (viewWorldW - paddingWorldLargeW);
+      const fitsLargeVert = bboxH <= (viewWorldH - paddingWorldLargeH);
+
+      const bboxCenterX = (minX + maxX) / 2;
+      const bboxCenterY = (minY + maxY) / 2;
+      const viewCenterWorldX = (rect.width / 2 - offset.x) / scale;
+      const viewCenterWorldY = (rect.height / 2 - offset.y) / scale;
+      const dxWorld = bboxCenterX - viewCenterWorldX;
+      const dyWorld = bboxCenterY - viewCenterWorldY;
+      const distWorld = Math.hypot(dxWorld, dyWorld);
+
+      const minView = Math.min(viewWorldW, viewWorldH);
+      const showDist = Math.max(1, minView);
+      const hideDist = Math.max(1, minView);
+
+      if (showCenter) {
+        if (fitsLargeHoriz && fitsLargeVert && distWorld <= hideDist) {
+          setShowCenter(false);
+        } else {
+          setShowCenter(true);
+        }
+        return;
+      }
+
+      if (!(fitsSmallHoriz && fitsSmallVert) || distWorld > showDist) {
+        setShowCenter(true);
+      } else {
+        setShowCenter(false);
+      }
+    };
+
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [offset, scale]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -78,48 +224,6 @@ const Canvas: React.FC = () => {
     setRectPos({ x: worldX, y: worldY });
     initialPosSet.current = true;
   }, []);
-
-  const [showCenter, setShowCenter] = useState(false);
-
-  const recenter = useCallback(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    setOffset({ x: (rect.width / 2) - rectPos.x * scale, y: (rect.height / 2) - rectPos.y * scale });
-  }, [rectPos, scale]);
-
-  useEffect(() => {
-    const update = () => {
-      const el = containerRef.current;
-
-      if (!el) {
-        setShowCenter(false);
-        return;
-      }
-
-      const SHOW_RATIO = 0.75;
-      const HIDE_RATIO = 0.6;
-
-      const rect = el.getBoundingClientRect();
-      const showThreshold = Math.max(48, Math.min(rect.width, rect.height) * SHOW_RATIO);
-      const hideThreshold = showThreshold * HIDE_RATIO;
-      const dx = Math.abs((rectPos.x * scale + offset.x) - rect.width / 2);
-      const dy = Math.abs((rectPos.y * scale + offset.y) - rect.height / 2);
-      const withinShow = dx <= showThreshold && dy <= showThreshold;
-      const withinHide = dx <= hideThreshold && dy <= hideThreshold;
-
-      setShowCenter(prev => {
-        if (prev) {
-          return !withinHide;
-        }
-        return !withinShow;
-      });
-    };
-
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, [offset, scale, rectPos]);
 
   const bgSize1 = `${gridPx * scale}px ${gridPx * scale}px`;
   const bgSize2 = `${gridPx * 8 * scale}px ${gridPx * 8 * scale}px`;
@@ -179,7 +283,7 @@ const Canvas: React.FC = () => {
             onMouseUp={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
-            onClick={recenter}
+            onClick={(e) => { e.stopPropagation(); recenter(); }}
             style={{
               position: 'absolute',
               right: 32,
