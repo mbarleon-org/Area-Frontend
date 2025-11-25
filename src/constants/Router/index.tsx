@@ -5,6 +5,7 @@ import Dashboard from "../../pages/Dashboard";
 import Apps from "../../pages/Apps";
 import Explore from "../../pages/Explore";
 import Login from "../../pages/Login"
+import Register from "../../pages/Register"
 import Automations from "../../pages/Automations";
 
 interface Router {
@@ -50,6 +51,11 @@ const ROUTES: Router[] = [
     label: "Login",
     navbar: true,
     security: "public",
+  },
+  {
+    path: "/register",
+    element: <Register />,
+    label: "Register",
   },
   {
     path: "/automations",

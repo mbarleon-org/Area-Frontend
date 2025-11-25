@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 
 const Navbar: React.FC = () => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
     <div style={styles.navbar}>
       <div style={styles.logo}>GT</div>
@@ -21,10 +24,39 @@ const Navbar: React.FC = () => {
         </NavLink>
       </nav>
       <nav style={styles.loginContainer} aria-label="Login container">
-        <NavLink to="/login" style={({ isActive }) => ({ ...styles.loginLink, opacity: isActive ? 1 : 0.85 })}>
-          <svg viewBox="0 0 24 24" fill="none" style={{width:"44px",height:"44px"}} xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path> <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path> </g></svg>
-          <span style={styles.item}>Login</span>
-        </NavLink>
+        <div style={styles.loginWrapper}>
+          <div
+            style={{
+              ...styles.iconCircle,
+              background: isHovered ? "#666666ff" : "#0000003d",
+              transition: "background 0.3s ease",
+              cursor: "pointer"
+            }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <svg viewBox="0 0 24 24" fill="none" style={{width:"30px",height:"30px"}} xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path> <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path> </g></svg>
+          </div>
+          {isMenuOpen && (
+            <div style={styles.dropdownMenu}>
+              <NavLink
+                to="/login"
+                style={({ isActive }) => ({ ...styles.dropdownItem, opacity: isActive ? 1 : 0.85 })}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Login
+              </NavLink>
+              <NavLink
+                to="/register"
+                style={({ isActive }) => ({ ...styles.dropdownItem, opacity: isActive ? 1 : 0.85 })}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Register
+              </NavLink>
+            </div>
+          )}
+        </div>
       </nav>
     </div>
   );
@@ -76,14 +108,43 @@ const styles: { [k: string]: React.CSSProperties } = {
     flexDirection: "column",
     alignItems: "center",
     marginBottom: "50px",
+    position: "relative",
   },
-  loginLink: {
+  loginWrapper: {
+    position: "relative",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: "6px",
+  },
+  iconCircle: {
+    width: "50px",
+    height: "50px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    left: "100px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    backgroundColor: "#1f1f1f",
+    borderRadius: "8px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+    padding: "8px 0",
+    minWidth: "120px",
+    display: "flex",
+    flexDirection: "column",
+    zIndex: 10001,
+  },
+  dropdownItem: {
     color: "#fff",
     textDecoration: "none",
+    padding: "12px 20px",
+    fontSize: "14px",
+    fontFamily: "'Montserrat', sans-serif",
+    transition: "background 0.2s ease",
   }
 };
 
