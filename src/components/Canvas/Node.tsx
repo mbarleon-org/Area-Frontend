@@ -4,7 +4,7 @@ type Vec = { x: number; y: number };
 
 type NodeProps = {
   pos: Vec;
-  setPos: React.Dispatch<React.SetStateAction<Vec>>;
+  setPos: (p: Vec) => void;
   width: number;
   height: number;
   scale: number;
@@ -22,6 +22,11 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, width, height, scale, offset, 
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const pointerOffset = useRef({ x: 0, y: 0 });
+  const currentPos = useRef<Vec>(pos);
+
+  useEffect(() => {
+    currentPos.current = pos;
+  }, [pos]);
 
   useEffect(() => {
     return () => {};
@@ -41,6 +46,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, width, height, scale, offset, 
     const snapOffY = computeSnapOffset(height, gridPx);
     const snappedX = Math.round((desiredX - snapOffX) / gridPx) * gridPx + snapOffX;
     const snappedY = Math.round((desiredY - snapOffY) / gridPx) * gridPx + snapOffY;
+    currentPos.current = { x: snappedX, y: snappedY };
     setPos({ x: snappedX, y: snappedY });
   }, [offset.x, offset.y, scale, gridPx, width, height, setPos]);
 
@@ -50,11 +56,11 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, width, height, scale, offset, 
     dragging.current = false;
     const snapOffX = computeSnapOffset(width, gridPx);
     const snapOffY = computeSnapOffset(height, gridPx);
-    setPos(r => {
-      const x = Math.round((r.x - snapOffX) / gridPx) * gridPx + snapOffX;
-      const y = Math.round((r.y - snapOffY) / gridPx) * gridPx + snapOffY;
-      return { x, y };
-    });
+  const cur = currentPos.current;
+  const x = Math.round((cur.x - snapOffX) / gridPx) * gridPx + snapOffX;
+  const y = Math.round((cur.y - snapOffY) / gridPx) * gridPx + snapOffY;
+  currentPos.current = { x, y };
+  setPos({ x, y });
     window.removeEventListener('mousemove', mouseMoveListener);
     window.removeEventListener('mouseup', mouseUpListener);
     window.removeEventListener('touchmove', touchMoveListener as any);
