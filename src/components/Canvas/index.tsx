@@ -79,6 +79,48 @@ const Canvas: React.FC = () => {
     initialPosSet.current = true;
   }, []);
 
+  const [showCenter, setShowCenter] = useState(false);
+
+  const recenter = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setOffset({ x: (rect.width / 2) - rectPos.x * scale, y: (rect.height / 2) - rectPos.y * scale });
+  }, [rectPos, scale]);
+
+  useEffect(() => {
+    const update = () => {
+      const el = containerRef.current;
+
+      if (!el) {
+        setShowCenter(false);
+        return;
+      }
+
+      const SHOW_RATIO = 0.75;
+      const HIDE_RATIO = 0.6;
+
+      const rect = el.getBoundingClientRect();
+      const showThreshold = Math.max(48, Math.min(rect.width, rect.height) * SHOW_RATIO);
+      const hideThreshold = showThreshold * HIDE_RATIO;
+      const dx = Math.abs((rectPos.x * scale + offset.x) - rect.width / 2);
+      const dy = Math.abs((rectPos.y * scale + offset.y) - rect.height / 2);
+      const withinShow = dx <= showThreshold && dy <= showThreshold;
+      const withinHide = dx <= hideThreshold && dy <= hideThreshold;
+
+      setShowCenter(prev => {
+        if (prev) {
+          return !withinHide;
+        }
+        return !withinShow;
+      });
+    };
+
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [offset, scale, rectPos]);
+
   const bgSize1 = `${gridPx * scale}px ${gridPx * scale}px`;
   const bgSize2 = `${gridPx * 8 * scale}px ${gridPx * 8 * scale}px`;
   const pos1x = Math.round(mod(offset.x, gridPx * scale));
@@ -131,6 +173,30 @@ const Canvas: React.FC = () => {
           gridPx={gridPx}
           label="Loïs"
         />
+        {showCenter && (
+          <button
+            onMouseDown={(e) => e.stopPropagation()}
+            onMouseUp={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+            onClick={recenter}
+            style={{
+              position: 'absolute',
+              right: 32,
+              bottom: 32,
+              zIndex: 1000,
+              background: '#2b2b2b',
+              color: '#fff',
+              border: '1px solid rgba(255,255,255,0.06)',
+              padding: '15px 20px',
+              borderRadius: 6,
+              cursor: 'pointer',
+            }}
+            aria-label="Recenter canvas"
+          >
+            Recenter
+          </button>
+        )}
       </div>
     </div>
   );
