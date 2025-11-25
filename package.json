@@ -13,39 +13,37 @@
   "license": "MIT",
   "author": "Area Team at mbarleon-org",
   "type": "module",
-  "main": "src/main.tsx",
+  "main": "web",
   "directories": {
     "doc": "docs",
     "test": "tests"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b",
     "lint": "eslint .",
-    "preview": "npm run build && vite preview",
-    "electron": "electron .",
-    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
-    "build-electron": "npm run build && electron-builder"
+    "web:dev": "cd web && npm run dev",
+    "web:build": "cd web && npm run build",
+    "web:start": "cd web && npm run start",
+    "mobile:start": "cd mobile && npm run start",
+    "mobile:android": "cd mobile && npm run android",
+    "mobile:ios": "cd mobile && npm run ios"
+  },
+  "pnpm": {
+    "overrides": {
+      "react-dom": "18.2.0"
+    }
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-router-dom": "^7.9.6",
     "serve": "^14.2.5"
   },
   "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "@eslint/js": "^9.39.0",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
     "@typescript-eslint/eslint-plugin": "^8.47.0",
     "@typescript-eslint/parser": "^8.46.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "@vitejs/plugin-react-swc": "^4.2.0",
-    "electron": "^39.0.0",
     "eslint": "^9.39.0",
     "globals": "^16.5.0",
-    "typescript": "~5.9.3",
-    "vite": "^7.1.12",
-    "vite-plugin-svgr": "^4.5.0"
+    "typescript": "~5.9.3"
   }
 }

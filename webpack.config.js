@@ -39,5 +39,5 @@ module.exports = {
     port: 3001,
     open: false
   },
-  target: 'electron-renderer'
+  target: 'web'
 };

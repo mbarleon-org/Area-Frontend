@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "jsx": "react-native",
+        "moduleResolution": "node",
+        "baseUrl": ".",
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "paths": {
+            "@area/*": [
+                "../../src/*"
+            ]
+        },
+        "types": [
+            "react",
+            "react-native"
+        ],
+        "skipLibCheck": true
+    },
+    "include": [
+        "src/**/*"
+    ]
+}

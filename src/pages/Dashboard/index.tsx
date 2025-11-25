@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import '../../index.css';
 import Navbar from '../../components/Navbar';
-import { NavLink } from "react-router-dom";
 
 const Dashboard: React.FC = () => {
   const [automations] = useState([
     { id: 1, name: 'Backup DB nightly (Fake data)', desc: 'Nightly saving (Fake data)', status: 'OK', lastRun: '2025-11-24 02:00' },
     { id: 2, name: 'Sync users (Fake data)', desc: 'User synchronization from LDAP (Fake data)', status: 'Error', lastRun: '2025-11-24 09:12' },
     { id: 3, name: 'Generate report (Fake data)', desc: 'Daily report generation (Fake data)', status: 'Running', lastRun: '2025-11-24 11:03' },
-  ] as Array<{ id: number; name: string; desc: string; status: string; lastRun: string }> );
+  ] as Array<{ id: number; name: string; desc: string; status: string; lastRun: string }>);
 
   return (
     <>
@@ -16,9 +15,9 @@ const Dashboard: React.FC = () => {
 
       <div style={styles.container}>
         <div style={styles.header}>
-          <NavLink to="/automations" style={{ textDecoration: 'none' }}>
+          <a href="/automations" style={{ textDecoration: 'none' }}>
             <button style={styles.addButton}>+ New automation</button>
-          </NavLink>
+          </a>
         </div>
 
         <h2 style={styles.title}>Automations</h2>

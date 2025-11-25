@@ -1,5 +1,19 @@
 {
     "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@area/ui": [
+                "packages/ui/src"
+            ],
+            "@area/*": [
+                "src/*",
+                "packages/*/src"
+            ]
+        },
+        "types": [
+            "react",
+            "react-dom"
+        ],
         "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
         "target": "ES2022",
         "useDefineForClassFields": true,

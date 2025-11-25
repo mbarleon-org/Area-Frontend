@@ -1,0 +1,13 @@
+{
+    "name": "@area/src",
+    "version": "1.0.0",
+    "private": true,
+    "main": "index.d.ts",
+    "types": "index.d.ts",
+    "files": [
+        "**/*"
+    ],
+    "scripts": {
+        "build": "echo 'No build step for source package'"
+    }
+}
