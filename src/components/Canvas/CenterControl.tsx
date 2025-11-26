@@ -10,7 +10,7 @@ type Props = {
   setOffset: (s: React.SetStateAction<Vec> | Vec) => void;
   scale: number;
   setScale: (s: React.SetStateAction<number> | number) => void;
-  rectPos: Vec;
+  rectPos?: Vec;
   nodes?: NodeItem[];
 };
 
@@ -46,8 +46,11 @@ const CenterControl: React.FC<Props> = ({ containerRef, offset, setOffset, scale
     const rect = el.getBoundingClientRect();
     const cx = rect.width / 2;
     const cy = rect.height / 2;
-
-    const list = (items && items.length > 0) ? items : [{ x: rectPos.x, y: rectPos.y, width: 96, height: 96 }];
+    const list = (items && items.length > 0)
+      ? items
+      : (nodes && nodes.length > 0)
+        ? nodes
+        : [{ x: (rectPos && rectPos.x) || 0, y: (rectPos && rectPos.y) || 0, width: 96, height: 96 }];
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const n of list) {
       minX = Math.min(minX, n.x);
@@ -109,10 +112,22 @@ const CenterControl: React.FC<Props> = ({ containerRef, offset, setOffset, scale
       const paddingWorldLargeW = paddingPxLarge / scale;
       const paddingWorldLargeH = paddingPxLarge / scale;
 
-      const minX = rectPos.x - nodeW / 2;
-      const maxX = rectPos.x + nodeW / 2;
-      const minY = rectPos.y - nodeH / 2;
-      const maxY = rectPos.y + nodeH / 2;
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      if (nodes && nodes.length > 0) {
+        for (const n of nodes) {
+          minX = Math.min(minX, n.x);
+          minY = Math.min(minY, n.y);
+          maxX = Math.max(maxX, n.x + (n.width ?? 0));
+          maxY = Math.max(maxY, n.y + (n.height ?? 0));
+        }
+      } else if (rectPos) {
+        minX = rectPos.x - nodeW / 2;
+        maxX = rectPos.x + nodeW / 2;
+        minY = rectPos.y - nodeH / 2;
+        maxY = rectPos.y + nodeH / 2;
+      } else {
+        minX = -nodeW/2; maxX = nodeW/2; minY = -nodeH/2; maxY = nodeH/2;
+      }
 
       const bboxW = maxX - minX;
       const bboxH = maxY - minY;

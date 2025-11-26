@@ -4,7 +4,8 @@ type Vec = { x: number; y: number };
 
 type NodeProps = {
   pos: Vec;
-  setPos: React.Dispatch<React.SetStateAction<Vec>>;
+  setPos: (p: Vec) => void;
+  onSelect?: () => void;
   width: number;
   height: number;
   scale: number;
@@ -18,10 +19,17 @@ const computeSnapOffset = (worldSize: number, gridPx: number) => {
   return (cells % 2 === 0) ? 0 : gridPx / 2;
 };
 
-const Node: React.FC<NodeProps> = ({ pos, setPos, width, height, scale, offset, gridPx, label }) => {
+const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height = 96, scale, offset, gridPx, label }) => {
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const pointerOffset = useRef({ x: 0, y: 0 });
+  const currentPos = useRef<Vec>(pos);
+  const moved = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    currentPos.current = pos;
+  }, [pos]);
 
   useEffect(() => {
     return () => {};
@@ -33,6 +41,12 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, width, height, scale, offset, 
 
   const handleMove = useCallback((clientX: number, clientY: number) => {
     lastPos.current = { x: clientX, y: clientY };
+    if (!moved.current) {
+      const dx0 = clientX - dragStart.current.x;
+      const dy0 = clientY - dragStart.current.y;
+      if (Math.hypot(dx0, dy0) > 4)
+        moved.current = true;
+    }
     const worldX = (clientX - offset.x) / scale;
     const worldY = (clientY - offset.y) / scale;
     const desiredX = worldX - pointerOffset.current.x;
@@ -41,6 +55,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, width, height, scale, offset, 
     const snapOffY = computeSnapOffset(height, gridPx);
     const snappedX = Math.round((desiredX - snapOffX) / gridPx) * gridPx + snapOffX;
     const snappedY = Math.round((desiredY - snapOffY) / gridPx) * gridPx + snapOffY;
+    currentPos.current = { x: snappedX, y: snappedY };
     setPos({ x: snappedX, y: snappedY });
   }, [offset.x, offset.y, scale, gridPx, width, height, setPos]);
 
@@ -50,15 +65,16 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, width, height, scale, offset, 
     dragging.current = false;
     const snapOffX = computeSnapOffset(width, gridPx);
     const snapOffY = computeSnapOffset(height, gridPx);
-    setPos(r => {
-      const x = Math.round((r.x - snapOffX) / gridPx) * gridPx + snapOffX;
-      const y = Math.round((r.y - snapOffY) / gridPx) * gridPx + snapOffY;
-      return { x, y };
-    });
+  const cur = currentPos.current;
+  const x = Math.round((cur.x - snapOffX) / gridPx) * gridPx + snapOffX;
+  const y = Math.round((cur.y - snapOffY) / gridPx) * gridPx + snapOffY;
+  currentPos.current = { x, y };
+  setPos({ x, y });
     window.removeEventListener('mousemove', mouseMoveListener);
     window.removeEventListener('mouseup', mouseUpListener);
     window.removeEventListener('touchmove', touchMoveListener as any);
     window.removeEventListener('touchend', touchEndListener as any);
+    // keep moved flag true until next mousedown; onClick will reset it
   }, [width, height, gridPx, setPos]);
 
   const mouseMoveListener = useCallback((e: MouseEvent) => {
@@ -107,10 +123,13 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, width, height, scale, offset, 
   return (
     <div
       style={style}
+      onClick={(e) => { e.stopPropagation(); if (!moved.current) { onSelect?.(); } moved.current = false; }}
       onMouseDown={(e) => {
         e.stopPropagation();
         dragging.current = true;
         lastPos.current = { x: e.clientX, y: e.clientY };
+        dragStart.current = { x: e.clientX, y: e.clientY };
+        moved.current = false;
         const pwx = (e.clientX - offset.x) / scale;
         const pwy = (e.clientY - offset.y) / scale;
         const snapOffX = computeSnapOffset(width, gridPx);
@@ -127,6 +146,8 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, width, height, scale, offset, 
         const t = e.touches[0];
         dragging.current = true;
         lastPos.current = { x: t.clientX, y: t.clientY };
+        dragStart.current = { x: t.clientX, y: t.clientY };
+        moved.current = false;
         const pwx = (t.clientX - offset.x) / scale;
         const pwy = (t.clientY - offset.y) / scale;
         const snapOffX = computeSnapOffset(width, gridPx);

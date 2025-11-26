@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import Node from "./Node";
+import EditMenu from "./EditMenu";
 import CenterControl from "./CenterControl";
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
@@ -13,14 +14,45 @@ const Canvas: React.FC = () => {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
 
-  const offsetRef = useRef(offset);
-  const scaleRef = useRef(scale);
-  useEffect(() => { offsetRef.current = offset; }, [offset]);
-  useEffect(() => { scaleRef.current = scale; }, [scale]);
-
-  const [rectPos, setRectPos] = useState({ x: 0, y: 0 });
+  type NodeItem = { id: string; x: number; y: number; width?: number; height?: number; label?: string };
+  const [nodes, setNodes] = useState<NodeItem[]>([]);
 
   const gridPx = 24;
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const editMenuRef = useRef<import("./EditMenu").EditMenuHandle | null>(null);
+
+  const computeSnapOffset = (worldSize: number, gridPx: number) => {
+    const cells = Math.round(worldSize / gridPx);
+    return (cells % 2 === 0) ? 0 : gridPx / 2;
+  };
+
+  const handleAddNode = useCallback((e: React.MouseEvent) => {
+    const el = containerRef.current;
+    if (!el)
+      return;
+    const rect = el.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const worldX = (cx - offset.x) / scale;
+    const worldY = (cy - offset.y) / scale;
+    const w = 96;
+    const h = 96;
+    const snapOffX = computeSnapOffset(w, gridPx);
+    const snapOffY = computeSnapOffset(h, gridPx);
+    const x = Math.round((worldX - snapOffX) / gridPx) * gridPx + snapOffX;
+    const y = Math.round((worldY - snapOffY) / gridPx) * gridPx + snapOffY;
+    const id = `n${Date.now()}`;
+    setNodes(ns => [...ns, { id, x, y, width: w, height: h, label: 'Node' }] );
+  }, [offset.x, offset.y, scale, gridPx]);
+
+  const handleCanvasClick = useCallback(() => {
+    if (editMenuRef.current?.requestClose) {
+      editMenuRef.current.requestClose();
+      return;
+    }
+    setSelectedId(null);
+  }, []);
 
   const onDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     dragging.current = true;
@@ -81,7 +113,7 @@ const Canvas: React.FC = () => {
     const cy = rect.height / 2;
     const worldX = Math.round((cx - offset.x) / scale);
     const worldY = Math.round((cy - offset.y) / scale);
-    setRectPos({ x: worldX, y: worldY });
+    setNodes([{ id: 'n1', x: worldX, y: worldY, width: 96, height: 96, label: 'Loïs' }]);
     initialPosSet.current = true;
   }, []);
 
@@ -126,26 +158,38 @@ const Canvas: React.FC = () => {
       onTouchMove={onMove}
   onTouchEnd={onUp}
     >
-      <div style={canvasStyle}>
-        <Node
-          pos={rectPos}
-          setPos={setRectPos}
-          width={96}
-          height={96}
-          scale={scale}
-          offset={offset}
-          gridPx={gridPx}
-          label="Loïs"
-        />
+  <div style={canvasStyle} onClick={handleCanvasClick} onDoubleClick={handleAddNode}>
+        {nodes.map(n => (
+          <Node
+            key={n.id}
+            pos={{ x: n.x, y: n.y }}
+            setPos={(p) => setNodes(ns => ns.map(item => item.id === n.id ? { ...item, x: p.x, y: p.y } : item))}
+            onSelect={() => setSelectedId(n.id)}
+            width={n.width || 96}
+            height={n.height || 96}
+            scale={scale}
+            offset={offset}
+            gridPx={gridPx}
+            label={n.label}
+          />
+        ))}
         <CenterControl
           containerRef={containerRef}
           offset={offset}
           setOffset={setOffset}
           scale={scale}
           setScale={setScale}
-          rectPos={rectPos}
+          nodes={nodes}
         />
       </div>
+      {selectedId && (
+        <EditMenu
+          node={nodes.find(n => n.id === selectedId) || null}
+          updateNode={(patch) => setNodes(ns => ns.map(n => n.id === selectedId ? { ...n, ...patch } : n))}
+          onClose={() => setSelectedId(null)}
+          ref={editMenuRef}
+        />
+      )}
     </div>
   );
 };
