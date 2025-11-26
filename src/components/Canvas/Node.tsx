@@ -24,6 +24,8 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height =
   const lastPos = useRef({ x: 0, y: 0 });
   const pointerOffset = useRef({ x: 0, y: 0 });
   const currentPos = useRef<Vec>(pos);
+  const moved = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     currentPos.current = pos;
@@ -39,6 +41,12 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height =
 
   const handleMove = useCallback((clientX: number, clientY: number) => {
     lastPos.current = { x: clientX, y: clientY };
+    if (!moved.current) {
+      const dx0 = clientX - dragStart.current.x;
+      const dy0 = clientY - dragStart.current.y;
+      if (Math.hypot(dx0, dy0) > 4)
+        moved.current = true;
+    }
     const worldX = (clientX - offset.x) / scale;
     const worldY = (clientY - offset.y) / scale;
     const desiredX = worldX - pointerOffset.current.x;
@@ -66,6 +74,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height =
     window.removeEventListener('mouseup', mouseUpListener);
     window.removeEventListener('touchmove', touchMoveListener as any);
     window.removeEventListener('touchend', touchEndListener as any);
+    // keep moved flag true until next mousedown; onClick will reset it
   }, [width, height, gridPx, setPos]);
 
   const mouseMoveListener = useCallback((e: MouseEvent) => {
@@ -114,11 +123,13 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height =
   return (
     <div
       style={style}
-      onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
+      onClick={(e) => { e.stopPropagation(); if (!moved.current) { onSelect?.(); } moved.current = false; }}
       onMouseDown={(e) => {
         e.stopPropagation();
         dragging.current = true;
         lastPos.current = { x: e.clientX, y: e.clientY };
+        dragStart.current = { x: e.clientX, y: e.clientY };
+        moved.current = false;
         const pwx = (e.clientX - offset.x) / scale;
         const pwy = (e.clientY - offset.y) / scale;
         const snapOffX = computeSnapOffset(width, gridPx);
@@ -135,6 +146,8 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height =
         const t = e.touches[0];
         dragging.current = true;
         lastPos.current = { x: t.clientX, y: t.clientY };
+        dragStart.current = { x: t.clientX, y: t.clientY };
+        moved.current = false;
         const pwx = (t.clientX - offset.x) / scale;
         const pwy = (t.clientY - offset.y) / scale;
         const snapOffX = computeSnapOffset(width, gridPx);
