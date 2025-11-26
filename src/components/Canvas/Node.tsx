@@ -12,6 +12,11 @@ type NodeProps = {
   offset: Vec;
   gridPx: number;
   label?: React.ReactNode;
+  connectionPoints?: Array<{
+    side: 'left' | 'right' | 'top' | 'bottom';
+    offset: number;
+    size?: number;
+  }>;
 };
 
 const computeSnapOffset = (worldSize: number, gridPx: number) => {
@@ -19,7 +24,7 @@ const computeSnapOffset = (worldSize: number, gridPx: number) => {
   return (cells % 2 === 0) ? 0 : gridPx / 2;
 };
 
-const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height = 96, scale, offset, gridPx, label }) => {
+const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height = 96, scale, offset, gridPx, label, connectionPoints }) => {
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const pointerOffset = useRef({ x: 0, y: 0 });
@@ -74,7 +79,6 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height =
     window.removeEventListener('mouseup', mouseUpListener);
     window.removeEventListener('touchmove', touchMoveListener as any);
     window.removeEventListener('touchend', touchEndListener as any);
-    // keep moved flag true until next mousedown; onClick will reset it
   }, [width, height, gridPx, setPos]);
 
   const mouseMoveListener = useCallback((e: MouseEvent) => {
@@ -120,6 +124,34 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height =
     touchAction: 'none',
   };
 
+  const baseConnector = {
+    position: 'absolute' as const,
+    borderRadius: '50%'
+  };
+
+  const renderConnector = (side: 'left' | 'right' | 'top' | 'bottom', off: number, size = 9) => {
+    const scaled = size * scale;
+    const css: React.CSSProperties = { ...baseConnector };
+    if (side === 'right') {
+      css.right = -Math.round(scaled / 2);
+      css.top = `calc(50% + ${off}px)`;
+      css.transform = 'translateY(-50%)';
+    } else if (side === 'left') {
+      css.left = -Math.round(scaled / 2);
+      css.top = `calc(50% + ${off}px)`;
+      css.transform = 'translateY(-50%)';
+    } else if (side === 'top') {
+      css.top = -Math.round(scaled / 2);
+      css.left = `calc(50% + ${off}px)`;
+      css.transform = 'translateX(-50%)';
+    } else {
+      css.bottom = -Math.round(scaled / 2);
+      css.left = `calc(50% + ${off}px)`;
+      css.transform = 'translateX(-50%)';
+    }
+    return <div key={`${side}-${off}-${size}`} style={{ ...css, width: scaled, height: scaled, background: '#fff', boxShadow: '0 0 0 2px rgba(255,255,255,0.06)', pointerEvents: 'none' }} />;
+  };
+
   return (
     <div
       style={style}
@@ -161,6 +193,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height =
       }}
     >
       <div style={{ pointerEvents: 'none' }}>{label ?? 'Drag me'}</div>
+      {connectionPoints?.map((cp: { side: 'left' | 'right' | 'top' | 'bottom'; offset: number; size?: number }) => renderConnector(cp.side, cp.offset, cp.size))}
     </div>
   );
 };

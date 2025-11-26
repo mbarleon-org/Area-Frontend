@@ -171,6 +171,7 @@ const Canvas: React.FC = () => {
             offset={offset}
             gridPx={gridPx}
             label={n.label}
+            connectionPoints={[{ side: 'right', offset: 0 }, { side: 'left', offset: 0, size: 9 }, { side: 'top', offset: 0, size: 9 }, { side: 'bottom', offset: 0, size: 9 }]}
           />
         ))}
         <CenterControl
