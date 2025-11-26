@@ -74,10 +74,12 @@ const EditMenu = forwardRef<EditMenuHandle, Props>(({ node, updateNode, onClose 
         <h3>Edit Menu</h3>
         <button onClick={handleRequestClose} style={{ background: 'transparent', color: '#fff', border: 'none' }}>✕</button>
       </div>
-  <label style={{ alignSelf: 'flex-start' }}>Name</label>
-  <input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} placeholder="Name..." style={styles.input} />
-      <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-  <button onClick={handleRequestClose} style={styles.closeButton}>Close</button>
+      <div style={styles.inputContainer}>
+        <label style={styles.label}>Name</label>
+        <input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} placeholder="Name..." style={styles.input} />
+      </div>
+      <div style={{ marginTop: 12, display: 'flex', gap: 40 }}>
+        <button onClick={handleRequestClose} style={styles.closeButton}>Close</button>
         <button onClick={() => updateNode({ label: name, x, y })} style={styles.applyButton}>Apply</button>
       </div>
     </div>
@@ -102,14 +104,26 @@ const styles: { [k: string]: React.CSSProperties } = {
     alignItems: "center",
     justifyContent: "flex-start",
   },
+  inputContainer: {
+    width: "90%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
   input: {
     width: "100%",
-    padding: "8px",
+    padding: "9px",
     marginBottom: "12px",
     borderRadius: "4px",
     border: "1px solid #333",
     backgroundColor: "#1e1e1e",
     color: "#fff",
+    fontSize: "15px",
+  },
+  label: {
+    fontSize: "14px",
+    marginBottom: "8px",
+    alignSelf: 'flex-start',
   },
   applyButton: {
     padding: "8px 12px",
