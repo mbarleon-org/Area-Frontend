@@ -177,7 +177,13 @@ const Canvas: React.FC = () => {
           nodes={nodes}
         />
       </div>
-      {selectedId && <EditMenu />}
+      {selectedId && (
+        <EditMenu
+          node={nodes.find(n => n.id === selectedId) || null}
+          updateNode={(patch) => setNodes(ns => ns.map(n => n.id === selectedId ? { ...n, ...patch } : n))}
+          onClose={() => setSelectedId(null)}
+        />
+      )}
     </div>
   );
 };
