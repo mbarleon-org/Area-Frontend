@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import "../../index.css";
 
 type NodeItem = { id: string; x: number; y: number; width?: number; height?: number; label?: string } | null;
@@ -8,11 +8,16 @@ type Props = {
   updateNode: (patch: Partial<NonNullable<NodeItem>>) => void;
   onClose: () => void;
 };
+export type EditMenuHandle = { requestClose: () => void };
 
-const EditMenu: React.FC<Props> = ({ node, updateNode, onClose }) => {
+const EditMenu = forwardRef<EditMenuHandle, Props>(({ node, updateNode, onClose }, ref) => {
   const [name, setName] = useState(node?.label || "");
   const [x, setX] = useState(node?.x ?? 0);
   const [y, setY] = useState(node?.y ?? 0);
+  const [visible, setVisible] = useState(false);
+  const nameRef = React.useRef<HTMLInputElement | null>(null);
+  const closeTimerRef = useRef<number | null>(null);
+  const TRANSITION_MS = 460;
 
   useEffect(() => {
     setName(node?.label || "");
@@ -20,11 +25,45 @@ const EditMenu: React.FC<Props> = ({ node, updateNode, onClose }) => {
     setY(node?.y ?? 0);
   }, [node]);
 
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      setVisible(true);
+      nameRef.current?.focus();
+    });
+  }, []);
+
+  const handleRequestClose = () => {
+    setVisible(false);
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+    }
+    closeTimerRef.current = window.setTimeout(() => {
+      closeTimerRef.current = null;
+      onClose();
+    }, TRANSITION_MS);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useImperativeHandle(ref, () => ({ requestClose: handleRequestClose }), [handleRequestClose]);
+
   if (!node) return null;
 
   return (
     <div
-      style={styles.container}
+      style={{
+        ...styles.container,
+        transform: `${styles.container.transform} ${visible ? ' translateY(0)' : ' translateY(80%)'}`,
+        opacity: visible ? 1 : 0,
+        transition: 'transform 420ms cubic-bezier(.16,.84,.36,1), opacity 320ms ease'
+      }}
       onMouseDown={(e) => e.stopPropagation()}
       onMouseUp={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
@@ -33,17 +72,17 @@ const EditMenu: React.FC<Props> = ({ node, updateNode, onClose }) => {
     >
       <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
         <h3>Edit Menu</h3>
-        <button onClick={onClose} style={{ background: 'transparent', color: '#fff', border: 'none' }}>✕</button>
+        <button onClick={handleRequestClose} style={{ background: 'transparent', color: '#fff', border: 'none' }}>✕</button>
       </div>
-      <label style={{ alignSelf: 'flex-start' }}>Name</label>
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name..." style={styles.input} />
+  <label style={{ alignSelf: 'flex-start' }}>Name</label>
+  <input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} placeholder="Name..." style={styles.input} />
       <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-        <button onClick={onClose} style={styles.closeButton}>Close</button>
+  <button onClick={handleRequestClose} style={styles.closeButton}>Close</button>
         <button onClick={() => updateNode({ label: name, x, y })} style={styles.applyButton}>Apply</button>
       </div>
     </div>
   );
-};
+});
 
 const styles: { [k: string]: React.CSSProperties } = {
   container: {

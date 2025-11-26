@@ -20,6 +20,7 @@ const Canvas: React.FC = () => {
   const gridPx = 24;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const editMenuRef = useRef<import("./EditMenu").EditMenuHandle | null>(null);
 
   const computeSnapOffset = (worldSize: number, gridPx: number) => {
     const cells = Math.round(worldSize / gridPx);
@@ -46,6 +47,10 @@ const Canvas: React.FC = () => {
   }, [offset.x, offset.y, scale, gridPx]);
 
   const handleCanvasClick = useCallback(() => {
+    if (editMenuRef.current?.requestClose) {
+      editMenuRef.current.requestClose();
+      return;
+    }
     setSelectedId(null);
   }, []);
 
@@ -182,6 +187,7 @@ const Canvas: React.FC = () => {
           node={nodes.find(n => n.id === selectedId) || null}
           updateNode={(patch) => setNodes(ns => ns.map(n => n.id === selectedId ? { ...n, ...patch } : n))}
           onClose={() => setSelectedId(null)}
+          ref={editMenuRef}
         />
       )}
     </div>
