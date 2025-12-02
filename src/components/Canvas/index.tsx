@@ -48,7 +48,7 @@ const Canvas: React.FC = () => {
     const x = Math.round((worldX - snapOffX) / gridPx) * gridPx + snapOffX;
     const y = Math.round((worldY - snapOffY) / gridPx) * gridPx + snapOffY;
     const id = `n${Date.now()}`;
-    setNodes(ns => [...ns, { id, x, y, width: w, height: h, label: 'Node' }] );
+    setNodes(ns => [...ns, { id, x, y, width: w, height: h, label: 'Node'}] );
   }, [offset.x, offset.y, scale, gridPx]);
 
   const handleCanvasClick = useCallback(() => {
@@ -166,11 +166,17 @@ const Canvas: React.FC = () => {
     const rect = el.getBoundingClientRect();
     const cx = rect.width / 2;
     const cy = rect.height / 2;
-    const worldX = Math.round((cx - offset.x) / scale);
-    const worldY = Math.round((cy - offset.y) / scale);
-    setNodes([{ id: 'n1', x: worldX, y: worldY, width: 96, height: 96, label: 'Loïs' }]);
+    const w = 96;
+    const h = 96;
+    const rawWorldX = (cx - offset.x) / scale;
+    const rawWorldY = (cy - offset.y) / scale;
+    const snapOffX = computeSnapOffset(w, gridPx);
+    const snapOffY = computeSnapOffset(h, gridPx);
+    const x = Math.round((rawWorldX - snapOffX) / gridPx) * gridPx + snapOffX;
+    const y = Math.round((rawWorldY - snapOffY) / gridPx) * gridPx + snapOffY;
+    setNodes([{ id: 'n1', x, y, width: w, height: h, label: 'Loïs' }]);
     initialPosSet.current = true;
-  }, []);
+  }, [offset.x, offset.y, scale]);
 
   const bgSize1 = `${gridPx * scale}px ${gridPx * scale}px`;
   const bgSize2 = `${gridPx * 8 * scale}px ${gridPx * 8 * scale}px`;
@@ -264,7 +270,7 @@ const Canvas: React.FC = () => {
             offset={offset}
             gridPx={gridPx}
             label={n.label}
-            connectionPoints={[{ side: 'right', offset: 0 }]}
+            connectionPoints={[{ side: 'right', offset: 0 }, { side: 'left', offset: 0 }, { side: 'top', offset: 0 }, { side: 'bottom', offset: 0 }]}
             onConnectorClick={(info) => {
               if (!pendingConnection) {
                 setPendingConnection(info);
