@@ -145,6 +145,7 @@ const styles: { [k: string]: React.CSSProperties } = {
     padding: "10px 16px",
     borderRadius: "8px",
     border: "1px solid #444",
+    marginTop: "20px",
     marginBottom: "12px",
     fontSize: "1.1em",
     background: "#222",
