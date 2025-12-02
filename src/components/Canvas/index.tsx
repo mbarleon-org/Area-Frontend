@@ -16,9 +16,10 @@ const Canvas: React.FC = () => {
 
   type NodeItem = { id: string; x: number; y: number; width?: number; height?: number; label?: string };
   const [nodes, setNodes] = useState<NodeItem[]>([]);
-  type LineItem = { x1: number; y1: number; x2: number; y2: number; stroke?: string; strokeWidth?: number };
-  const [straightLines, setLines] = useState<LineItem[]>([]);
-  const [pendingConnection, setPendingConnection] = useState<null | { nodeId?: string; worldX: number; worldY: number; side: string; index?: number }>(null);
+  type EndpointRef = { nodeId?: string; side?: 'left' | 'right' | 'top' | 'bottom'; offset?: number; worldX?: number; worldY?: number; index?: number };
+  type LineItem = { a: EndpointRef; b: EndpointRef; stroke?: string; strokeWidth?: number };
+  const [lines, setLines] = useState<LineItem[]>([]);
+  const [pendingConnection, setPendingConnection] = useState<null | EndpointRef>(null);
 
   const gridPx = 24;
 
@@ -183,11 +184,7 @@ const Canvas: React.FC = () => {
               }
               const a = pendingConnection;
               const b = info;
-              const ax = offset.x + a.worldX * scale;
-              const ay = offset.y + a.worldY * scale;
-              const bx = offset.x + b.worldX * scale;
-              const by = offset.y + b.worldY * scale;
-              setLines(ls => [...ls, { x1: ax, y1: ay, x2: bx, y2: by, stroke: '#fff', strokeWidth: 4 }]);
+              setLines(ls => [...ls, { a: { nodeId: a.nodeId, side: a.side, offset: a.offset, worldX: a.worldX, worldY: a.worldY }, b: { nodeId: b.nodeId, side: b.side, offset: b.offset, worldX: b.worldX, worldY: b.worldY }, stroke: '#fff', strokeWidth: 4 }]);
               setPendingConnection(null);
             }}
           />
@@ -201,9 +198,40 @@ const Canvas: React.FC = () => {
           nodes={nodes}
         />
         <svg style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-          {straightLines.map((l, i) => (
-            <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={l.stroke} strokeWidth={l.strokeWidth} />
-          ))}
+          {lines.map((l, i) => {
+            const resolve = (ep: EndpointRef) => {
+              if (ep.nodeId) {
+                const node = nodes.find(n => n.id === ep.nodeId);
+                if (node) {
+                  let wx = node.x;
+                  let wy = node.y;
+                  const w = node.width || 96;
+                  const h = node.height || 96;
+                  if (ep.side === 'right') {
+                    wx = node.x + w / 2;
+                    wy = node.y + (ep.offset || 0);
+                  } else if (ep.side === 'left') {
+                    wx = node.x - w / 2;
+                    wy = node.y + (ep.offset || 0);
+                  } else if (ep.side === 'top') {
+                    wy = node.y - h / 2;
+                    wx = node.x + (ep.offset || 0);
+                  } else if (ep.side === 'bottom') {
+                    wy = node.y + h / 2;
+                    wx = node.x + (ep.offset || 0);
+                  }
+                  return { x: offset.x + wx * scale, y: offset.y + wy * scale };
+                }
+              }
+              if (ep.worldX !== undefined && ep.worldY !== undefined) {
+                return { x: offset.x + ep.worldX * scale, y: offset.y + ep.worldY * scale };
+              }
+              return { x: 0, y: 0 };
+            };
+            const a = resolve(l.a);
+            const b = resolve(l.b);
+            return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={l.stroke} strokeWidth={l.strokeWidth} />;
+          })}
         </svg>
       </div>
       {selectedId && (
