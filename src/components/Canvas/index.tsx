@@ -16,6 +16,9 @@ const Canvas: React.FC = () => {
 
   type NodeItem = { id: string; x: number; y: number; width?: number; height?: number; label?: string };
   const [nodes, setNodes] = useState<NodeItem[]>([]);
+  type LineItem = { x1: number; y1: number; x2: number; y2: number; stroke?: string; strokeWidth?: number };
+  const [straightLines, setLines] = useState<LineItem[]>([]);
+  const [pendingConnection, setPendingConnection] = useState<null | { nodeId?: string; worldX: number; worldY: number; side: string; index?: number }>(null);
 
   const gridPx = 24;
 
@@ -162,6 +165,7 @@ const Canvas: React.FC = () => {
         {nodes.map(n => (
           <Node
             key={n.id}
+            id={n.id}
             pos={{ x: n.x, y: n.y }}
             setPos={(p) => setNodes(ns => ns.map(item => item.id === n.id ? { ...item, x: p.x, y: p.y } : item))}
             onSelect={() => setSelectedId(n.id)}
@@ -171,7 +175,21 @@ const Canvas: React.FC = () => {
             offset={offset}
             gridPx={gridPx}
             label={n.label}
-            connectionPoints={[{ side: 'right', offset: 0 }, { side: 'left', offset: 0, size: 9 }, { side: 'top', offset: 0, size: 9 }, { side: 'bottom', offset: 0, size: 9 }]}
+            connectionPoints={[{ side: 'right', offset: 0 }]}
+            onConnectorClick={(info) => {
+              if (!pendingConnection) {
+                setPendingConnection(info);
+                return;
+              }
+              const a = pendingConnection;
+              const b = info;
+              const ax = offset.x + a.worldX * scale;
+              const ay = offset.y + a.worldY * scale;
+              const bx = offset.x + b.worldX * scale;
+              const by = offset.y + b.worldY * scale;
+              setLines(ls => [...ls, { x1: ax, y1: ay, x2: bx, y2: by, stroke: '#fff', strokeWidth: 4 }]);
+              setPendingConnection(null);
+            }}
           />
         ))}
         <CenterControl
@@ -182,6 +200,11 @@ const Canvas: React.FC = () => {
           setScale={setScale}
           nodes={nodes}
         />
+        <svg style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+          {straightLines.map((l, i) => (
+            <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke={l.stroke} strokeWidth={l.strokeWidth} />
+          ))}
+        </svg>
       </div>
       {selectedId && (
         <EditMenu

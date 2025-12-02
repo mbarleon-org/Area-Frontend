@@ -6,6 +6,8 @@ type NodeProps = {
   pos: Vec;
   setPos: (p: Vec) => void;
   onSelect?: () => void;
+  id?: string;
+  onConnectorClick?: (info: { nodeId?: string; side: 'left'|'right'|'top'|'bottom'; offset: number; worldX: number; worldY: number; index?: number }) => void;
   width: number;
   height: number;
   scale: number;
@@ -24,7 +26,7 @@ const computeSnapOffset = (worldSize: number, gridPx: number) => {
   return (cells % 2 === 0) ? 0 : gridPx / 2;
 };
 
-const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height = 96, scale, offset, gridPx, label, connectionPoints }) => {
+const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, height = 96, scale, offset, gridPx, label, connectionPoints, onConnectorClick }) => {
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const pointerOffset = useRef({ x: 0, y: 0 });
@@ -129,7 +131,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height =
     borderRadius: '50%'
   };
 
-  const renderConnector = (side: 'left' | 'right' | 'top' | 'bottom', off: number, size = 9) => {
+  const renderConnector = (side: 'left' | 'right' | 'top' | 'bottom', off: number, size = 9, index?: number) => {
     const scaled = size * scale;
     const css: React.CSSProperties = { ...baseConnector };
     if (side === 'right') {
@@ -149,7 +151,28 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height =
       css.left = `calc(50% + ${off}px)`;
       css.transform = 'translateX(-50%)';
     }
-    return <div key={`${side}-${off}-${size}`} style={{ ...css, width: scaled, height: scaled, background: '#fff', boxShadow: '0 0 0 2px rgba(255,255,255,0.06)', pointerEvents: 'none' }} />;
+  const handleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      let worldX = pos.x;
+      let worldY = pos.y;
+      if (side === 'right') {
+        worldX = pos.x + width / 2;
+        worldY = pos.y + off;
+      } else if (side === 'left') {
+        worldX = pos.x - width / 2;
+        worldY = pos.y + off;
+      } else if (side === 'top') {
+        worldY = pos.y - height / 2;
+        worldX = pos.x + off;
+      } else {
+        worldY = pos.y + height / 2;
+        worldX = pos.x + off;
+      }
+      console.log('Connector clicked:', { nodeId: id, side, offset: off, worldX, worldY, index });
+      onConnectorClick?.({ nodeId: id, side, offset: off, worldX, worldY, index });
+    };
+
+    return <div key={`${side}-${off}-${size}-${index}`} onClick={handleClick} style={{ ...css, width: scaled, height: scaled, background: '#fff', boxShadow: '0 0 0 2px rgba(255,255,255,0.06)', pointerEvents: 'auto' }} />;
   };
 
   return (
