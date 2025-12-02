@@ -126,32 +126,15 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
     touchAction: 'none',
   };
 
-  const baseConnector = {
-    position: 'absolute' as const,
-    borderRadius: '50%'
-  };
+
 
   const renderConnector = (side: 'left' | 'right' | 'top' | 'bottom', off: number, size = 9, index?: number) => {
-    const scaled = size * scale;
-    const css: React.CSSProperties = { ...baseConnector };
-    if (side === 'right') {
-      css.right = -Math.round(scaled / 2);
-      css.top = `calc(50% + ${off}px)`;
-      css.transform = 'translateY(-50%)';
-    } else if (side === 'left') {
-      css.left = -Math.round(scaled / 2);
-      css.top = `calc(50% + ${off}px)`;
-      css.transform = 'translateY(-50%)';
-    } else if (side === 'top') {
-      css.top = -Math.round(scaled / 2);
-      css.left = `calc(50% + ${off}px)`;
-      css.transform = 'translateX(-50%)';
-    } else {
-      css.bottom = -Math.round(scaled / 2);
-      css.left = `calc(50% + ${off}px)`;
-      css.transform = 'translateX(-50%)';
-    }
-  const handleClick = (e: React.MouseEvent) => {
+    const screenOffset = off * scale;
+    const visibleSize = size;
+    const hitSize = Math.max(20, visibleSize);
+    const hitHalf = Math.round(hitSize / 2);
+
+    const handleClick = (e: React.MouseEvent) => {
       e.stopPropagation();
       let worldX = pos.x;
       let worldY = pos.y;
@@ -172,7 +155,51 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
       onConnectorClick?.({ nodeId: id, side, offset: off, worldX, worldY, index });
     };
 
-    return <div key={`${side}-${off}-${size}-${index}`} onClick={handleClick} style={{ ...css, width: scaled, height: scaled, background: '#fff', boxShadow: '0 0 0 2px rgba(255,255,255,0.06)', pointerEvents: 'auto' }} />;
+    const hitStyleBase: React.CSSProperties = {
+      position: 'absolute',
+      width: hitSize,
+      height: hitSize,
+      background: 'transparent',
+      borderRadius: '50%',
+      pointerEvents: 'auto',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'default'
+    };
+
+    const hitStyle: React.CSSProperties = { ...hitStyleBase };
+    if (side === 'right') {
+      hitStyle.right = -hitHalf;
+      hitStyle.top = `calc(50% + ${screenOffset}px)`;
+      hitStyle.transform = 'translateY(-50%)';
+    } else if (side === 'left') {
+      hitStyle.left = -hitHalf;
+      hitStyle.top = `calc(50% + ${screenOffset}px)`;
+      hitStyle.transform = 'translateY(-50%)';
+    } else if (side === 'top') {
+      hitStyle.top = -hitHalf;
+      hitStyle.left = `calc(50% + ${screenOffset}px)`;
+      hitStyle.transform = 'translateX(-50%)';
+    } else {
+      hitStyle.bottom = -hitHalf;
+      hitStyle.left = `calc(50% + ${screenOffset}px)`;
+      hitStyle.transform = 'translateX(-50%)';
+    }
+
+    const visualStyle: React.CSSProperties = { width: visibleSize, height: visibleSize, borderRadius: '50%', background: '#fff', boxShadow: '0 0 0 2px rgba(255,255,255,0.06)', pointerEvents: 'none' };
+
+    return (
+      <div
+        key={`${side}-${off}-${size}-${index}`}
+        onClick={handleClick}
+        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+        onTouchStart={(e) => { e.stopPropagation(); e.preventDefault(); }}
+        style={hitStyle}
+      >
+        <div style={visualStyle} />
+      </div>
+    );
   };
 
   return (
