@@ -103,10 +103,15 @@ const Canvas: React.FC = () => {
             let wy = node.y;
             const w = node.width || 96;
             const h = node.height || 96;
-            if (ep.side === 'right') { wx = node.x + w / 2; wy = node.y + (ep.offset || 0); }
-            else if (ep.side === 'left') { wx = node.x - w / 2; wy = node.y + (ep.offset || 0); }
-            else if (ep.side === 'top') { wy = node.y - h / 2; wx = node.x + (ep.offset || 0); }
-            else if (ep.side === 'bottom') { wy = node.y + h / 2; wx = node.x + (ep.offset || 0); }
+            if (ep.side === 'right') {
+              wx = node.x + w / 2; wy = node.y + (ep.offset || 0);
+            } else if (ep.side === 'left') {
+              wx = node.x - w / 2; wy = node.y + (ep.offset || 0);
+            } else if (ep.side === 'top') {
+              wy = node.y - h / 2; wx = node.x + (ep.offset || 0);
+            } else if (ep.side === 'bottom') {
+              wy = node.y + h / 2; wx = node.x + (ep.offset || 0);
+            }
             return { x: offset.x + wx * scale, y: offset.y + wy * scale };
           }
         }
