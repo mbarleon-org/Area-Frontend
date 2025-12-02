@@ -7,6 +7,7 @@ import Explore from "../../pages/Explore";
 import Login from "../../pages/Login"
 import Register from "../../pages/Register"
 import Automations from "../../pages/Automations";
+import User from "../../pages/User";
 
 interface Router {
   path: string;
@@ -63,6 +64,13 @@ const ROUTES: Router[] = [
     path: "/automations",
     element: <Automations />,
     label: "Automations",
+    navbar: true,
+    security: "public",
+  },
+  {
+    path: "/user",
+    element: <User />,
+    label: "User",
     navbar: true,
     security: "public",
   },
