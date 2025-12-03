@@ -32,9 +32,10 @@
     "expo": "^54.0.25",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-native": "0.81.5",
+    "react-native-web": "^0.21.0",
     "react-router-dom": "^7.9.6",
-    "serve": "^14.2.5",
-    "react-native": "0.81.5"
+    "serve": "^14.2.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
