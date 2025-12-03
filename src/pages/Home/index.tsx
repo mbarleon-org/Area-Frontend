@@ -1,5 +1,5 @@
-import React from "react";
-import "../../index.css";
+import React from 'react';
+if (typeof document !== 'undefined') require('../../index.css');
 import Navbar from "../../components/Navbar";
 
 const Home: React.FC = () => {

@@ -1,7 +1,23 @@
 import React, { useState } from 'react';
 import '../../index.css';
 import Navbar from '../../components/Navbar';
-import { NavLink } from "react-router-dom";
+
+const NavLinkWrapper: React.FC<any> = ({ children, ...props }) => {
+  if (typeof document !== 'undefined') {
+    const { NavLink } = require('react-router-dom');
+    return <NavLink {...props}>{children}</NavLink>;
+  }
+  try {
+    const { TouchableOpacity, Text } = require('react-native');
+    return (
+      <TouchableOpacity onPress={() => {}}>
+        <Text>{children}</Text>
+      </TouchableOpacity>
+    );
+  } catch {
+    return <>{children}</>;
+  }
+};
 
 const Dashboard: React.FC = () => {
   const [automations] = useState([
@@ -16,9 +32,9 @@ const Dashboard: React.FC = () => {
 
       <div style={styles.container}>
         <div style={styles.header}>
-          <NavLink to="/automations" style={{ textDecoration: 'none' }}>
+          <NavLinkWrapper to="/automations" style={{ textDecoration: 'none' }}>
             <button style={styles.addButton}>+ New automation</button>
-          </NavLink>
+          </NavLinkWrapper>
         </div>
 
         <h2 style={styles.title}>Automations</h2>

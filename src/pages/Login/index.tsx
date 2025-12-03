@@ -1,5 +1,5 @@
 import React from "react";
-import "../../index.css";
+if (typeof document !== 'undefined') require('../../index.css');
 import Navbar from "../../components/Navbar";
 
 const Login: React.FC = () => {
@@ -7,14 +7,16 @@ const Login: React.FC = () => {
   const [emailError, setEmailError] = React.useState("");
 
   React.useEffect(() => {
-    document.body.style.margin = "0";
-    document.body.style.padding = "0";
-    document.body.style.backgroundColor = "#151316ff";
-    document.body.style.overflow = "hidden";
+    if (typeof document !== 'undefined') {
+      document.body.style.margin = "0";
+      document.body.style.padding = "0";
+      document.body.style.backgroundColor = "#151316ff";
+      document.body.style.overflow = "hidden";
 
-    return () => {
-      document.body.style.overflow = "auto";
-    };
+      return () => {
+        document.body.style.overflow = "auto";
+      };
+    }
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {

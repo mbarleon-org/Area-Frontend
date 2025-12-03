@@ -1,5 +1,5 @@
 import React from "react";
-import "../../index.css";
+if (typeof document !== 'undefined') require('../../index.css');
 import Navbar from "../../components/Navbar";
 import Canvas from "../../components/Canvas";
 

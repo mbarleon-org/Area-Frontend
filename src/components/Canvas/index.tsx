@@ -69,7 +69,7 @@ const Canvas: React.FC = () => {
     const isTouch = "touches" in e;
     const p = isTouch ? (e as React.TouchEvent).touches[0] : (e as React.MouseEvent).nativeEvent;
     lastPos.current = { x: p.clientX, y: p.clientY };
-    (document.activeElement as HTMLElement)?.blur();
+    if (typeof document !== 'undefined') (document.activeElement as HTMLElement)?.blur();
     if (!isTouch)
       (e as React.MouseEvent).preventDefault();
   }, []);
