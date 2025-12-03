@@ -1,24 +1,38 @@
 import React from 'react';
-if (typeof document !== 'undefined') require('../../index.css');
-// import Navbar from "../../components/Navbar";
+import Navbar from "../../components/Navbar";
+import { View, Text } from 'react-native';
 
-const isWeb = typeof document !== 'undefined';
+const detectIsWeb = (): boolean => {
+  try {
+    const { Platform } = require('react-native');
+    return Platform && Platform.OS === 'web';
+  } catch (e) {
+    return typeof document !== 'undefined';
+  }
+};
+
+const isWeb = detectIsWeb();
+
+if (isWeb) import ('../../index.css');
 
 const Home: React.FC = () => {
+
+  // ------------------------ Mobile view ------------------------
   if (!isWeb) {
-    const { View, Text } = require('react-native');
     return (
       <>
-        {/* <Navbar /> */}
+        <Navbar />
         <View style={mobileStyles.container}>
           <Text style={mobileStyles.title}>Welcome to the AREA Home Page</Text>
         </View>
       </>
     );
   }
+
+  // ------------------------ Web / desktop view ------------------------
   return (
     <>
-      {/* <Navbar /> */}
+      <Navbar />
       <div style={webStyles.container}>
         <h2 style={webStyles.title}>Welcome to the AREA Home Page</h2>
       </div>
@@ -29,15 +43,9 @@ const Home: React.FC = () => {
 const webStyles: any = {
   container: {
     position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 0,
-    margin: 0,
     width: '100vw',
     height: '100vh',
     boxSizing: 'border-box',
@@ -46,7 +54,7 @@ const webStyles: any = {
   },
   title: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
     margin: 0,
     textAlign: 'center' as any,
@@ -54,7 +62,7 @@ const webStyles: any = {
   },
 };
 
-const mobileStyles = {
+const mobileStyles: any = {
   container: {
     flex: 1,
     width: '100%',
@@ -62,6 +70,7 @@ const mobileStyles = {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#151316',
+    paddingLeft: 75,
   },
   title: {
     color: '#fff',
