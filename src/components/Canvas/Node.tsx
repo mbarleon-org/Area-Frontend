@@ -6,6 +6,8 @@ type NodeProps = {
   pos: Vec;
   setPos: (p: Vec) => void;
   onSelect?: () => void;
+  id?: string;
+  onConnectorClick?: (info: { nodeId?: string; side: 'left'|'right'|'top'|'bottom'; offset: number; worldX: number; worldY: number; index?: number }) => void;
   width: number;
   height: number;
   scale: number;
@@ -24,7 +26,7 @@ const computeSnapOffset = (worldSize: number, gridPx: number) => {
   return (cells % 2 === 0) ? 0 : gridPx / 2;
 };
 
-const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height = 96, scale, offset, gridPx, label, connectionPoints }) => {
+const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, height = 96, scale, offset, gridPx, label, connectionPoints, onConnectorClick }) => {
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const pointerOffset = useRef({ x: 0, y: 0 });
@@ -124,32 +126,80 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, width = 96, height =
     touchAction: 'none',
   };
 
-  const baseConnector = {
-    position: 'absolute' as const,
-    borderRadius: '50%'
-  };
 
-  const renderConnector = (side: 'left' | 'right' | 'top' | 'bottom', off: number, size = 9) => {
-    const scaled = size * scale;
-    const css: React.CSSProperties = { ...baseConnector };
+
+  const renderConnector = (side: 'left' | 'right' | 'top' | 'bottom', off: number, size = 9, index?: number) => {
+    const screenOffset = off * scale;
+    const visibleSize = size;
+    const hitSize = Math.max(20, visibleSize);
+    const hitHalf = Math.round(hitSize / 2);
+
+    const handleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      let worldX = pos.x;
+      let worldY = pos.y;
+      if (side === 'right') {
+        worldX = pos.x + width / 2;
+        worldY = pos.y + off;
+      } else if (side === 'left') {
+        worldX = pos.x - width / 2;
+        worldY = pos.y + off;
+      } else if (side === 'top') {
+        worldY = pos.y - height / 2;
+        worldX = pos.x + off;
+      } else {
+        worldY = pos.y + height / 2;
+        worldX = pos.x + off;
+      }
+      console.log('Connector clicked:', { nodeId: id, side, offset: off, worldX, worldY, index });
+      onConnectorClick?.({ nodeId: id, side, offset: off, worldX, worldY, index });
+    };
+
+    const hitStyleBase: React.CSSProperties = {
+      position: 'absolute',
+      width: hitSize,
+      height: hitSize,
+      background: 'transparent',
+      borderRadius: '50%',
+      pointerEvents: 'auto',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'default'
+    };
+
+    const hitStyle: React.CSSProperties = { ...hitStyleBase };
     if (side === 'right') {
-      css.right = -Math.round(scaled / 2);
-      css.top = `calc(50% + ${off}px)`;
-      css.transform = 'translateY(-50%)';
+      hitStyle.right = -hitHalf;
+      hitStyle.top = `calc(50% + ${screenOffset}px)`;
+      hitStyle.transform = 'translateY(-50%)';
     } else if (side === 'left') {
-      css.left = -Math.round(scaled / 2);
-      css.top = `calc(50% + ${off}px)`;
-      css.transform = 'translateY(-50%)';
+      hitStyle.left = -hitHalf;
+      hitStyle.top = `calc(50% + ${screenOffset}px)`;
+      hitStyle.transform = 'translateY(-50%)';
     } else if (side === 'top') {
-      css.top = -Math.round(scaled / 2);
-      css.left = `calc(50% + ${off}px)`;
-      css.transform = 'translateX(-50%)';
+      hitStyle.top = -hitHalf;
+      hitStyle.left = `calc(50% + ${screenOffset}px)`;
+      hitStyle.transform = 'translateX(-50%)';
     } else {
-      css.bottom = -Math.round(scaled / 2);
-      css.left = `calc(50% + ${off}px)`;
-      css.transform = 'translateX(-50%)';
+      hitStyle.bottom = -hitHalf;
+      hitStyle.left = `calc(50% + ${screenOffset}px)`;
+      hitStyle.transform = 'translateX(-50%)';
     }
-    return <div key={`${side}-${off}-${size}`} style={{ ...css, width: scaled, height: scaled, background: '#fff', boxShadow: '0 0 0 2px rgba(255,255,255,0.06)', pointerEvents: 'none' }} />;
+
+    const visualStyle: React.CSSProperties = { width: visibleSize, height: visibleSize, borderRadius: '50%', background: '#fff', boxShadow: '0 0 0 2px rgba(255,255,255,0.06)', pointerEvents: 'none' };
+
+    return (
+      <div
+        key={`${side}-${off}-${size}-${index}`}
+        onClick={handleClick}
+        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+        onTouchStart={(e) => { e.stopPropagation(); e.preventDefault(); }}
+        style={hitStyle}
+      >
+        <div style={visualStyle} />
+      </div>
+    );
   };
 
   return (
