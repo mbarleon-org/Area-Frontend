@@ -2,7 +2,11 @@ import React from "react";
 import Navbar from "../../components/Navbar";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 
-let safeUseNavigation: any = () => ({ navigate: (_: any) => {} });
+let safeUseNavigation: any = () => ({
+  navigate: (_: any) => {},
+  reset: (_: any) => {}
+});
+
 try {
   const rnNav = require('@react-navigation/native');
   if (rnNav && rnNav.useNavigation) safeUseNavigation = rnNav.useNavigation;
@@ -130,7 +134,7 @@ const Register: React.FC = () => {
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity onPress={() => navigationMobile.navigate('Login')}>
+              <TouchableOpacity onPress={() => navigationMobile.reset ? navigationMobile.reset({ index: 0, routes: [{ name: 'Login' }] }) : navigationMobile.navigate('Login')}>
                 <Text style={mobileStyles.login}>Already have an account</Text>
               </TouchableOpacity>
             </View>
