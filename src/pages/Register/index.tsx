@@ -2,6 +2,13 @@ import React from "react";
 import Navbar from "../../components/Navbar";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 
+let safeUseNavigation: any = () => ({ navigate: (_: any) => {} });
+try {
+  const rnNav = require('@react-navigation/native');
+  if (rnNav && rnNav.useNavigation) safeUseNavigation = rnNav.useNavigation;
+} catch (e) {
+}
+
 const detectIsWeb = (): boolean => {
   try {
     const { Platform } = require('react-native');
@@ -51,6 +58,10 @@ const Register: React.FC = () => {
     if (hasError) return;
     // ...submit logic
   };
+
+  const navigationMobile = (!isWeb && typeof safeUseNavigation === 'function')
+    ? safeUseNavigation()
+    : { navigate: (_: any) => {} };
 
   // ------------------------ Mobile view ------------------------
   if (!isWeb) {
@@ -119,7 +130,9 @@ const Register: React.FC = () => {
                 </TouchableOpacity>
               </View>
 
-              <Text style={mobileStyles.login}>Already have an account</Text>
+              <TouchableOpacity onPress={() => navigationMobile.navigate('Login')}>
+                <Text style={mobileStyles.login}>Already have an account</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
