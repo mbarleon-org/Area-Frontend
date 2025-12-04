@@ -289,6 +289,7 @@ const mobileStyles: any = {
     fontWeight: '700',
     fontSize: 32,
     textAlign: "center",
+    fontFamily: "'Montserrat', sans-serif",
   },
   item: { color: '#fff', fontSize: 16 },
 };
