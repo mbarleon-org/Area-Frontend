@@ -299,7 +299,6 @@ const webStyles: { [k: string]: React.CSSProperties } = {
     backgroundColor: "#151316",
     margin: "0",
     padding: "0",
-    paddingLeft: "100px",
     boxSizing: "border-box",
     display: "flex",
     alignItems: "center",
