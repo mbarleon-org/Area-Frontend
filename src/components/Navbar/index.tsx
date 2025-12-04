@@ -2,6 +2,13 @@ import React, { useState} from "react";
 import {  View, Text, TouchableOpacity, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
+let safeUseNavigation: any = () => ({ navigate: (_: any) => {} });
+try {
+  const rnNav = require('@react-navigation/native');
+  if (rnNav && rnNav.useNavigation) safeUseNavigation = rnNav.useNavigation;
+} catch (e) {
+}
+
 const detectIsWeb = (): boolean => {
   try {
     return Platform && Platform.OS === 'web';
@@ -12,41 +19,51 @@ const detectIsWeb = (): boolean => {
 
 const isWeb = detectIsWeb();
 
-const NavLinkWrapper: React.FC<any> = ({ children, ...props }) => {
-  if (isWeb) {
-    const href = props.to || props.href || '#';
-    const rawStyle = props.style;
-    const onClick = props.onClick;
-    const resolvedStyle = typeof rawStyle === 'function' ? rawStyle({ isActive: false }) : (rawStyle || {});
-    return (
-      <a href={href} onClick={onClick} style={resolvedStyle}>
-        {children}
-      </a>
-    );
-  }
-  try {
-    return (
-      <TouchableOpacity onPress={() => {}} style={props.style || { padding: 10 }}>
-        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{children}</Text>
-      </TouchableOpacity>
-    );
-  } catch {
-    return <>{children}</>;
-  }
-};
-
 const Navbar: React.FC = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigationMobile = (!isWeb && typeof safeUseNavigation === 'function')
+    ? safeUseNavigation()
+    : { navigate: (_: any) => {} };
+  const NavLinkWrapper: React.FC<any> = ({ children, ...props }) => {
+    if (isWeb) {
+      const href = props.to || props.href || '#';
+      const rawStyle = props.style;
+      const onClick = props.onClick;
+      const resolvedStyle = typeof rawStyle === 'function' ? rawStyle({ isActive: false }) : (rawStyle || {});
+      return (
+        <a href={href} onClick={onClick} style={resolvedStyle}>
+          {children}
+        </a>
+      );
+    }
+    try {
+      const onPress = props.onClick || (() => {});
+      return (
+        <TouchableOpacity onPress={onPress} style={props.style || { padding: 10 }}>
+          <Text style={{ color: '#fff', fontSize: 7, fontWeight: '700' }}>{children}</Text>
+        </TouchableOpacity>
+      );
+    } catch {
+      return <>{children}</>;
+    }
+  };
 
   // ------------------------ Mobile view ------------------------
   if (!isWeb) {
     try {
+      const goTo = (to: string) => {
+        if (!to) return;
+        const nameRaw = to.startsWith('/') ? to.slice(1) : to;
+        const screen = nameRaw.charAt(0).toUpperCase() + nameRaw.slice(1);
+        try { navigationMobile.navigate(screen as any); } catch {}
+      };
+
       return (
         <View style={mobileStyles.navbar}>
           <Text style={mobileStyles.logo}>GT</Text>
           <View style={mobileStyles.itemsContainer}>
-            <View style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px'}}>
+            <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
               {(() => {
                 try {
                   return (
@@ -58,29 +75,47 @@ const Navbar: React.FC = () => {
                   return null;
                 }
               })()}
-              <NavLinkWrapper to="/dashboard">Dashboard</NavLinkWrapper>
+              <TouchableOpacity onPress={() => goTo('/dashboard')} style={{ padding: 6 }}>
+                <Text style={mobileStyles.item}>Dashboard</Text>
+              </TouchableOpacity>
             </View>
-            <NavLinkWrapper to="/apps">Apps</NavLinkWrapper>
-            <NavLinkWrapper to="/explore">Explore</NavLinkWrapper>
+
+            <TouchableOpacity onPress={() => goTo('/apps')} style={{ padding: 6 }}>
+              <Text style={mobileStyles.item}>Apps</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => goTo('/explore')} style={{ padding: 6 }}>
+              <Text style={mobileStyles.item}>Explore</Text>
+            </TouchableOpacity>
           </View>
+
           <View style={mobileStyles.loginContainer}>
             <TouchableOpacity
               style={mobileStyles.iconCircle}
               onPress={() => setIsMenuOpen(!isMenuOpen)}
             >
-               <View style={{width: 12, height: 12, borderRadius: 6, borderWidth: 2, borderColor: '#fff', marginBottom: 2}} />
-               <View style={{width: 20, height: 10, borderTopLeftRadius: 10, borderTopRightRadius: 10, borderWidth: 2, borderColor: '#fff'}} />
+               <View style={{ width: 12, height: 12, borderRadius: 6, borderWidth: 2, borderColor: '#fff', marginBottom: 2 }} />
+               <View style={{ width: 20, height: 10, borderTopLeftRadius: 10, borderTopRightRadius: 10, borderWidth: 2, borderColor: '#fff' }} />
             </TouchableOpacity>
             {isMenuOpen && (
               <View style={mobileStyles.dropdownMenu}>
-                <NavLinkWrapper to="/login" style={mobileStyles.dropdownItem}>Login</NavLinkWrapper>
-                <NavLinkWrapper to="/register" style={mobileStyles.dropdownItem}>Register</NavLinkWrapper>
+                <TouchableOpacity onPress={() => { goTo('/login'); setIsMenuOpen(false); }}>
+                  <Text style={mobileStyles.dropdownItem}>Login</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { goTo('/register'); setIsMenuOpen(false); }}>
+                  <Text style={mobileStyles.dropdownItem}>Register</Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
         </View>
       );
     } catch {
+      return (
+        <View style={mobileStyles.navbar}>
+          <Text style={mobileStyles.logo}>GT</Text>
+        </View>
+      );
     }
   }
 
@@ -291,7 +326,13 @@ const mobileStyles: any = {
     textAlign: "center",
     fontFamily: "'Montserrat', sans-serif",
   },
-  item: { color: '#fff', fontSize: 16 },
+  item: {
+    color: "#fff",
+    textDecoration: "none",
+    fontSize: "12px",
+    fontFamily: "'Montserrat', sans-serif",
+    writingMode: "horizontal-tb",
+  },
 };
 
 export default Navbar;

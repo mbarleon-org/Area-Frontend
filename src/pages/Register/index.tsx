@@ -1,6 +1,17 @@
 import React from "react";
-if (typeof document !== 'undefined') require('../../index.css');
 import Navbar from "../../components/Navbar";
+
+const detectIsWeb = (): boolean => {
+  try {
+    const { Platform } = require('react-native');
+    return Platform && Platform.OS === 'web';
+  } catch (e) {
+    return typeof document !== 'undefined';
+  }
+};
+
+const isWeb = detectIsWeb();
+if (isWeb) import ('../../index.css');
 
 const Register: React.FC = () => {
   const [email, setEmail] = React.useState("");
@@ -40,6 +51,16 @@ const Register: React.FC = () => {
     // ...submit logic
   };
 
+  // ------------------------ Mobile view ------------------------
+  if (!isWeb) {
+    return(
+      <>
+        <Navbar />
+      </>
+    )
+  }
+
+  // ------------------------ Web / desktop view ------------------------
   return(
     <>
       <Navbar />
