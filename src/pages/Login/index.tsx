@@ -2,12 +2,6 @@ import React from "react";
 import Navbar from "../../components/Navbar";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
 
-let safeUseNavigation: any = () => ({ navigate: (_: any) => {} });
-try {
-  const rnNav = require('@react-navigation/native');
-  if (rnNav && rnNav.useNavigation) safeUseNavigation = rnNav.useNavigation;
-} catch (e) {}
-
 const detectIsWeb = (): boolean => {
   try {
     return Platform && Platform.OS === 'web';
@@ -17,7 +11,21 @@ const detectIsWeb = (): boolean => {
 };
 
 const isWeb = detectIsWeb();
-if (isWeb) import ('../../index.css');
+
+let safeUseNavigation: any = () => ({
+  navigate: (_: any) => {},
+  reset: (_: any) => {}
+});
+
+if (!isWeb) {
+  try {
+    const rnNav = require('@react-navigation/native');
+    if (rnNav && rnNav.useNavigation) safeUseNavigation = rnNav.useNavigation;
+  } catch (e)
+  {
+    // ignore
+  }
+}
 
 const Login: React.FC = () => {
   const [email, setEmail] = React.useState("");
@@ -30,19 +38,15 @@ const Login: React.FC = () => {
     if (typeof document !== 'undefined') {
       document.body.style.margin = "0";
       document.body.style.padding = "0";
-      document.body.style.backgroundColor = "#151316ff";
-      document.body.style.overflow = "hidden";
-
-      return () => {
-        document.body.style.overflow = "auto";
-      };
+      document.body.style.backgroundColor = "#151316";
+      document.body.style.overflow = "auto";
     }
   }, []);
 
   const handleLogin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!email.includes("@") || !email.includes(".")) {
-      setEmailError("Enter valide email <test@email.com>");
+      setEmailError("Enter valid email <test@email.com>");
       return;
     }
     setEmailError("");
@@ -94,7 +98,6 @@ const Login: React.FC = () => {
               </View>
 
               <View style={mobileStyles.providersContainer}>
-                {/* Boutons fournisseurs adaptés pour mobile (placeholders) */}
                 <TouchableOpacity style={mobileStyles.providerButton}>
                   <Text style={mobileStyles.providerText}>G</Text>
                 </TouchableOpacity>
@@ -109,8 +112,7 @@ const Login: React.FC = () => {
                 </TouchableOpacity>
               </View>
 
-              {/* Navigation vers Register (ajustez le nom de la route si nécessaire) */}
-              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <TouchableOpacity onPress={() => navigation.reset ? navigation.reset({ index: 0, routes: [{ name: 'Register' }] }) : navigation.navigate('Register')}>
                 <Text style={mobileStyles.register}>Don't have an account</Text>
               </TouchableOpacity>
             </View>
@@ -124,48 +126,49 @@ const Login: React.FC = () => {
   return(
     <>
       <Navbar />
-      <div style={styles.container}>
-        <div style={styles.cardContainer}>
-          <div style={styles.card}>
-            <form style={styles.Login} onSubmit={handleLogin}>
-              <h2>Login</h2>
+      <div style={webStyles.container}>
+        <div style={webStyles.cardContainer}>
+          <div style={webStyles.card}>
+            <form style={webStyles.Login} onSubmit={handleLogin}>
+              <h2 style={{ margin: '0 0 20px 0' }}>Login</h2>
               <input
                 type="email"
                 placeholder="Enter your email"
-                style={styles.input}
+                style={webStyles.input}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
-              {emailError && <span style={{ color: 'red', fontSize: 12 }}>{emailError}</span>}
+              {emailError && <span style={{ color: 'red', fontSize: 12, width: '100%', textAlign: 'left' }}>{emailError}</span>}
               <input
                 type="password"
                 placeholder="Enter your password"
-                style={styles.input}
+                style={webStyles.input}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
               />
-              <a style={styles.forgot}>Forgot password ?</a>
-              <button style={styles.button} type="submit">
+              <a style={webStyles.forgot}>Forgot password ?</a>
+              <button style={webStyles.button} type="submit">
                 Login
               </button>
-              <div style={styles.divider}>
-                <span style={styles.dividerText}>Or continue with</span>
+              <div style={webStyles.divider}>
+                <span style={webStyles.dividerText}>Or continue with</span>
+                <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: '1px', background: '#333', zIndex: 0 }}></div>
               </div>
-              <div style={styles.providersContainer}>
-                <button style={styles.providerButton} title="GitHub" type="button">
+              <div style={webStyles.providersContainer}>
+                <button style={webStyles.providerButton} title="GitHub" type="button">
                   <svg viewBox="0 0 24 24" fill="#fff" style={{width:"24px",height:"24px"}} xmlns="http://www.w3.org/2000/svg"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
                 </button>
-                <button style={styles.providerButton} title="Google" type="button">
+                <button style={webStyles.providerButton} title="Google" type="button">
                   <svg viewBox="0 0 24 24" style={{width:"24px",height:"24px"}} xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                 </button>
-                <button style={styles.providerButton} title="Apple" type="button">
+                <button style={webStyles.providerButton} title="Apple" type="button">
                   <svg viewBox="0 0 24 24" fill="#fff" style={{width:"24px",height:"24px"}} xmlns="http://www.w3.org/2000/svg"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
                 </button>
-                <button style={styles.providerButton} title="Microsoft" type="button">
+                <button style={webStyles.providerButton} title="Microsoft" type="button">
                   <svg viewBox="0 0 24 24" style={{width:"24px",height:"24px"}} xmlns="http://www.w3.org/2000/svg"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#00a4ef" d="M13 1h10v10H13z"/><path fill="#7fba00" d="M1 13h10v10H1z"/><path fill="#ffb900" d="M13 13h10v10H13z"/></svg>
                 </button>
               </div>
-              <a href="/register" className="register" style={styles.register}>Don't have an account</a>
+              <a href="/register" className="register" style={webStyles.register}>Don't have an account</a>
             </form>
           </div>
         </div>
@@ -178,6 +181,7 @@ const mobileStyles = StyleSheet.create({
   fullScreen: {
     flex: 1,
     backgroundColor: "#151316ff",
+    paddingTop: 80,
   },
   container: {
     flexGrow: 1,
@@ -191,11 +195,17 @@ const mobileStyles = StyleSheet.create({
     padding: 25,
     width: '100%',
     maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   Login: {
     display: 'flex',
@@ -282,18 +292,21 @@ const mobileStyles = StyleSheet.create({
   }
 });
 
-const styles: { [k: string]: React.CSSProperties } = {
+const webStyles: { [k: string]: React.CSSProperties } = {
   container: {
     minHeight: "100vh",
     width: "100%",
-    backgroundColor: "#151316ff",
+    backgroundColor: "#151316",
     margin: "0",
     padding: "0",
+    paddingLeft: "100px",
     boxSizing: "border-box",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     overflow: "auto",
+    position: "relative",
+    zIndex: 1,
   },
   cardContainer: {
     display: "flex",
@@ -309,6 +322,7 @@ const styles: { [k: string]: React.CSSProperties } = {
     boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
     padding: "40px",
     minWidth: "400px",
+    maxWidth: "100%",
     boxSizing: "border-box",
   },
   Login: {
@@ -320,12 +334,12 @@ const styles: { [k: string]: React.CSSProperties } = {
     color: "#fff",
   },
   input: {
-    width: "300px",
+    width: "100%",
     padding: "12px",
     fontSize: "14px",
     borderRadius: "8px",
     border: "1px solid #333",
-    backgroundColor: "#161616ff",
+    backgroundColor: "#161616",
     color: "#fff",
     boxSizing: "border-box",
   },
@@ -333,12 +347,12 @@ const styles: { [k: string]: React.CSSProperties } = {
     color: "#fff",
     cursor: "pointer",
     alignSelf: "flex-end",
-    width: "300px",
+    width: "100%",
     textAlign: "right",
     fontSize: "12px",
   },
   button: {
-    width: "300px",
+    width: "100%",
     padding: "12px",
     fontSize: "14px",
     borderRadius: "8px",
@@ -347,10 +361,13 @@ const styles: { [k: string]: React.CSSProperties } = {
     color: "#fff",
     cursor: "pointer",
     boxSizing: "border-box",
+    fontWeight: "bold",
   },
   register: {
     color: "#fff",
     cursor: "pointer",
+    textDecoration: "none",
+    marginTop: "10px",
   },
   divider: {
     width: "100%",
@@ -377,7 +394,7 @@ const styles: { [k: string]: React.CSSProperties } = {
     height: "60px",
     borderRadius: "12px",
     border: "1px solid #333",
-    backgroundColor: "#161616ff",
+    backgroundColor: "#161616",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
