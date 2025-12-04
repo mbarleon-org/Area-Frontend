@@ -1,19 +1,9 @@
 import React from 'react';
 import Navbar from "../../components/Navbar";
 import { View, Text } from 'react-native';
+import { isWeb } from "../../utils/IsWeb";
 
-const detectIsWeb = (): boolean => {
-  try {
-    const { Platform } = require('react-native');
-    return Platform && Platform.OS === 'web';
-  } catch (e) {
-    return typeof document !== 'undefined';
-  }
-};
-
-const isWeb = detectIsWeb();
-
-if (isWeb) import ('../../index.css');
+if (isWeb) import('../../index.css');
 
 const Home: React.FC = () => {
 

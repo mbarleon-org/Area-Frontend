@@ -70,7 +70,7 @@ const User: React.FC = () => {
               onMouseLeave={() => setEditHover(false)}
               onClick={() => setIsEditing(!isEditing)}
             >
-              {isEditing ? "Valider" : "Edit"}
+              {isEditing ? "Confirm" : "Edit"}
             </button>
           </div>
         </div>
