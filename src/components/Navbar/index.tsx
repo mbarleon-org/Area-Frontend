@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+// react-native components are required dynamically in the mobile branch
 import { Feather } from '@expo/vector-icons';
 import { isWeb } from "../../utils/IsWeb";
 
@@ -39,6 +39,8 @@ const Navbar: React.FC = () => {
 
   // ------------------------ Mobile view (Burger Menu) ------------------------
   if (!isWeb) {
+    const RN = require('react-native');
+    const { View, Text, TouchableOpacity, ScrollView } = RN;
     const goTo = (to: string) => {
       if (!to) return;
       setIsMenuOpen(false);
@@ -254,7 +256,7 @@ const webStyles: any = {
   },
 };
 
-const mobileStyles = StyleSheet.create({
+const mobileStyles: any = {
   headerContainer: {
     position: 'absolute',
     top: 0,
@@ -270,10 +272,7 @@ const mobileStyles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 15,
     paddingHorizontal: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
     elevation: 5,
   },
   logo: {
@@ -294,10 +293,7 @@ const mobileStyles = StyleSheet.create({
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
     padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
+    boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
     elevation: 10,
   },
   menuContent: {
@@ -324,6 +320,6 @@ const mobileStyles = StyleSheet.create({
     backgroundColor: '#333',
     marginVertical: 15,
   },
-});
+};
 
 export default Navbar;

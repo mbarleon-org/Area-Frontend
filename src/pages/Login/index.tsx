@@ -1,7 +1,7 @@
 import React from "react";
 import Navbar from "../../components/Navbar";
 import { isWeb } from "../../utils/IsWeb";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
+// react-native components are required dynamically inside the mobile branch
 
 let safeUseNavigation: any = () => ({
   navigate: (_: any) => { },
@@ -45,6 +45,9 @@ const Login: React.FC = () => {
 
   // ------------------------ Mobile View ------------------------
   if (!isWeb) {
+    const RN = require('react-native');
+    const { View, Text, TextInput, TouchableOpacity, ScrollView } = RN;
+
     return (
       <View style={mobileStyles.fullScreen}>
         <Navbar />
@@ -167,7 +170,7 @@ const Login: React.FC = () => {
   )
 }
 
-const mobileStyles = StyleSheet.create({
+const mobileStyles: any = {
   fullScreen: {
     flex: 1,
     backgroundColor: "#151316ff",
@@ -185,17 +188,8 @@ const mobileStyles = StyleSheet.create({
     padding: 25,
     width: '100%',
     maxWidth: 400,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
+      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+      elevation: 8,
   },
   Login: {
     display: 'flex',
@@ -280,7 +274,7 @@ const mobileStyles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
   }
-});
+};
 
 const webStyles: { [k: string]: React.CSSProperties } = {
   container: {

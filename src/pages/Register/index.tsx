@@ -1,7 +1,8 @@
 import React from "react";
 import Navbar from "../../components/Navbar";
 import { isWeb } from "../../utils/IsWeb";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+// react-native components are required dynamically inside the mobile branch
+import { useApi } from "../../utils/UseApi";
 
 let safeUseNavigation: any = () => ({
   navigate: (_: any) => { },
@@ -21,6 +22,8 @@ const Register: React.FC = () => {
   const [emailError, setEmailError] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [passwordError, setPasswordError] = React.useState("");
+  const [needPassword, setNeedPassword] = React.useState<boolean>(false);
+  const { post, get } = useApi();
 
   React.useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -35,7 +38,26 @@ const Register: React.FC = () => {
     }
   }, []);
 
-  const handleRegister = (e?: React.FormEvent) => {
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await get('/auth/supports_check_email');
+        console.log("Res : ", res);
+        if (mounted)
+          setNeedPassword(false);
+        console.log("CICIICICIC");
+        console.log(needPassword);
+      } catch (e) {
+        if (mounted)
+          setNeedPassword(true);
+        console.error(e);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [get]);
+
+  const handleRegister = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     let hasError = false;
     if (!email.includes(".") || !email.includes("@")) {
@@ -44,13 +66,14 @@ const Register: React.FC = () => {
     } else {
       setEmailError("");
     }
-    if (password.length < 8) {
+    if (needPassword && password.length < 8) {
       setPasswordError("Enter valid password, minimum 8 characters");
       hasError = true;
     } else {
       setPasswordError("");
     }
     if (hasError) return;
+    await post('/auth/register', { email, password: needPassword ? password : undefined });
     // ...submit logic
   };
 
@@ -60,6 +83,8 @@ const Register: React.FC = () => {
 
   // ------------------------ Mobile view ------------------------
   if (!isWeb) {
+    const RN = require('react-native');
+    const { View, Text, TextInput, TouchableOpacity, ScrollView } = RN;
     return (
       <>
         <View style={mobileStyles.fullScreen}>
@@ -69,11 +94,6 @@ const Register: React.FC = () => {
               <View style={mobileStyles.Register}>
                 <Text style={mobileStyles.heading}>Register</Text>
 
-                <TextInput
-                  placeholder="Enter your full name"
-                  style={mobileStyles.input}
-                  placeholderTextColor="#888"
-                />
                 <TextInput
                   placeholder="Enter your username"
                   style={mobileStyles.input}
@@ -89,14 +109,14 @@ const Register: React.FC = () => {
                 />
                 {emailError ? <Text style={mobileStyles.errorText}>{emailError}</Text> : null}
 
-                <TextInput
+                {needPassword ? <TextInput
                   placeholder="Enter your password"
                   style={mobileStyles.input}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={true}
                   placeholderTextColor="#888"
-                />
+                /> : null}
                 {passwordError ? <Text style={mobileStyles.errorText}>{passwordError}</Text> : null}
 
                 <TouchableOpacity
@@ -147,11 +167,6 @@ const Register: React.FC = () => {
               <h2>Register</h2>
               <input
                 type="text"
-                placeholder="Enter your full name"
-                style={webStyles.input}
-              />
-              <input
-                type="text"
                 placeholder="Enter your username"
                 style={webStyles.input}
               />
@@ -163,13 +178,13 @@ const Register: React.FC = () => {
                 onChange={e => setEmail(e.target.value)}
               />
               {emailError && <span style={{ color: 'red', fontSize: 12 }}>{emailError}</span>}
-              <input
+              {needPassword && <input
                 type="password"
                 placeholder="Enter your password"
                 style={webStyles.input}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-              />
+              />}
               {passwordError && <span style={{ color: 'red', fontSize: 12 }}>{passwordError}</span>}
               <button style={webStyles.button} type="submit">
                 Register
@@ -295,7 +310,7 @@ const webStyles: { [k: string]: React.CSSProperties } = {
   },
 };
 
-const mobileStyles = StyleSheet.create({
+const mobileStyles: any = {
   fullScreen: {
     flex: 1,
     backgroundColor: "#151316ff",
@@ -312,10 +327,7 @@ const mobileStyles = StyleSheet.create({
     padding: 25,
     width: '100%',
     maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
     elevation: 8,
   },
   Register: {
@@ -395,6 +407,6 @@ const mobileStyles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
   }
-});
+};
 
 export default Register;
