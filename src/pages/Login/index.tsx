@@ -1,10 +1,30 @@
 import React from "react";
-if (typeof document !== 'undefined') require('../../index.css');
 import Navbar from "../../components/Navbar";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
+
+let safeUseNavigation: any = () => ({ navigate: (_: any) => {} });
+try {
+  const rnNav = require('@react-navigation/native');
+  if (rnNav && rnNav.useNavigation) safeUseNavigation = rnNav.useNavigation;
+} catch (e) {}
+
+const detectIsWeb = (): boolean => {
+  try {
+    return Platform && Platform.OS === 'web';
+  } catch (e) {
+    return typeof document !== 'undefined';
+  }
+};
+
+const isWeb = detectIsWeb();
+if (isWeb) import ('../../index.css');
 
 const Login: React.FC = () => {
   const [email, setEmail] = React.useState("");
   const [emailError, setEmailError] = React.useState("");
+  const [password, setPassword] = React.useState("");
+
+  const navigation = safeUseNavigation();
 
   React.useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -19,15 +39,88 @@ const Login: React.FC = () => {
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!email.includes("@") || !email.includes(".")) {
       setEmailError("Enter valide email <test@email.com>");
       return;
     }
     setEmailError("");
+    console.log("Login with:", email, password);
   };
 
+  // ------------------------ Mobile View ------------------------
+  if (!isWeb) {
+    return (
+      <View style={mobileStyles.fullScreen}>
+        <Navbar />
+        <ScrollView contentContainerStyle={mobileStyles.container}>
+          <View style={mobileStyles.card}>
+            <View style={mobileStyles.Login}>
+              <Text style={mobileStyles.heading}>Login</Text>
+
+              <TextInput
+                placeholder="Enter your email"
+                style={mobileStyles.input}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                placeholderTextColor="#888"
+              />
+              {emailError ? <Text style={mobileStyles.errorText}>{emailError}</Text> : null}
+
+              <TextInput
+                placeholder="Enter your password"
+                style={mobileStyles.input}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={true}
+                placeholderTextColor="#888"
+              />
+
+              <TouchableOpacity onPress={() => console.log("Forgot password?")}>
+                <Text style={mobileStyles.forgot}>Forgot password ?</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={mobileStyles.button}
+                onPress={() => handleLogin()}
+              >
+                <Text style={mobileStyles.buttonText}>Login</Text>
+              </TouchableOpacity>
+
+              <View style={mobileStyles.divider}>
+                <Text style={mobileStyles.dividerText}>Or continue with</Text>
+              </View>
+
+              <View style={mobileStyles.providersContainer}>
+                {/* Boutons fournisseurs adaptés pour mobile (placeholders) */}
+                <TouchableOpacity style={mobileStyles.providerButton}>
+                  <Text style={mobileStyles.providerText}>G</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={mobileStyles.providerButton}>
+                  <Text style={mobileStyles.providerText}>F</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={mobileStyles.providerButton}>
+                  <Text style={mobileStyles.providerText}>A</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={mobileStyles.providerButton}>
+                  <Text style={mobileStyles.providerText}>M</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Navigation vers Register (ajustez le nom de la route si nécessaire) */}
+              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                <Text style={mobileStyles.register}>Don't have an account</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // ------------------------ Web / Desktop View ------------------------
   return(
     <>
       <Navbar />
@@ -48,6 +141,8 @@ const Login: React.FC = () => {
                 type="password"
                 placeholder="Enter your password"
                 style={styles.input}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
               />
               <a style={styles.forgot}>Forgot password ?</a>
               <button style={styles.button} type="submit">
@@ -79,22 +174,134 @@ const Login: React.FC = () => {
   )
 }
 
+const mobileStyles = StyleSheet.create({
+  fullScreen: {
+    flex: 1,
+    backgroundColor: "#151316ff",
+  },
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  card: {
+    backgroundColor: "#1f1f1f",
+    borderRadius: 16,
+    padding: 25,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+  },
+  Login: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 15,
+  },
+  heading: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: "#fff",
+    marginBottom: 10,
+  },
+  input: {
+    width: '100%',
+    padding: 12,
+    fontSize: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#333",
+    backgroundColor: "#161616ff",
+    color: "#fff",
+  },
+  button: {
+    width: '100%',
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "#4CAF50",
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 5,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    alignSelf: 'flex-start',
+    marginTop: -10,
+    width: '100%',
+  },
+  forgot: {
+    color: "#fff",
+    alignSelf: 'flex-end',
+    fontSize: 12,
+    marginBottom: 10,
+  },
+  register: {
+    color: "#fff",
+    marginTop: 15,
+  },
+  divider: {
+    width: '100%',
+    marginVertical: 10,
+    alignItems: 'center',
+  },
+  dividerText: {
+    color: "#888",
+    fontSize: 12,
+  },
+  providersContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 10,
+  },
+  providerButton: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#333",
+    backgroundColor: "#161616ff",
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  providerText: {
+    color: '#fff',
+    fontSize: 20,
+  }
+});
+
 const styles: { [k: string]: React.CSSProperties } = {
   container: {
     minHeight: "100vh",
-    maxHeight: "100vh",
+    width: "100%",
     backgroundColor: "#151316ff",
     margin: "0",
     padding: "0",
-    overflow: "hidden",
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "auto",
   },
   cardContainer: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: "10vh",
-    marginTop: "10vh",
+    width: "100%",
     padding: "20px",
+    boxSizing: "border-box",
   },
   card: {
     backgroundColor: "#1f1f1f",
@@ -102,6 +309,7 @@ const styles: { [k: string]: React.CSSProperties } = {
     boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
     padding: "40px",
     minWidth: "400px",
+    boxSizing: "border-box",
   },
   Login: {
     display: "flex",
@@ -119,10 +327,15 @@ const styles: { [k: string]: React.CSSProperties } = {
     border: "1px solid #333",
     backgroundColor: "#161616ff",
     color: "#fff",
+    boxSizing: "border-box",
   },
   forgot: {
     color: "#fff",
     cursor: "pointer",
+    alignSelf: "flex-end",
+    width: "300px",
+    textAlign: "right",
+    fontSize: "12px",
   },
   button: {
     width: "300px",
@@ -133,9 +346,11 @@ const styles: { [k: string]: React.CSSProperties } = {
     backgroundColor: "#4CAF50",
     color: "#fff",
     cursor: "pointer",
+    boxSizing: "border-box",
   },
   register: {
     color: "#fff",
+    cursor: "pointer",
   },
   divider: {
     width: "100%",
