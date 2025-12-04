@@ -17,13 +17,13 @@ const Explore: React.FC = () => {
 const styles: { [k: string]: React.CSSProperties } = {
   container: {
     minHeight: '100vh',
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 0,
     margin: 0,
-    paddingLeft: '80px',
     backgroundColor: '#151316ff',
     color: '#fff',
   },
