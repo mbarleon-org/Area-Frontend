@@ -1,5 +1,6 @@
 import React from "react";
 import Navbar from "../../components/Navbar";
+import Toast from "../../components/Toast/Toast";
 import { isWeb } from "../../utils/IsWeb";
 // react-native components are required dynamically inside the mobile branch
 import { useApi } from "../../utils/UseApi";
@@ -15,15 +16,19 @@ try {
 } catch (e) {
 }
 
-if (isWeb) import('../../index.css');
-
 const Register: React.FC = () => {
   const [email, setEmail] = React.useState("");
+  const [username, setUsername] = React.useState("");
   const [emailError, setEmailError] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [passwordError, setPasswordError] = React.useState("");
   const [needPassword, setNeedPassword] = React.useState<boolean>(false);
   const { post, get } = useApi();
+  const [buttonHover, setButtonHover] = React.useState(false);
+  const [buttonActive, setButtonActive] = React.useState(false);
+  const [popupVisible, setPopupVisible] = React.useState(false);
+  const [popupMessage, setPopupMessage] = React.useState("");
+  const [pressed, setPressed] = React.useState(false);
 
   React.useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -42,16 +47,12 @@ const Register: React.FC = () => {
     let mounted = true;
     (async () => {
       try {
-        const res = await get('/auth/supports_check_email');
-        console.log("Res : ", res);
+        await get('/auth/supports_check_email')
         if (mounted)
           setNeedPassword(false);
-        console.log("CICIICICIC");
-        console.log(needPassword);
       } catch (e) {
         if (mounted)
           setNeedPassword(true);
-        console.error(e);
       }
     })();
     return () => { mounted = false; };
@@ -73,8 +74,20 @@ const Register: React.FC = () => {
       setPasswordError("");
     }
     if (hasError) return;
-    await post('/auth/register', { email, password: needPassword ? password : undefined });
-    // ...submit logic
+    try {
+      await post('/auth/register', { username, email, password: needPassword ? password : undefined });
+      if (needPassword) {
+        setPopupMessage('Account created successfully. You can now log in.');
+      } else {
+        setPopupMessage('An email has been sent to your address with instructions.');
+      }
+      setPopupMessage(needPassword ? 'Account created successfully. You can now log in.' : 'An email has been sent to your address with instructions.');
+      setPopupVisible(true);
+      setPassword('');
+    } catch (err) {
+      setPopupMessage('An error occurred while creating the account.');
+      setPopupVisible(true);
+    }
   };
 
   const navigationMobile = (!isWeb && typeof safeUseNavigation === 'function')
@@ -84,11 +97,25 @@ const Register: React.FC = () => {
   // ------------------------ Mobile view ------------------------
   if (!isWeb) {
     const RN = require('react-native');
-    const { View, Text, TextInput, TouchableOpacity, ScrollView } = RN;
+    const { View, Text, TextInput, TouchableOpacity, ScrollView, StatusBar, Platform } = RN;
+    const statusBarHeight = (StatusBar && StatusBar.currentHeight) ? StatusBar.currentHeight : (Platform && Platform.OS === 'ios' ? 44 : 20);
+    const toastTop = statusBarHeight + 8;
+
     return (
       <>
         <View style={mobileStyles.fullScreen}>
           <Navbar />
+          <Toast
+            message={popupMessage}
+            visible={popupVisible}
+            onClose={() => setPopupVisible(false)}
+            duration={5000}
+            position={'top'}
+            offset={toastTop + 64}
+            transitionSide={'left'}
+            backgroundColor="#222"
+            textColor="#fff"
+          />
           <ScrollView contentContainerStyle={mobileStyles.container}>
             <View style={mobileStyles.card}>
               <View style={mobileStyles.Register}>
@@ -97,6 +124,8 @@ const Register: React.FC = () => {
                 <TextInput
                   placeholder="Enter your username"
                   style={mobileStyles.input}
+                  value={username}
+                  onChangeText={setUsername}
                   placeholderTextColor="#888"
                 />
                 <TextInput
@@ -120,8 +149,10 @@ const Register: React.FC = () => {
                 {passwordError ? <Text style={mobileStyles.errorText}>{passwordError}</Text> : null}
 
                 <TouchableOpacity
-                  style={mobileStyles.button}
+                  style={[mobileStyles.button, pressed ? mobileStyles.buttonActive : null]}
                   onPress={() => handleRegister()}
+                  onPressIn={() => setPressed(true)}
+                  onPressOut={() => setPressed(false)}
                 >
                   <Text style={mobileStyles.buttonText}>Register</Text>
                 </TouchableOpacity>
@@ -169,6 +200,8 @@ const Register: React.FC = () => {
                 type="text"
                 placeholder="Enter your username"
                 style={webStyles.input}
+                value={username}
+                onChange={e => setUsername(e.target.value)}
               />
               <input
                 type="email"
@@ -186,7 +219,18 @@ const Register: React.FC = () => {
                 onChange={e => setPassword(e.target.value)}
               />}
               {passwordError && <span style={{ color: 'red', fontSize: 12 }}>{passwordError}</span>}
-              <button style={webStyles.button} type="submit">
+              <button
+                style={{
+                  ...webStyles.button,
+                  ...(buttonHover ? webStyles.buttonHover : {}),
+                  ...(buttonActive ? webStyles.buttonActive : {}),
+                }}
+                type="submit"
+                onMouseEnter={() => setButtonHover(true)}
+                onMouseLeave={() => { setButtonHover(false); setButtonActive(false); }}
+                onMouseDown={() => setButtonActive(true)}
+                onMouseUp={() => setButtonActive(false)}
+              >
                 Register
               </button>
               <div style={webStyles.divider}>
@@ -208,6 +252,17 @@ const Register: React.FC = () => {
               </div>
               <a href="/login" className="login" style={webStyles.login}>Already have an account</a>
             </form>
+            <Toast
+              message={popupMessage}
+              visible={popupVisible}
+              onClose={() => setPopupVisible(false)}
+              duration={5000}
+              position={'top'}
+              offset={20}
+              transitionSide={'left'}
+              backgroundColor="#222"
+              textColor="#fff"
+            />
           </div>
         </div>
       </div>
@@ -273,6 +328,13 @@ const webStyles: { [k: string]: React.CSSProperties } = {
     cursor: "pointer",
     boxSizing: "border-box",
   },
+  buttonHover: {
+    boxShadow: '0 6px 18px rgba(0,0,0,0.25)'
+  },
+  buttonActive: {
+    transform: 'translateY(0px) scale(0.98)',
+    boxShadow: '0 3px 8px rgba(0,0,0,0.2)'
+  },
   login: {
     color: "#fff",
   },
@@ -307,7 +369,7 @@ const webStyles: { [k: string]: React.CSSProperties } = {
     justifyContent: "center",
     cursor: "pointer",
     transition: "all 0.3s ease",
-  },
+  }
 };
 
 const mobileStyles: any = {
@@ -360,6 +422,10 @@ const mobileStyles: any = {
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 5,
+  },
+  buttonActive: {
+    transform: [{ translateY: 0 }],
+    opacity: 0.95,
   },
   buttonText: {
     color: "#fff",
