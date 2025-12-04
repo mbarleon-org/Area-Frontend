@@ -70,7 +70,6 @@ const mobileStyles: any = {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#151316',
-    paddingLeft: 75,
   },
   title: {
     color: '#fff',
