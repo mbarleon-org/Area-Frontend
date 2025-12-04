@@ -282,7 +282,7 @@ const mobileStyles: any = {
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#333',
+    backgroundColor: '#000',
   },
   logo: {
     color: "#fff",
