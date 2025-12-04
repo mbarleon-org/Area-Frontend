@@ -1,6 +1,6 @@
 import React from "react";
 import Navbar from "../../components/Navbar";
-import Toast from "../../components/Toast/Toast";
+import { useToast } from "../../components/Toast";
 import { isWeb } from "../../utils/IsWeb";
 // react-native components are required dynamically inside the mobile branch
 import { useApi } from "../../utils/UseApi";
@@ -19,16 +19,14 @@ try {
 const Register: React.FC = () => {
   const [email, setEmail] = React.useState("");
   const [username, setUsername] = React.useState("");
-  const [emailError, setEmailError] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [passwordError, setPasswordError] = React.useState("");
   const [needPassword, setNeedPassword] = React.useState<boolean>(false);
   const { post, get } = useApi();
   const [buttonHover, setButtonHover] = React.useState(false);
   const [buttonActive, setButtonActive] = React.useState(false);
-  const [popupVisible, setPopupVisible] = React.useState(false);
-  const [popupMessage, setPopupMessage] = React.useState("");
+  const { showToast } = useToast();
   const [pressed, setPressed] = React.useState(false);
+
 
   React.useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -62,31 +60,20 @@ const Register: React.FC = () => {
     if (e) e.preventDefault();
     let hasError = false;
     if (!email.includes(".") || !email.includes("@")) {
-      setEmailError("Enter valid email <test@example.com>");
+      showToast({ message: "Enter valid email <test@example.com>", duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
       hasError = true;
-    } else {
-      setEmailError("");
-    }
+    } else { }
     if (needPassword && password.length < 8) {
-      setPasswordError("Enter valid password, minimum 8 characters");
+      showToast({ message: "Password must be at least 8 characters long.", duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
       hasError = true;
-    } else {
-      setPasswordError("");
-    }
+    } else { }
     if (hasError) return;
     try {
       await post('/auth/register', { username, email, password: needPassword ? password : undefined });
-      if (needPassword) {
-        setPopupMessage('Account created successfully. You can now log in.');
-      } else {
-        setPopupMessage('An email has been sent to your address with instructions.');
-      }
-      setPopupMessage(needPassword ? 'Account created successfully. You can now log in.' : 'An email has been sent to your address with instructions.');
-      setPopupVisible(true);
+      showToast({ message: needPassword ? 'Account created successfully. You can now log in.' : 'An email has been sent to your address with instructions.', duration: 5000, barColor: '#4CAF50', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
       setPassword('');
     } catch (err) {
-      setPopupMessage('An error occurred while creating the account.');
-      setPopupVisible(true);
+      showToast({ message: 'An error occurred while creating the account.', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
     }
   };
 
@@ -97,25 +84,12 @@ const Register: React.FC = () => {
   // ------------------------ Mobile view ------------------------
   if (!isWeb) {
     const RN = require('react-native');
-    const { View, Text, TextInput, TouchableOpacity, ScrollView, StatusBar, Platform } = RN;
-    const statusBarHeight = (StatusBar && StatusBar.currentHeight) ? StatusBar.currentHeight : (Platform && Platform.OS === 'ios' ? 44 : 20);
-    const toastTop = statusBarHeight + 8;
+    const { View, Text, TextInput, TouchableOpacity, ScrollView } = RN;
 
     return (
       <>
         <View style={mobileStyles.fullScreen}>
           <Navbar />
-          <Toast
-            message={popupMessage}
-            visible={popupVisible}
-            onClose={() => setPopupVisible(false)}
-            duration={5000}
-            position={'top'}
-            offset={toastTop + 64}
-            transitionSide={'left'}
-            backgroundColor="#222"
-            textColor="#fff"
-          />
           <ScrollView contentContainerStyle={mobileStyles.container}>
             <View style={mobileStyles.card}>
               <View style={mobileStyles.Register}>
@@ -136,7 +110,6 @@ const Register: React.FC = () => {
                   keyboardType="email-address"
                   placeholderTextColor="#888"
                 />
-                {emailError ? <Text style={mobileStyles.errorText}>{emailError}</Text> : null}
 
                 {needPassword ? <TextInput
                   placeholder="Enter your password"
@@ -146,7 +119,6 @@ const Register: React.FC = () => {
                   secureTextEntry={true}
                   placeholderTextColor="#888"
                 /> : null}
-                {passwordError ? <Text style={mobileStyles.errorText}>{passwordError}</Text> : null}
 
                 <TouchableOpacity
                   style={[mobileStyles.button, pressed ? mobileStyles.buttonActive : null]}
@@ -210,7 +182,6 @@ const Register: React.FC = () => {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
-              {emailError && <span style={{ color: 'red', fontSize: 12 }}>{emailError}</span>}
               {needPassword && <input
                 type="password"
                 placeholder="Enter your password"
@@ -218,7 +189,6 @@ const Register: React.FC = () => {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
               />}
-              {passwordError && <span style={{ color: 'red', fontSize: 12 }}>{passwordError}</span>}
               <button
                 style={{
                   ...webStyles.button,
@@ -252,17 +222,6 @@ const Register: React.FC = () => {
               </div>
               <a href="/login" className="login" style={webStyles.login}>Already have an account</a>
             </form>
-            <Toast
-              message={popupMessage}
-              visible={popupVisible}
-              onClose={() => setPopupVisible(false)}
-              duration={5000}
-              position={'top'}
-              offset={20}
-              transitionSide={'left'}
-              backgroundColor="#222"
-              textColor="#fff"
-            />
           </div>
         </div>
       </div>

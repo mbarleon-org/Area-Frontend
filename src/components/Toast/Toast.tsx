@@ -10,6 +10,7 @@ type Props = {
     duration?: number;
     backgroundColor?: string;
     textColor?: string;
+    barColor?: string;
     position?: 'top' | 'bottom';
     offset?: number;
     transitionSide?: TransitionSide;
@@ -24,6 +25,7 @@ const Toast: React.FC<Props> = ({
     duration = DEFAULT_DURATION,
     backgroundColor = '#222',
     textColor = '#fff',
+    barColor = '#4CAF50',
     position = 'top',
     offset = 20,
     transitionSide = 'left',
@@ -97,7 +99,7 @@ const Toast: React.FC<Props> = ({
                     <button style={{ background: 'transparent', border: 'none', color: textColor, cursor: 'pointer' }} aria-label="close">✕</button>
                 </div>
                 <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 6, background: '#333', borderRadius: 4, overflow: 'hidden', marginTop: 8 }}>
-                    <div style={{ height: '100%', background: '#4CAF50', width: progressStarted ? '0%' : '100%', transition: `width ${duration}ms linear` }} />
+                    <div style={{ height: '100%', background: barColor, width: progressStarted ? '0%' : '100%', transition: `width ${duration}ms linear` }} />
                 </div>
             </div>
         );
@@ -161,7 +163,7 @@ const Toast: React.FC<Props> = ({
                     </TouchableOpacity>
                 </View>
                 <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 4, backgroundColor: '#333', borderRadius: 4, overflow: 'hidden' }}>
-                    <Animated.View style={{ height: '100%', backgroundColor: '#4CAF50', width: interpolatedWidth }} />
+                    <Animated.View style={{ height: '100%', backgroundColor: barColor, width: interpolatedWidth }} />
                 </View>
             </Animated.View>
         );

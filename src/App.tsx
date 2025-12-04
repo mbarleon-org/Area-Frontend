@@ -2,6 +2,7 @@ import React from 'react';
 import Home from './pages/Home';
 import ROUTES from './constants/Router';
 import { CookiesProvider } from 'react-cookie';
+import { ToastProvider } from './components/Toast';
 
 const detectIsWeb = (): boolean => {
   try {
@@ -17,45 +18,56 @@ const App: React.FC = () => {
 
   if (!isWeb) {
     try {
-    const { NavigationContainer } = require('@react-navigation/native');
-    const { createNativeStackNavigator } = require('@react-navigation/native-stack');
-    const Stack = createNativeStackNavigator();
+      const { NavigationContainer } = require('@react-navigation/native');
+      let SafeAreaProvider: any = ({ children }: any) => children;
+      try {
+        const safe = require('react-native-safe-area-context');
+        SafeAreaProvider = safe.SafeAreaProvider || SafeAreaProvider;
+      } catch (e) {
+        SafeAreaProvider = SafeAreaProvider;
+      }
+      const { createNativeStackNavigator } = require('@react-navigation/native-stack');
+      const Stack = createNativeStackNavigator();
 
-    return (
-      <CookiesProvider>
-        <NavigationContainer>
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            {ROUTES.map((r: any) => {
-              const Component = (r.element as any)?.type || (() => r.element);
-              // use r.label or a safe key as screen name
-              const screenName = r.label || r.path || String(r.path);
-              return <Stack.Screen key={r.path} name={screenName} component={Component} />;
-            })}
-          </Stack.Navigator>
-        </NavigationContainer>
-      </CookiesProvider>
-    );
-  } catch (e) {
-    // fallback
-    return <Home />;
-  }
+      return (
+        <CookiesProvider>
+          <SafeAreaProvider>
+            <ToastProvider>
+              <NavigationContainer>
+                <Stack.Navigator screenOptions={{ headerShown: false }}>
+                  {ROUTES.map((r: any) => {
+                    const Component = (r.element as any)?.type || (() => r.element);
+                    // use r.label or a safe key as screen name
+                    const screenName = r.label || r.path || String(r.path);
+                    return <Stack.Screen key={r.path} name={screenName} component={Component} />;
+                  })}
+                </Stack.Navigator>
+              </NavigationContainer>
+            </ToastProvider>
+          </SafeAreaProvider>
+        </CookiesProvider>
+      );
+    } catch (e) {
+      return <Home />;
+    }
   }
 
   try {
     const { BrowserRouter, Routes, Route } = require('react-router-dom');
     return (
       <CookiesProvider>
-        <BrowserRouter>
-          <Routes>
-            {ROUTES.map((r: any) => (
-              <Route key={r.path} path={r.path} element={r.element} />
-            ))}
-          </Routes>
-        </BrowserRouter>
+        <ToastProvider>
+          <BrowserRouter>
+            <Routes>
+              {ROUTES.map((r: any) => (
+                <Route key={r.path} path={r.path} element={r.element} />
+              ))}
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
       </CookiesProvider>
     );
   } catch (e) {
-    // fallback
     return <Home />;
   }
 };
