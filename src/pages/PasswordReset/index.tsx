@@ -35,7 +35,7 @@ const PasswordReset: React.FC = () => {
   const [confirm, setConfirm] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [tokenData, setTokenData] = React.useState<any>(null);
-  const [cookies, setCookie] = useCookies(['token']);
+  const [_cookies, setCookie] = useCookies(['token']);
 
   React.useEffect(() => {
     const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams('');

@@ -1,7 +1,9 @@
 import React from "react";
 import Navbar from "../../components/Navbar";
 import { isWeb } from "../../utils/IsWeb";
-// react-native components are required dynamically inside the mobile branch
+import { useApi } from "../../utils/UseApi";
+import { useToast } from "../../components/Toast";
+import { useCookies } from 'react-cookie';
 
 let safeUseNavigation: any = () => ({
   navigate: (_: any) => { },
@@ -19,8 +21,10 @@ if (!isWeb) {
 
 const Login: React.FC = () => {
   const [email, setEmail] = React.useState("");
-  const [emailError, setEmailError] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const { post } = useApi();
+  const { showToast } = useToast();
+  const [_cookies, setCookie] = useCookies(['token']);
 
   const navigation = safeUseNavigation();
 
@@ -33,14 +37,20 @@ const Login: React.FC = () => {
     }
   }, []);
 
-  const handleLogin = (e?: React.FormEvent) => {
+  const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!email.includes("@") || !email.includes(".")) {
-      setEmailError("Enter valid email <test@email.com>");
-      return;
+    try {
+      const res = await post('/auth/login', { user: email, password: password });
+      if (res && res.token) {
+        setCookie('token', res.token, { path: '/' });
+        showToast({ message: 'Login successful!', duration: 5000, barColor: '#4CAF50', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+        setPassword('');
+      } else {
+        showToast({ message: 'Login failed. Invalid credentials.', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+      }
+    } catch (err) {
+      showToast({ message: 'An error occurred while logging in.', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
     }
-    setEmailError("");
-    console.log("Login with:", email, password);
   };
 
   // ------------------------ Mobile View ------------------------
@@ -57,14 +67,13 @@ const Login: React.FC = () => {
               <Text style={mobileStyles.heading}>Login</Text>
 
               <TextInput
-                placeholder="Enter your email"
+                placeholder="Enter your Username or Email"
                 style={mobileStyles.input}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 placeholderTextColor="#888"
               />
-              {emailError ? <Text style={mobileStyles.errorText}>{emailError}</Text> : null}
 
               <TextInput
                 placeholder="Enter your password"
@@ -125,13 +134,12 @@ const Login: React.FC = () => {
             <form style={webStyles.Login} onSubmit={handleLogin}>
               <h2 style={{ margin: '0 0 20px 0' }}>Login</h2>
               <input
-                type="email"
-                placeholder="Enter your email"
+                type="text"
+                placeholder="Enter your Username or Email"
                 style={webStyles.input}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
-              {emailError && <span style={{ color: 'red', fontSize: 12, width: '100%', textAlign: 'left' }}>{emailError}</span>}
               <input
                 type="password"
                 placeholder="Enter your password"
