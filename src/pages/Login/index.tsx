@@ -45,11 +45,13 @@ const Login: React.FC = () => {
         setCookie('token', res.token, { path: '/' });
         showToast({ message: 'Login successful!', duration: 5000, barColor: '#4CAF50', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
         setPassword('');
-      } else {
-        showToast({ message: 'Login failed. Invalid credentials.', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
       }
-    } catch (err) {
-      showToast({ message: 'An error occurred while logging in.', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+    } catch (err: any) {
+      if (err && err.status === 401) {
+        showToast({ message: 'Login failed. Invalid credentials.', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+      } else {
+        showToast({ message: 'An error occurred while logging in.', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+      }
     }
   };
 
@@ -196,8 +198,8 @@ const mobileStyles: any = {
     padding: 25,
     width: '100%',
     maxWidth: 400,
-      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-      elevation: 8,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+    elevation: 8,
   },
   Login: {
     display: 'flex',
