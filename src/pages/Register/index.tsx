@@ -59,14 +59,21 @@ const Register: React.FC = () => {
   const handleRegister = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     let hasError = false;
-    if (!email.includes(".") || !email.includes("@")) {
+    const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/;
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,}$/;
+
+    if (needPassword && (password.length < 8 || !passwordPattern.test(password))) {
+      showToast({ message: "Password must be at least 8 characters long, and contain a letter (both upper and lowercase), a number, and a special character.", duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+      hasError = true;
+    }
+    if (username.includes('@')) {
+      showToast({ message: "Username cannot contain '@' character.", duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+      hasError = true;
+    }
+    if (!emailPattern.test(email)) {
       showToast({ message: "Enter valid email <test@example.com>", duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
       hasError = true;
-    } else { }
-    if (needPassword && password.length < 8) {
-      showToast({ message: "Password must be at least 8 characters long.", duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
-      hasError = true;
-    } else { }
+    }
     if (hasError) return;
     try {
       await post('/auth/register', { username, email, password: needPassword ? password : undefined });

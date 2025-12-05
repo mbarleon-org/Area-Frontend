@@ -54,8 +54,9 @@ const PasswordReset: React.FC = () => {
       showToast({ message: 'Missing token', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
       return;
     }
-    if (password.length < 8) {
-      showToast({ message: 'Password must be at least 8 characters', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+    const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/;
+    if (password.length < 8 || !passwordPattern.test(password)) {
+      showToast({ message: "Password must be at least 8 characters long, and contain a letter (both upper and lowercase), a number, and a special character.", duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
       return;
     }
     if (password !== confirm) {
