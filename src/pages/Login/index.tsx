@@ -43,14 +43,14 @@ const Login: React.FC = () => {
       const res = await post('/auth/login', { user: email, password: password });
       if (res && res.token) {
         setCookie('token', res.token, { path: '/' });
-        showToast({ message: 'Login successful!', duration: 5000, barColor: '#4CAF50', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+        showToast({ message: 'Login successful!', duration: 5000, barColor: '#4CAF50', backgroundColor: '#222', textColor: '#fff', position: isWeb ? 'top' : 'bottom', transitionSide: 'left' });
         setPassword('');
       }
     } catch (err: any) {
       if (err && err.status === 401) {
-        showToast({ message: 'Login failed. Invalid credentials.', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+        showToast({ message: 'Login failed. Invalid credentials.', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: isWeb ? 'top' : 'bottom', transitionSide: 'left' });
       } else {
-        showToast({ message: 'An error occurred while logging in.', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+        showToast({ message: 'An error occurred while logging in.', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: isWeb ? 'top' : 'bottom', transitionSide: 'left' });
       }
     }
   };
