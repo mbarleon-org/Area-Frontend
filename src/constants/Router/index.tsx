@@ -6,6 +6,7 @@ import Apps from "../../pages/Apps";
 import Explore from "../../pages/Explore";
 import Login from "../../pages/Login"
 import Register from "../../pages/Register"
+import PasswordReset from "../../pages/PasswordReset";
 import Automations from "../../pages/Automations";
 import User from "../../pages/User";
 
@@ -58,6 +59,13 @@ const ROUTES: Router[] = [
     element: <Register />,
     label: "Register",
     navbar: true,
+    security: "public",
+  },
+  {
+    path: "/password_reset",
+    element: <PasswordReset />,
+    label: "PasswordReset",
+    navbar: false,
     security: "public",
   },
   {

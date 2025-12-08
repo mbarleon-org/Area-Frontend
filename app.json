@@ -1,0 +1,8 @@
+{
+  "ios": {
+    "bundleIdentifier": "com.mbarleon.area"
+  },
+  "android": {
+    "bundleIdentifier": "com.mbarleon.area"
+  }
+}

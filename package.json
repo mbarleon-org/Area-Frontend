@@ -12,8 +12,7 @@
   },
   "license": "MIT",
   "author": "Area Team at mbarleon-org",
-  "type": "module",
-  "main": "src/main.tsx",
+  "main": "index.js",
   "directories": {
     "doc": "docs",
     "test": "tests"
@@ -25,11 +24,23 @@
     "preview": "npm run build && vite preview",
     "electron": "electron .",
     "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
-    "build-electron": "npm run build && electron-builder"
+    "build-electron": "npm run build && electron-builder",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "@react-navigation/native": "^7.1.24",
+    "@react-navigation/native-stack": "^7.8.5",
+    "axios": "^1.13.2",
+    "expo": "^54.0.25",
+    "expo-secure-store": "^15.0.8",
+    "react": "19.1.0",
+    "react-cookie": "^8.0.1",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0",
+    "react-native-web": "^0.21.0",
     "react-router-dom": "^7.9.6",
     "serve": "^14.2.5"
   },

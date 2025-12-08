@@ -50,3 +50,9 @@ temp/
 node_modules/
 dist/
 !Dockerfile
+
+# expo
+.expo/
+web/
+ios/
+android/

@@ -1,7 +1,23 @@
 import React, { useState } from 'react';
 import '../../index.css';
 import Navbar from '../../components/Navbar';
-import { NavLink } from "react-router-dom";
+
+const NavLinkWrapper: React.FC<any> = ({ children, ...props }) => {
+  if (typeof document !== 'undefined') {
+    const { NavLink } = require('react-router-dom');
+    return <NavLink {...props}>{children}</NavLink>;
+  }
+  try {
+    const { TouchableOpacity, Text } = require('react-native');
+    return (
+      <TouchableOpacity onPress={() => {}}>
+        <Text>{children}</Text>
+      </TouchableOpacity>
+    );
+  } catch {
+    return <>{children}</>;
+  }
+};
 
 const Dashboard: React.FC = () => {
   const [automations] = useState([
@@ -16,9 +32,9 @@ const Dashboard: React.FC = () => {
 
       <div style={styles.container}>
         <div style={styles.header}>
-          <NavLink to="/automations" style={{ textDecoration: 'none' }}>
+          <NavLinkWrapper to="/automations" style={{ textDecoration: 'none' }}>
             <button style={styles.addButton}>+ New automation</button>
-          </NavLink>
+          </NavLinkWrapper>
         </div>
 
         <h2 style={styles.title}>Automations</h2>
@@ -42,14 +58,23 @@ const Dashboard: React.FC = () => {
 
 const styles: { [k: string]: React.CSSProperties } = {
   container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: '20px',
-    marginTop: "40px",
-    backgroundColor: '#151316ff',
-    color: '#fff',
+    minHeight: "100vh",
+    flex: 1,
+    width: "100%",
+    backgroundColor: "#151316ff",
+    margin: "0",
+    padding: "0",
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    overflow: "auto",
+    marginTop: 40,
+    gap: 20,
+    position: "relative",
+    zIndex: 1,
+    flexDirection: "column",
+    color: "#fff",
   },
   title: {
     margin: '0 0 16px 0',

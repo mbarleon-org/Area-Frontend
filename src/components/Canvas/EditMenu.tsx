@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
-import "../../index.css";
+if (typeof document !== 'undefined') require('../../index.css');
 
 type NodeItem = { id: string; x: number; y: number; width?: number; height?: number; label?: string } | null;
 
