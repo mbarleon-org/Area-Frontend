@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Feather } from '@expo/vector-icons';
 import { isWeb } from "../../utils/IsWeb";
-import { useCookies } from 'react-cookie';
+import { useToken } from "../../hooks/useToken";
 import { useNavigate, useInRouterContext } from 'react-router-dom';
 
 let safeUseNavigation: any = () => ({
@@ -18,7 +18,7 @@ try {
 const Navbar: React.FC = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [cookies] = useCookies(['token']);
+  const { token } = useToken();
   const inRouter = useInRouterContext();
   const navigate = inRouter ? useNavigate() : ((to: string) => { if (typeof window !== 'undefined') window.location.href = to; });
 
@@ -115,7 +115,7 @@ const Navbar: React.FC = () => {
               <View style={mobileStyles.divider} />
 
               <View style={mobileStyles.section}>
-                {!cookies.token && (
+                {!token && (
                 <>
                 <TouchableOpacity onPress={() => goTo('/login')} style={mobileStyles.menuItem}>
                   <Feather name="log-in" size={20} color="#ccc" style={mobileStyles.icon} />
@@ -128,7 +128,7 @@ const Navbar: React.FC = () => {
                 </TouchableOpacity>
                 </>
                 )}
-                {cookies.token && (
+                {token && (
                   <>
                     <TouchableOpacity onPress={() => goTo('/user')} style={mobileStyles.menuItem}>
                       <Feather name="user" size={20} color="#ccc" style={mobileStyles.icon} />
@@ -180,7 +180,7 @@ const Navbar: React.FC = () => {
             }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            onClick={() => (!cookies.token ? setIsMenuOpen(!isMenuOpen) : navigate('/user'))}
+            onClick={() => (!token ? setIsMenuOpen(!isMenuOpen) : navigate('/user'))}
           >
             <svg viewBox="0 0 24 24" fill="none" style={{ width: "30px", height: "30px" }} xmlns="http://www.w3.org/2000/svg"><g strokeWidth="0"></g><g strokeLinecap="round" strokeLinejoin="round"></g><g> <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path> <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path> </g></svg>
           </div>

@@ -3,7 +3,7 @@ import Navbar from "../../components/Navbar";
 import { isWeb } from "../../utils/IsWeb";
 import { useApi } from "../../utils/UseApi";
 import { useToast } from "../../components/Toast";
-import { useCookies } from 'react-cookie';
+import { useToken } from "../../hooks/useToken";
 
 let safeUseNavigation: any = () => ({
   navigate: (_: any) => { },
@@ -24,7 +24,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = React.useState("");
   const { post } = useApi();
   const { showToast } = useToast();
-  const [_cookies, setCookie] = useCookies(['token']);
+  const { setToken } = useToken();
 
   const navigation = safeUseNavigation();
 
@@ -42,7 +42,7 @@ const Login: React.FC = () => {
     try {
       const res = await post('/auth/login', { user: email, password: password });
       if (res && res.token) {
-        setCookie('token', res.token, { path: '/' });
+        setToken(res.token);
         showToast({ message: 'Login successful!', duration: 5000, barColor: '#4CAF50', backgroundColor: '#222', textColor: '#fff', position: isWeb ? 'top' : 'bottom', transitionSide: 'left' });
         setPassword('');
       }

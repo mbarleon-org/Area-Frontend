@@ -2,9 +2,22 @@ import React from "react";
 import Navbar from "../../components/Navbar";
 import { isWeb } from "../../utils/IsWeb";
 import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useToken } from "../../hooks/useToken";
+import { useInRouterContext, useNavigate } from "react-router-dom";
+
 
 if (isWeb) import('../../index.css');
 
+let safeUseNavigation: any = () => ({
+  navigate: (_: any) => { },
+  reset: (_: any) => { }
+});
+
+try {
+  const rnNav = require('@react-navigation/native');
+  if (rnNav && rnNav.useNavigation) safeUseNavigation = rnNav.useNavigation;
+} catch (e) {
+}
 const User: React.FC = () => {
   const [editHover, setEditHover] = React.useState(false);
   const [logoutHover, setLogoutHover] = React.useState(false);
@@ -13,6 +26,13 @@ const User: React.FC = () => {
   const [username, setUsername] = React.useState("Username : Le plus beau");
   const [email, setEmail] = React.useState("Email : LadiesMan69@mommy.com");
   const user_icon = require('../../../assets/user_icon2.png');
+  const { setToken } = useToken();
+  const inRouter = useInRouterContext();
+  const navigate = inRouter ? useNavigate() : ((to: string) => { if (typeof window !== 'undefined') window.location.href = to; });
+
+  const navigationMobile = (!isWeb && typeof safeUseNavigation === 'function')
+    ? safeUseNavigation()
+    : { navigate: (_: any) => { } };
 
   // ------------------------ Mobile View ------------------------
   if (!isWeb) {
@@ -73,6 +93,18 @@ const User: React.FC = () => {
             </TouchableOpacity>
           </View>
 
+          <View style={mobileStyles.bottomBar}>
+            <TouchableOpacity
+              style={mobileStyles.logoutButton}
+              onPress={() => {
+                setToken(null);
+                navigationMobile.navigate('Login');
+              }}
+            >
+              <Text style={mobileStyles.logoutButtonText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+
         </ScrollView>
       </View>
     );
@@ -92,6 +124,10 @@ const User: React.FC = () => {
         }}
         onMouseEnter={() => setLogoutHover(true)}
         onMouseLeave={() => setLogoutHover(false)}
+        onClick={() => {
+          setToken(null);
+          navigate('/login');
+          }}
       >
         Logout
       </button>
@@ -157,6 +193,18 @@ const mobileStyles = StyleSheet.create({
   scrollContainer: {
     paddingTop: 120,
     paddingBottom: 40,
+    paddingHorizontal: 20,
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 20,
+  },
+  bottomBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 380,
+    marginRight: 10,
   },
   iconContainer: {
     alignSelf: 'center',
@@ -214,6 +262,17 @@ const mobileStyles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+    logoutButton: {
+    backgroundColor: '#e74c3c',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
   }
 });
 

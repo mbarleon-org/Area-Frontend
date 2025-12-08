@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import Navbar from "../../components/Navbar";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { isWeb } from "../../utils/IsWeb";
-import { useCookies } from 'react-cookie';
 import { useApi } from '../../utils/UseApi';
+import { useToken } from '../../hooks/useToken';
 
 if (isWeb) import('../../index.css');
 
@@ -15,13 +15,13 @@ const FILTERS = [
 ];
 
 const Home: React.FC = () => {
-  const [cookies] = useCookies(['token']);
+  const { token } = useToken();
   const { get } = useApi();
   const [activeFilter, setActiveFilter] = useState(FILTERS[0].id);
   const [data, setData] = useState<any[] | null>(null);
 
   useEffect(() => {
-    if (!cookies.token)
+    if (!token)
       return;
     let mounted = true;
     const currentFilter = FILTERS.find(f => f.id === activeFilter) || FILTERS[0];
@@ -45,10 +45,10 @@ const Home: React.FC = () => {
         if (mounted) setData([]);
       });
     return () => { mounted = false; };
-  }, [get, activeFilter, cookies.token]);
+  }, [get, activeFilter, token]);
 
   // ------------------------ Not Logged In View ------------------------
-  if (!cookies.token) {
+  if (!token) {
     if (!isWeb) {
       return (
         <View style={mobileStyles.mainContainer}>

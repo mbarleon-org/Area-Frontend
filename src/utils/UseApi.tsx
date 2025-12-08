@@ -1,6 +1,6 @@
 import axios, { type AxiosRequestConfig } from "axios";
-import { useCookies } from "react-cookie";
 import { useCallback, useMemo } from "react";
+import { useToken } from "../hooks/useToken";
 
 function detectBaseURL(): string {
     const viteEnv = typeof import.meta !== 'undefined' && (import.meta as any).env ? (import.meta as any).env : {};
@@ -21,8 +21,7 @@ function detectBaseURL(): string {
 }
 
 export function useApi() {
-    const [cookies] = useCookies(['token']);
-    const token = cookies?.token;
+    const { token } = useToken();
 
     const baseURL = useMemo(() => detectBaseURL(), []);
 
