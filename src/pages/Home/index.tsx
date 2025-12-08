@@ -189,7 +189,7 @@ const mobileStyles = StyleSheet.create({
     padding: 20,
   },
   scrollContainer: {
-    paddingTop: 80,
+    paddingTop: 100,
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
