@@ -7,7 +7,7 @@ const Automations: React.FC = () => {
   return (
     <>
       <Navbar />
-      <div style={{ paddingLeft: "100px", minHeight: "100vh", background: "#151316ff" }}>
+      <div style={{ paddingLeft: "100px", minHeight: "100vh", background: "#151316ff", flex: 1 }}>
         <Canvas />
       </div>
     </>
