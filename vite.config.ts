@@ -33,7 +33,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "../src"),
-      'react-native': 'react-native-web',
+      'react-native': path.resolve(__dirname, 'src/shims/react-native.ts'),
       '@expo/vector-icons': path.resolve(__dirname, 'src/shims/expo-vector-icons.tsx'),
     },
   },
