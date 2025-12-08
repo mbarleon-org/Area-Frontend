@@ -5,8 +5,9 @@ import { useToken } from "../hooks/useToken";
 function detectBaseURL(): string {
     const viteEnv = typeof import.meta !== 'undefined' && (import.meta as any).env ? (import.meta as any).env : {};
     const procEnv = typeof process !== 'undefined' && (process as any).env ? (process as any).env : {};
+    const runtimeEnv = typeof globalThis !== 'undefined' && (globalThis as any).RUNTIME_CONFIG ? (globalThis as any).RUNTIME_CONFIG : {};
 
-    let expo = viteEnv.VITE_BACKEND_URL || procEnv.EXPO_PUBLIC_BACKEND_URL;
+    let expo = runtimeEnv.BACKEND_URL || viteEnv.VITE_BACKEND_URL || procEnv.EXPO_PUBLIC_BACKEND_URL;
     if (expo) {
         if (expo.endsWith('/')) {
             expo = expo.slice(0, -1);
