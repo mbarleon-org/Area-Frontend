@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useApi } from "../../utils/UseApi";
+import { assetPath } from "../../utils/assets";
 import Node from "./Node";
 
 type ModuleItem = {
@@ -23,6 +24,7 @@ const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nodePositions, setNodePositions] = useState<{ [key: string]: { x: number; y: number } }>({});
+
   const normalizeModules = (mods: ModuleEntry[]) => {
     return mods.map((m) => {
       const name = (m.name || '').trim();
@@ -77,13 +79,13 @@ const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose }) => {
 
   return (
     <div style={styles.container}
-    onMouseDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
       onMouseUp={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
       onTouchEnd={(e) => e.stopPropagation()}
       onWheel={(e) => e.stopPropagation()}
-      >
+    >
       <h3 style={styles.title}>Add Module</h3>
 
       {loading && <div style={{ color: '#aaa', padding: 12 }}>Loading modules…</div>}
@@ -108,6 +110,7 @@ const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose }) => {
                 offset={{ x: 0, y: 0 }}
                 gridPx={16}
                 label={m.name}
+                icon={<img src={assetPath('/node_icons/gmail_logo.png')} alt={m.name} style={{ width: '54px', height: '54px' }} />}
               />
             </div>
           );
