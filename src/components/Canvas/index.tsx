@@ -2,6 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from "react";
 import Node from "./Node";
 import EditMenu from "./EditMenu";
 import CenterControl from "./CenterControl";
+import AddNode from "./AddNode";
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
@@ -26,6 +27,7 @@ const Canvas: React.FC = () => {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const editMenuRef = useRef<import("./EditMenu").EditMenuHandle | null>(null);
+  const [showAddMenu, setShowAddMenu] = useState(false);
 
   const computeSnapOffset = (worldSize: number, gridPx: number) => {
     const cells = Math.round(worldSize / gridPx);
@@ -33,22 +35,24 @@ const Canvas: React.FC = () => {
   };
 
   const handleAddNode = useCallback((e: React.MouseEvent) => {
-    const el = containerRef.current;
-    if (!el)
-      return;
-    const rect = el.getBoundingClientRect();
-    const cx = e.clientX - rect.left;
-    const cy = e.clientY - rect.top;
-    const worldX = (cx - offset.x) / scale;
-    const worldY = (cy - offset.y) / scale;
-    const w = 96;
-    const h = 96;
-    const snapOffX = computeSnapOffset(w, gridPx);
-    const snapOffY = computeSnapOffset(h, gridPx);
-    const x = Math.round((worldX - snapOffX) / gridPx) * gridPx + snapOffX;
-    const y = Math.round((worldY - snapOffY) / gridPx) * gridPx + snapOffY;
-    const id = `n${Date.now()}`;
-    setNodes(ns => [...ns, { id, x, y, width: w, height: h, label: 'Node'}] );
+    // const el = containerRef.current;
+    // if (!el)
+    //   return;
+    // setShowAddMenu(true);
+    // const rect = el.getBoundingClientRect();
+    // const cx = e.clientX - rect.left;
+    // const cy = e.clientY - rect.top;
+    // const worldX = (cx - offset.x) / scale;
+    // const worldY = (cy - offset.y) / scale;
+    // const w = 96;
+    // const h = 96;
+    // const snapOffX = computeSnapOffset(w, gridPx);
+    // const snapOffY = computeSnapOffset(h, gridPx);
+    // const x = Math.round((worldX - snapOffX) / gridPx) * gridPx + snapOffX;
+    // const y = Math.round((worldY - snapOffY) / gridPx) * gridPx + snapOffY;
+    // const id = `n${Date.now()}`;
+    // setNodes(ns => [...ns, { id, x, y, width: w, height: h, label: 'Node'}] );
+    setShowAddMenu(true);
   }, [offset.x, offset.y, scale, gridPx]);
 
   const handleCanvasClick = useCallback(() => {
@@ -65,6 +69,7 @@ const Canvas: React.FC = () => {
   }, [hoveredLineIndex]);
 
   const onDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (showAddMenu) return;
     dragging.current = true;
     const isTouch = "touches" in e;
     const p = isTouch ? (e as React.TouchEvent).touches[0] : (e as React.MouseEvent).nativeEvent;
@@ -72,9 +77,10 @@ const Canvas: React.FC = () => {
     if (typeof document !== 'undefined') (document.activeElement as HTMLElement)?.blur();
     if (!isTouch)
       (e as React.MouseEvent).preventDefault();
-  }, []);
+  }, [showAddMenu]);
 
   const onMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (showAddMenu) return;
     const p = "touches" in e ? (e as React.TouchEvent).touches[0] : (e as React.MouseEvent).nativeEvent;
     const clientX = p.clientX;
     const clientY = p.clientY;
@@ -134,7 +140,7 @@ const Canvas: React.FC = () => {
     const threshold = 10;
     if (bestIndex !== null && bestDist <= threshold) setHoveredLineIndex(bestIndex);
     else setHoveredLineIndex(null);
-  }, [lines, nodes, offset.x, offset.y, scale]);
+  }, [lines, nodes, offset.x, offset.y, scale, showAddMenu]);
 
   const onUp = useCallback(() => {
     dragging.current = false;
@@ -145,6 +151,7 @@ const Canvas: React.FC = () => {
     if (!el)
         return;
     const wheel = (e: WheelEvent) => {
+      if (showAddMenu) return;
       e.preventDefault();
       const delta = -e.deltaY;
       const rect = el.getBoundingClientRect();
@@ -162,7 +169,7 @@ const Canvas: React.FC = () => {
     };
     el.addEventListener('wheel', wheel, { passive: false });
     return () => el.removeEventListener('wheel', wheel as EventListener);
-  }, [scale, setScale]);
+  }, [scale, setScale, showAddMenu]);
 
   useEffect(() => {
     if (initialPosSet.current) return;
@@ -297,6 +304,7 @@ const Canvas: React.FC = () => {
           nodes={nodes}
         />
       </div>
+      {showAddMenu && <AddNode onClose={() => setShowAddMenu(true)} />}
       {selectedId && (
         <EditMenu
           node={nodes.find(n => n.id === selectedId) || null}

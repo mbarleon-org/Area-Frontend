@@ -242,7 +242,18 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
         window.addEventListener('touchend', touchEndListener as any);
       }}
     >
-      <div style={{ pointerEvents: 'none' }}>{label ?? 'Drag me'}</div>
+      <div style={{
+        pointerEvents: 'none',
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        padding: 8,
+        boxSizing: 'border-box',
+        wordBreak: 'break-word'
+      }}>{label ?? 'Drag me'}</div>
       {connectionPoints?.map((cp: { side: 'left' | 'right' | 'top' | 'bottom'; offset: number; size?: number }) => renderConnector(cp.side, cp.offset, cp.size))}
     </div>
   );
