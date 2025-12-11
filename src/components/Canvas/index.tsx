@@ -16,7 +16,7 @@ const Canvas: React.FC = () => {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
 
-  type NodeItem = { id: string; x: number; y: number; width?: number; height?: number; label?: string };
+  type NodeItem = { id: string; x: number; y: number; width?: number; height?: number; label?: string; icon?: string };
   const [nodes, setNodes] = useState<NodeItem[]>([]);
   type EndpointRef = { nodeId?: string; side?: 'left' | 'right' | 'top' | 'bottom'; offset?: number; worldX?: number; worldY?: number; index?: number };
   type LineItem = { a: EndpointRef; b: EndpointRef; stroke?: string; strokeWidth?: number };
@@ -40,6 +40,11 @@ const Canvas: React.FC = () => {
   const handleAddNode = useCallback(() => {
     setShowAddMenu(true);
   }, [offset.x, offset.y, scale, gridPx]);
+
+  const handleAddFromMenu = useCallback((node: any) => {
+    setNodes((ns) => [...ns, node]);
+    setShowAddMenu(false);
+  }, []);
 
   const handleCanvasClick = useCallback(() => {
     if (showAddMenu) {
@@ -287,6 +292,7 @@ const Canvas: React.FC = () => {
             offset={offset}
             gridPx={gridPx}
             label={n.label}
+            icon={n.icon ? <img src={n.icon} alt={n.label ?? n.id} style={{ width: '40px', height: '40px', objectFit: 'contain' }} /> : undefined}
             connectionPoints={[{ side: 'right', offset: 0 }, { side: 'left', offset: 0 }, { side: 'top', offset: 0 }, { side: 'bottom', offset: 0 }]}
             onConnectorClick={(info) => {
               if (!pendingConnection) {
@@ -309,7 +315,7 @@ const Canvas: React.FC = () => {
           nodes={nodes}
         />
       </div>
-      {showAddMenu && <AddNode onClose={() => setShowAddMenu(false)} modules={modules} />}
+      {showAddMenu && <AddNode onClose={() => setShowAddMenu(false)} onAdd={handleAddFromMenu} modules={modules} />}
       {selectedId && (
         <EditMenu
           node={nodes.find(n => n.id === selectedId) || null}

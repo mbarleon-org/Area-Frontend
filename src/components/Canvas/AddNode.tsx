@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { assetPath } from "../../utils/assets";
+import { getIconForModule } from "../../utils/iconHelper";
 import Node from "./Node";
 
 type ModuleItem = {
@@ -44,6 +44,7 @@ const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose, modules: pa
   }, [passedModules]);
 
   const handleAdd = (m: ModuleEntry) => {
+    const icon = getIconForModule(m.name || "");
     const node = {
       id: `n${Date.now()}`,
       x: position?.x ?? 0,
@@ -52,6 +53,7 @@ const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose, modules: pa
       height: 96,
       label: m.name || 'New Node',
       module: m.data,
+      icon,
     };
     if (onAdd) onAdd(node);
     else console.log('Add node', node);
@@ -91,7 +93,10 @@ const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose, modules: pa
                 offset={{ x: 0, y: 0 }}
                 gridPx={16}
                 label={m.name}
-                icon={<img src={assetPath('/node_icons/gmail_logo.png')} alt={m.name} style={{ width: '54px', height: '54px' }} />}
+                icon={(() => {
+                  const src = getIconForModule(m.name || "");
+                  return src ? <img src={src} alt={m.name} style={{ width: '54px', height: '54px', objectFit: 'contain' }} /> : undefined;
+                })()}
               />
             </div>
           );
