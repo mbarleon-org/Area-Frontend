@@ -44,7 +44,6 @@ const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose }) => {
         const modulesObj = res?.modules || res || {};
         const list: ModuleEntry[] = Object.entries(modulesObj).map(([name, data]) => ({ name, data: data as ModuleItem }));
         setModules(normalizeModules(list));
-        if (onClose) onClose();
         const positions: { [key: string]: { x: number; y: number } } = {};
         list.forEach((m) => {
           positions[m.name] = { x: 50, y: 50 };

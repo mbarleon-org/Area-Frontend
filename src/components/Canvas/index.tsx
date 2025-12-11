@@ -35,27 +35,14 @@ const Canvas: React.FC = () => {
   };
 
   const handleAddNode = useCallback((e: React.MouseEvent) => {
-    // const el = containerRef.current;
-    // if (!el)
-    //   return;
-    // setShowAddMenu(true);
-    // const rect = el.getBoundingClientRect();
-    // const cx = e.clientX - rect.left;
-    // const cy = e.clientY - rect.top;
-    // const worldX = (cx - offset.x) / scale;
-    // const worldY = (cy - offset.y) / scale;
-    // const w = 96;
-    // const h = 96;
-    // const snapOffX = computeSnapOffset(w, gridPx);
-    // const snapOffY = computeSnapOffset(h, gridPx);
-    // const x = Math.round((worldX - snapOffX) / gridPx) * gridPx + snapOffX;
-    // const y = Math.round((worldY - snapOffY) / gridPx) * gridPx + snapOffY;
-    // const id = `n${Date.now()}`;
-    // setNodes(ns => [...ns, { id, x, y, width: w, height: h, label: 'Node'}] );
     setShowAddMenu(true);
   }, [offset.x, offset.y, scale, gridPx]);
 
   const handleCanvasClick = useCallback(() => {
+    if (showAddMenu) {
+      setShowAddMenu(false);
+      return;
+    }
     if (hoveredLineIndex !== null) {
       setLines(ls => ls.filter((_, i) => i !== hoveredLineIndex));
       setHoveredLineIndex(null);
@@ -304,7 +291,7 @@ const Canvas: React.FC = () => {
           nodes={nodes}
         />
       </div>
-      {showAddMenu && <AddNode onClose={() => setShowAddMenu(true)} />}
+      {showAddMenu && <AddNode onClose={() => setShowAddMenu(false)} />}
       {selectedId && (
         <EditMenu
           node={nodes.find(n => n.id === selectedId) || null}

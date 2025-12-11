@@ -208,6 +208,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
     <div
       style={style}
       onClick={(e) => { e.stopPropagation(); if (!moved.current) { onSelect?.(); } moved.current = false; }}
+      onDoubleClick={(e) => { e.stopPropagation(); }}
       onMouseDown={(e) => {
         e.stopPropagation();
         dragging.current = true;
