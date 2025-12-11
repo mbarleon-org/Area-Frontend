@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import Node from "./Node";
+import { useApi } from "../../utils/UseApi";
 import EditMenu from "./EditMenu";
 import CenterControl from "./CenterControl";
 import AddNode from "./AddNode";
@@ -28,13 +29,15 @@ const Canvas: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const editMenuRef = useRef<import("./EditMenu").EditMenuHandle | null>(null);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const { get } = useApi();
+  const [modules, setModules] = useState<Array<{ name: string; data: any }>>([]);
 
   const computeSnapOffset = (worldSize: number, gridPx: number) => {
     const cells = Math.round(worldSize / gridPx);
     return (cells % 2 === 0) ? 0 : gridPx / 2;
   };
 
-  const handleAddNode = useCallback((e: React.MouseEvent) => {
+  const handleAddNode = useCallback(() => {
     setShowAddMenu(true);
   }, [offset.x, offset.y, scale, gridPx]);
 
@@ -53,7 +56,7 @@ const Canvas: React.FC = () => {
       return;
     }
     setSelectedId(null);
-  }, [hoveredLineIndex]);
+  }, [hoveredLineIndex, showAddMenu, setShowAddMenu, setLines, setHoveredLineIndex, setSelectedId]);
 
   const onDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     if (showAddMenu) return;
@@ -177,6 +180,21 @@ const Canvas: React.FC = () => {
     initialPosSet.current = true;
   }, [offset.x, offset.y, scale]);
 
+  useEffect(() => {
+    let mounted = true;
+    get('/modules')
+      .then((res: any) => {
+        if (!mounted) return;
+        const modulesObj = res?.modules || res || {};
+        const list = Object.entries(modulesObj).map(([name, data]) => ({ name, data }));
+        setModules(list);
+      })
+      .catch((err: any) => {
+        console.error('Failed to load modules (canvas)', err);
+      });
+    return () => { mounted = false; };
+  }, [get]);
+
   const bgSize1 = `${gridPx * scale}px ${gridPx * scale}px`;
   const bgSize2 = `${gridPx * 8 * scale}px ${gridPx * 8 * scale}px`;
   const pos1x = Math.round(mod(offset.x, gridPx * scale));
@@ -291,7 +309,7 @@ const Canvas: React.FC = () => {
           nodes={nodes}
         />
       </div>
-      {showAddMenu && <AddNode onClose={() => setShowAddMenu(false)} />}
+      {showAddMenu && <AddNode onClose={() => setShowAddMenu(false)} modules={modules} />}
       {selectedId && (
         <EditMenu
           node={nodes.find(n => n.id === selectedId) || null}

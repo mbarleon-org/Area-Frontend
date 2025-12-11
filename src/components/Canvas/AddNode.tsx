@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useApi } from "../../utils/UseApi";
 import { assetPath } from "../../utils/assets";
 import Node from "./Node";
 
@@ -16,13 +15,13 @@ type Props = {
   position?: { x: number; y: number } | null;
   onAdd?: (node: any) => void;
   onClose?: () => void;
+  modules?: ModuleEntry[];
 };
 
-const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose }) => {
-  const { get } = useApi();
-  const [modules, setModules] = useState<ModuleEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose, modules: passedModules }) => {
+  const [modules, setModules] = useState<ModuleEntry[]>(passedModules && passedModules.length > 0 ? passedModules : []);
+  const [loading, _setLoading] = useState(false);
+  const [error, _setError] = useState<string | null>(null);
   const [nodePositions, setNodePositions] = useState<{ [key: string]: { x: number; y: number } }>({});
 
   const normalizeModules = (mods: ModuleEntry[]) => {
@@ -36,30 +35,13 @@ const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose }) => {
   };
 
   useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-    get('/modules')
-      .then((res: any) => {
-        if (!mounted) return;
-        const modulesObj = res?.modules || res || {};
-        const list: ModuleEntry[] = Object.entries(modulesObj).map(([name, data]) => ({ name, data: data as ModuleItem }));
-        setModules(normalizeModules(list));
-        const positions: { [key: string]: { x: number; y: number } } = {};
-        list.forEach((m) => {
-          positions[m.name] = { x: 50, y: 50 };
-        });
-        setNodePositions(positions);
-      })
-      .catch((err: any) => {
-        console.error('Failed to load modules', err);
-        if (!mounted) return;
-        setError(err?.message || 'Failed to load');
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-    return () => { mounted = false; };
-  }, [get]);
+    if (passedModules && passedModules.length > 0) {
+      setModules(normalizeModules(passedModules));
+      const positions: { [key: string]: { x: number; y: number } } = {};
+      passedModules.forEach((m) => { positions[m.name] = { x: 50, y: 50 }; });
+      setNodePositions(positions);
+    }
+  }, [passedModules]);
 
   const handleAdd = (m: ModuleEntry) => {
     const node = {
