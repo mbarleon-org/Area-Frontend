@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getIconForModule } from "../../utils/iconHelper";
+import { getIconForModule, getConnectionPointsForModule } from "../../utils/iconHelper";
 import Node from "./Node";
 
 type ModuleItem = {
@@ -54,10 +54,25 @@ const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose, modules: pa
       label: m.name || 'New Node',
       module: m.data,
       icon,
+        connectionPoints: getConnectionPointsForModule(m.name || ""),
     };
     if (onAdd) onAdd(node);
     else console.log('Add node', node);
     if (onClose) onClose();
+  };
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, m: ModuleEntry) => {
+    const icon = getIconForModule(m.name || "");
+    const payload = {
+      name: m.name || "New Node",
+      module: m.data,
+      icon,
+      width: 240,
+      height: 120,
+        connectionPoints: getConnectionPointsForModule(m.name || ""),
+    };
+    e.dataTransfer.setData("application/json", JSON.stringify(payload));
+    e.dataTransfer.effectAllowed = "copy";
   };
 
   return (
@@ -68,6 +83,8 @@ const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose, modules: pa
       onTouchStart={(e) => e.stopPropagation()}
       onTouchEnd={(e) => e.stopPropagation()}
       onWheel={(e) => e.stopPropagation()}
+      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+      onDrop={(e) => { e.preventDefault(); e.stopPropagation(); }}
     >
       <h3 style={styles.title}>Add Module</h3>
 
@@ -81,14 +98,16 @@ const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose, modules: pa
             <div
               key={m.name}
               onClick={() => handleAdd(m)}
+              draggable
+              onDragStart={(e) => handleDragStart(e, m)}
               style={{ position: 'relative', width: '100px', height: '100px', margin: '80px' }}
             >
               <Node
                 id={m.name}
                 pos={pos}
                 setPos={() => {}}
-                width={256}
-                height={128}
+                width={240}
+                height={120}
                 scale={1}
                 offset={{ x: 0, y: 0 }}
                 gridPx={16}

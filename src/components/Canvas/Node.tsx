@@ -125,7 +125,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
     cursor: dragging.current ? 'grabbing' : 'grab',
     userSelect: 'none',
     touchAction: 'none',
-    overflow: 'hidden',
+    overflow: 'visible',
   };
 
 
@@ -164,6 +164,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
       background: 'transparent',
       borderRadius: '50%',
       pointerEvents: 'auto',
+      zIndex: 20,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',

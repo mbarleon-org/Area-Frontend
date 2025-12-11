@@ -16,7 +16,7 @@ const Canvas: React.FC = () => {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
 
-  type NodeItem = { id: string; x: number; y: number; width?: number; height?: number; label?: string; icon?: string };
+  type NodeItem = { id: string; x: number; y: number; width?: number; height?: number; label?: string; icon?: string; module?: any; connectionPoints?: Array<{ side: 'left'|'right'|'top'|'bottom'; offset: number; size?: number }> };
   const [nodes, setNodes] = useState<NodeItem[]>([]);
   type EndpointRef = { nodeId?: string; side?: 'left' | 'right' | 'top' | 'bottom'; offset?: number; worldX?: number; worldY?: number; index?: number };
   type LineItem = { a: EndpointRef; b: EndpointRef; stroke?: string; strokeWidth?: number };
@@ -45,6 +45,56 @@ const Canvas: React.FC = () => {
     setNodes((ns) => [...ns, node]);
     setShowAddMenu(false);
   }, []);
+
+  type DragPayload = {
+    name: string;
+    module: any;
+    icon?: string | null;
+    width?: number;
+    height?: number;
+    connectionPoints?: Array<{ side: 'left'|'right'|'top'|'bottom'; offset: number; size?: number }>;
+  };
+
+  const handleDropOnCanvas = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const el = containerRef.current;
+    if (!el) return;
+
+    const json = e.dataTransfer.getData("application/json") || e.dataTransfer.getData("text/plain");
+    if (!json) return;
+    let payload: DragPayload | null = null;
+    try {
+      payload = JSON.parse(json);
+    } catch (err) {
+      return;
+    }
+    if (!payload) return;
+
+    const rect = el.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const worldX = (cx - offset.x) / scale;
+    const worldY = (cy - offset.y) / scale;
+    const w = payload.width || 240;
+    const h = payload.height || 120;
+    const snapOffX = computeSnapOffset(w, gridPx);
+    const snapOffY = computeSnapOffset(h, gridPx);
+    const x = Math.round((worldX - snapOffX) / gridPx) * gridPx + snapOffX;
+    const y = Math.round((worldY - snapOffY) / gridPx) * gridPx + snapOffY;
+
+    const newNode: NodeItem = {
+      id: `n${Date.now()}`,
+      x,
+      y,
+      width: w,
+      height: h,
+      label: payload.name || "New Node",
+      icon: payload.icon || undefined,
+      module: payload.module,
+      connectionPoints: payload.connectionPoints,
+    };
+    setNodes((ns) => [...ns, newNode]);
+  }, [gridPx, offset.x, offset.y, scale]);
 
   const handleCanvasClick = useCallback(() => {
     if (showAddMenu) {
@@ -102,8 +152,8 @@ const Canvas: React.FC = () => {
           if (node) {
             let wx = node.x;
             let wy = node.y;
-            const w = node.width || 96;
-            const h = node.height || 96;
+            const w = node.width || 240;
+            const h = node.height || 120;
             if (ep.side === 'right') {
               wx = node.x + w / 2; wy = node.y + (ep.offset || 0);
             } else if (ep.side === 'left') {
@@ -173,15 +223,15 @@ const Canvas: React.FC = () => {
     const rect = el.getBoundingClientRect();
     const cx = rect.width / 2;
     const cy = rect.height / 2;
-    const w = 96;
-    const h = 96;
+    const w = 240;
+    const h = 120;
     const rawWorldX = (cx - offset.x) / scale;
     const rawWorldY = (cy - offset.y) / scale;
     const snapOffX = computeSnapOffset(w, gridPx);
     const snapOffY = computeSnapOffset(h, gridPx);
     const x = Math.round((rawWorldX - snapOffX) / gridPx) * gridPx + snapOffX;
     const y = Math.round((rawWorldY - snapOffY) / gridPx) * gridPx + snapOffY;
-    setNodes([{ id: 'n1', x, y, width: w, height: h, label: 'Loïs' }]);
+    setNodes([{ id: 'n1', x, y, width: w, height: h, label: 'Default' }]);
     initialPosSet.current = true;
   }, [offset.x, offset.y, scale]);
 
@@ -241,7 +291,7 @@ const Canvas: React.FC = () => {
       onTouchMove={onMove}
   onTouchEnd={onUp}
     >
-  <div style={canvasStyle} onClick={handleCanvasClick} onDoubleClick={handleAddNode}>
+  <div style={canvasStyle} onClick={handleCanvasClick} onDoubleClick={handleAddNode} onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnCanvas}>
         <svg style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
           {lines.map((l, i) => {
             const resolve = (ep: EndpointRef) => {
@@ -293,7 +343,7 @@ const Canvas: React.FC = () => {
             gridPx={gridPx}
             label={n.label}
             icon={n.icon ? <img src={n.icon} alt={n.label ?? n.id} style={{ width: '40px', height: '40px', objectFit: 'contain' }} /> : undefined}
-            connectionPoints={[{ side: 'right', offset: 0 }, { side: 'left', offset: 0 }, { side: 'top', offset: 0 }, { side: 'bottom', offset: 0 }]}
+            connectionPoints={n.connectionPoints || [{ side: 'right', offset: 0 }, { side: 'left', offset: 0 }, { side: 'top', offset: 0 }, { side: 'bottom', offset: 0 }]}
             onConnectorClick={(info) => {
               if (!pendingConnection) {
                 setPendingConnection(info);
