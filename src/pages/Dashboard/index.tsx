@@ -58,7 +58,7 @@ const Dashboard: React.FC = () => {
       </>
     );
   }
-
+  // ------------------------ Web view ---------------------------
   return (
     <>
       <Navbar />

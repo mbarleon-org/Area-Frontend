@@ -101,7 +101,7 @@ const Navbar: React.FC = () => {
                   <Text style={mobileStyles.menuText}>Dashboard</Text>
                 </TouchableOpacity>
 
-                {/* <TouchableOpacity onPress={() => goTo('/apps')} style={mobileStyles.menuItem}>
+                <TouchableOpacity onPress={() => goTo('/apps')} style={mobileStyles.menuItem}>
                   <Feather name="box" size={20} color="#fff" style={mobileStyles.icon} />
                   <Text style={mobileStyles.menuText}>Apps</Text>
                 </TouchableOpacity>
@@ -109,7 +109,7 @@ const Navbar: React.FC = () => {
                 <TouchableOpacity onPress={() => goTo('/explore')} style={mobileStyles.menuItem}>
                   <Feather name="compass" size={20} color="#fff" style={mobileStyles.icon} />
                   <Text style={mobileStyles.menuText}>Explore</Text>
-                </TouchableOpacity> */}
+                </TouchableOpacity>
               </View>
 
               <View style={mobileStyles.divider} />
