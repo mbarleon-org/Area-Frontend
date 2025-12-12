@@ -96,12 +96,12 @@ const Navbar: React.FC = () => {
                   <Feather name="home" size={20} color="#fff" style={mobileStyles.icon} />
                   <Text style={mobileStyles.menuText}>Home</Text>
                 </TouchableOpacity>
-                {/* <TouchableOpacity onPress={() => goTo('/dashboard')} style={mobileStyles.menuItem}>
+                <TouchableOpacity onPress={() => goTo('/dashboard')} style={mobileStyles.menuItem}>
                   <Feather name="grid" size={20} color="#fff" style={mobileStyles.icon} />
                   <Text style={mobileStyles.menuText}>Dashboard</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => goTo('/apps')} style={mobileStyles.menuItem}>
+                {/* <TouchableOpacity onPress={() => goTo('/apps')} style={mobileStyles.menuItem}>
                   <Feather name="box" size={20} color="#fff" style={mobileStyles.icon} />
                   <Text style={mobileStyles.menuText}>Apps</Text>
                 </TouchableOpacity>
