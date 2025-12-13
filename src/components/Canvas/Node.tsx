@@ -14,11 +14,14 @@ type NodeProps = {
   offset: Vec;
   gridPx: number;
   label?: React.ReactNode;
+  icon?: React.ReactNode;
   connectionPoints?: Array<{
     side: 'left' | 'right' | 'top' | 'bottom';
     offset: number;
     size?: number;
   }>;
+  iconMaxPx?: number;
+  iconMinPx?: number;
 };
 
 const computeSnapOffset = (worldSize: number, gridPx: number) => {
@@ -26,7 +29,7 @@ const computeSnapOffset = (worldSize: number, gridPx: number) => {
   return (cells % 2 === 0) ? 0 : gridPx / 2;
 };
 
-const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, height = 96, scale, offset, gridPx, label, connectionPoints, onConnectorClick }) => {
+const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, height = 96, scale, offset, gridPx, label, icon, connectionPoints, onConnectorClick, iconMaxPx = 64, iconMinPx = 12 }) => {
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const pointerOffset = useRef({ x: 0, y: 0 });
@@ -124,6 +127,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
     cursor: dragging.current ? 'grabbing' : 'grab',
     userSelect: 'none',
     touchAction: 'none',
+    overflow: 'visible',
   };
 
 
@@ -162,6 +166,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
       background: 'transparent',
       borderRadius: '50%',
       pointerEvents: 'auto',
+      zIndex: 20,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -206,6 +211,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
     <div
       style={style}
       onClick={(e) => { e.stopPropagation(); if (!moved.current) { onSelect?.(); } moved.current = false; }}
+      onDoubleClick={(e) => { e.stopPropagation(); }}
       onMouseDown={(e) => {
         e.stopPropagation();
         dragging.current = true;
@@ -242,7 +248,69 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
         window.addEventListener('touchend', touchEndListener as any);
       }}
     >
-      <div style={{ pointerEvents: 'none' }}>{label ?? 'Drag me'}</div>
+      {icon && (() => {
+        const iconAreaWidth = Math.max(0, screenW * 0.35);
+        const iconAreaHeight = screenH;
+        const desiredIconPx = Math.min(iconAreaWidth * 0.75, iconAreaHeight * 0.75);
+        const iconSizePx = Math.max(iconMinPx, Math.min(desiredIconPx, iconMaxPx));
+
+        const wrapperStyle: React.CSSProperties = {
+          position: 'absolute',
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: '35%',
+          background: 'rgba(255,255,255,0.1)',
+          borderTopLeftRadius: '100% 50%',
+          borderBottomLeftRadius: '100% 50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none'
+        };
+
+        const imgStyle: React.CSSProperties = {
+          width: iconSizePx,
+          height: iconSizePx,
+          objectFit: 'contain',
+          pointerEvents: 'none'
+        };
+
+        if (React.isValidElement(icon)) {
+          return (
+            <div style={wrapperStyle}>
+              {React.cloneElement(icon as React.ReactElement, { style: { ...((icon as any).props?.style || {}), ...imgStyle } } as any)}
+            </div>
+          );
+        }
+
+        if (typeof icon === 'string') {
+          return (
+            <div style={wrapperStyle}>
+              <img src={icon} alt="icon" style={imgStyle} />
+            </div>
+          );
+        }
+
+        return (
+          <div style={wrapperStyle}>{icon}</div>
+        );
+      })()}
+      <div style={{
+        pointerEvents: 'none',
+        width: icon ? '65%' : '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        padding: 8,
+        boxSizing: 'border-box',
+        wordBreak: 'break-word',
+        position: 'absolute',
+        left: 0,
+        top: 0
+      }}>{label ?? 'Drag me'}</div>
       {connectionPoints?.map((cp: { side: 'left' | 'right' | 'top' | 'bottom'; offset: number; size?: number }) => renderConnector(cp.side, cp.offset, cp.size))}
     </div>
   );
