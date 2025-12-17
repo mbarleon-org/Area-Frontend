@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import ROUTES from './constants/Router';
 import { CookiesProvider } from 'react-cookie';
 import { ToastProvider } from './components/Toast';
+import { BrowserRouter, Routes, Route } from './utils/router';
 
 const detectIsWeb = (): boolean => {
   try {
@@ -52,24 +53,19 @@ const App: React.FC = () => {
     }
   }
 
-  try {
-    const { BrowserRouter, Routes, Route } = require('react-router-dom');
-    return (
-      <CookiesProvider>
-        <ToastProvider>
-          <BrowserRouter>
-            <Routes>
-              {ROUTES.map((r: any) => (
-                <Route key={r.path} path={r.path} element={r.element} />
-              ))}
-            </Routes>
-          </BrowserRouter>
-        </ToastProvider>
-      </CookiesProvider>
-    );
-  } catch (e) {
-    return <Home />;
-  }
+  return (
+    <CookiesProvider>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            {ROUTES.map((r: any) => (
+              <Route key={r.path} path={r.path} element={r.element} />
+            ))}
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
+    </CookiesProvider>
+  );
 };
 
 export default App;
