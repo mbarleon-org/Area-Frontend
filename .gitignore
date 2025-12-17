@@ -56,3 +56,4 @@ dist/
 web/
 ios/
 android/
+*.apk
