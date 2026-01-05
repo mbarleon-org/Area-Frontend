@@ -4,5 +4,23 @@
   },
   "android": {
     "bundleIdentifier": "com.mbarleon.area"
+  },
+  "extra": {
+    "eas": {
+      "projectId": "90e313ec-5261-4fa9-9660-058fc13f6123"
+    }
+  },
+  "expo": {
+    "ios": {
+      "bundleIdentifier": "com.mbarleon.area"
+    },
+    "android": {
+      "package": "com.mbarleon.area"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "90e313ec-5261-4fa9-9660-058fc13f6123"
+      }
+    }
   }
 }
