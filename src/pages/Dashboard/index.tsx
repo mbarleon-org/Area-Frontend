@@ -33,13 +33,18 @@ const Dashboard: React.FC = () => {
   // ------------------------ Mobile view ------------------------
   if (!isWeb) {
     const { View, Text, TouchableOpacity, ScrollView } = require('react-native');
+    const { useNavigation } = require('@react-navigation/native');
+    const navigation = useNavigation();
     return (
       <>
         <Navbar />
-        <ScrollView style={{ flex: 1, backgroundColor: "#151316"}}>
+        <ScrollView style={{ flex: 1, backgroundColor: "#151316", marginTop: 93}}>
           <View style ={{ padding: 16}}>
-            <TouchableOpacity style={{ backgroundColor: "#2b2b2b", padding: 12, borderRadius: 6, marginBottom: 16, marginTop: 100 }}>
-              <Text style={{ color: "#fff", textAlign: "center" }}>+ New automations</Text>
+            <TouchableOpacity
+              style={{ backgroundColor: "#2b2b2b", padding: 12, borderRadius: 6, marginBottom: 16 }}
+              onPress={() => navigation.navigate('Automations')}
+            >
+              <Text style={{ color: "#fff", textAlign: "center" }}>+ New automation</Text>
             </TouchableOpacity>
             <Text style={{ color: "#fff", fontSize: 20, marginBottom: 16 }}>Automations</Text>
             {automations.map(a => (
