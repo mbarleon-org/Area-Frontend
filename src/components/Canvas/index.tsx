@@ -14,6 +14,7 @@ const Canvas: React.FC = () => {
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const initialPosSet = useRef(false);
+  const binButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
@@ -97,6 +98,13 @@ const Canvas: React.FC = () => {
     };
     setNodes((ns) => [...ns, newNode]);
   }, [gridPx, offset.x, offset.y, scale]);
+
+  const handleRemoveNode = useCallback((nodeId: string) => {
+    console.log('Remove node', nodeId);
+    setNodes((ns) => ns.filter((n) => n.id !== nodeId));
+    setLines((ls) => ls.filter((l) => l.a.nodeId !== nodeId && l.b.nodeId !== nodeId));
+    setSelectedId((sid) => (sid === nodeId ? null : sid));
+  }, []);
 
   const handleCanvasClick = useCallback(() => {
     if (showAddMenu) {
@@ -356,6 +364,29 @@ const Canvas: React.FC = () => {
               setLines(ls => [...ls, { a: { nodeId: a.nodeId, side: a.side, offset: a.offset, worldX: a.worldX, worldY: a.worldY }, b: { nodeId: b.nodeId, side: b.side, offset: b.offset, worldX: b.worldX, worldY: b.worldY }, stroke: '#fff', strokeWidth: 4 }]);
               setPendingConnection(null);
             }}
+            onDragEnd={({ id: draggedId, screenX, screenY }) => {
+              console.log('Node drag end', draggedId, screenX, screenY);
+              if (!draggedId) return;
+              const binEl = binButtonRef.current;
+              console.log('Bin element', binEl);
+              if (!binEl) return;
+              const rect = binEl.getBoundingClientRect();
+              console.log('Bin rect', rect);
+              console.log('Screen pos', screenX, screenY);
+              console.log(`screenX >= rect.left ${screenX} >= ${rect.left}`, screenX >= rect.left);
+              console.log(`screenX <= rect.right ${screenX} <= ${rect.right}`, screenX <= rect.right);
+              console.log(`screenY >= rect.top ${screenY} >= ${rect.top}`, screenY >= rect.top);
+              console.log(`screenY <= rect.bottom ${screenY} <= ${rect.bottom}`, screenY <= rect.bottom);
+              const isOverBin =
+                screenX >= rect.left &&
+                screenX <= rect.right &&
+                screenY >= rect.top &&
+                screenY <= rect.bottom;
+
+              if (isOverBin) {
+                handleRemoveNode(draggedId);
+              }
+            }}
           />
         ))}
         <CenterControl
@@ -369,7 +400,7 @@ const Canvas: React.FC = () => {
       </div>
       {showAddMenu && <AddNode onClose={() => setShowAddMenu(false)} onAdd={handleAddFromMenu} modules={modules} />}
       <BottomBar />
-      <BinButton />
+      <BinButton ref={binButtonRef} />
       {selectedId && (
         <EditMenu
           node={nodes.find(n => n.id === selectedId) || null}

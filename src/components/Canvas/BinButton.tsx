@@ -1,12 +1,12 @@
-  import React from 'react';
+  import React, { forwardRef } from 'react';
 
-  const BinButton: React.FC = () => {
+  const BinButton = forwardRef<HTMLButtonElement>((_, ref) => {
     return (
-      <button style={styles.button} aria-label="Move to trash">
-        <span style={styles.icon}>🗑️</span>
+      <button ref={ref} style={styles.button} aria-label="Move to trash" className="bin-button">
+        <span style={styles.icon} className="bin-button-icon">🗑️</span>
       </button>
     );
-  };
+  });
 
   const styles = {
     button: {
@@ -33,3 +33,18 @@
   };
 
   export default BinButton;
+
+
+  if (typeof document !== 'undefined') {
+    const styleId = 'bin-button-hover-styles';
+    if (!document.getElementById(styleId)) {
+      const styleTag = document.createElement('style');
+      styleTag.id = styleId;
+      styleTag.innerHTML = `
+      .bin-button:hover .bin-button-icon {
+        opacity: 1 !important;
+      }
+      `;
+      document.head.appendChild(styleTag);
+    }
+  }

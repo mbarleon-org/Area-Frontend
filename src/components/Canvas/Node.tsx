@@ -22,6 +22,7 @@ type NodeProps = {
   }>;
   iconMaxPx?: number;
   iconMinPx?: number;
+  onDragEnd?: (info: { id?: string; screenX: number; screenY: number }) => void;
 };
 
 const computeSnapOffset = (worldSize: number, gridPx: number) => {
@@ -29,7 +30,7 @@ const computeSnapOffset = (worldSize: number, gridPx: number) => {
   return (cells % 2 === 0) ? 0 : gridPx / 2;
 };
 
-const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, height = 96, scale, offset, gridPx, label, icon, connectionPoints, onConnectorClick, iconMaxPx = 64, iconMinPx = 12 }) => {
+const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, height = 96, scale, offset, gridPx, label, icon, connectionPoints, onConnectorClick, iconMaxPx = 64, iconMinPx = 12, onDragEnd }) => {
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const pointerOffset = useRef({ x: 0, y: 0 });
@@ -69,30 +70,31 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
     setPos({ x: snappedX, y: snappedY });
   }, [offset.x, offset.y, scale, gridPx, width, height, setPos]);
 
-  const finishDrag = useCallback(() => {
+  const finishDrag = useCallback((clientX: number, clientY: number) => {
     if (!dragging.current)
       return;
     dragging.current = false;
     const snapOffX = computeSnapOffset(width, gridPx);
     const snapOffY = computeSnapOffset(height, gridPx);
-  const cur = currentPos.current;
-  const x = Math.round((cur.x - snapOffX) / gridPx) * gridPx + snapOffX;
-  const y = Math.round((cur.y - snapOffY) / gridPx) * gridPx + snapOffY;
-  currentPos.current = { x, y };
-  setPos({ x, y });
+    const cur = currentPos.current;
+    onDragEnd?.({ id, screenX: clientX, screenY: clientY });
+    const x = Math.round((cur.x - snapOffX) / gridPx) * gridPx + snapOffX;
+    const y = Math.round((cur.y - snapOffY) / gridPx) * gridPx + snapOffY;
+    currentPos.current = { x, y };
+    setPos({ x, y });
     window.removeEventListener('mousemove', mouseMoveListener);
     window.removeEventListener('mouseup', mouseUpListener);
     window.removeEventListener('touchmove', touchMoveListener as any);
     window.removeEventListener('touchend', touchEndListener as any);
-  }, [width, height, gridPx, setPos]);
+  }, [width, height, gridPx, setPos, id, onDragEnd]);
 
   const mouseMoveListener = useCallback((e: MouseEvent) => {
     if (!dragging.current)
       return;
     handleMove(e.clientX, e.clientY);
   }, [handleMove]);
-  const mouseUpListener = useCallback(() => {
-    finishDrag();
+  const mouseUpListener = useCallback((e: MouseEvent) => {
+    finishDrag(e.clientX, e.clientY);
   }, [finishDrag]);
   const touchMoveListener = useCallback((e: TouchEvent) => {
     if (!dragging.current)
@@ -101,8 +103,8 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
     const t = e.touches[0];
     handleMove(t.clientX, t.clientY);
   }, [handleMove]);
-  const touchEndListener = useCallback(() => {
-    finishDrag();
+  const touchEndListener = useCallback((e: MouseEvent) => {
+    finishDrag(e.clientX, e.clientY);
   }, [finishDrag]);
 
   const screenX = offset.x + pos.x * scale;
