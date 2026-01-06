@@ -22,7 +22,7 @@
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      transition: 'background 0.2s, transform 0.12s',
+      transition: 'background 0.2s, transform 0.12s, outline-color 0.2s',
       outline: '2px solid #212121ff',
     },
     icon: {

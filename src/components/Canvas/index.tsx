@@ -4,7 +4,7 @@ import { useApi } from "../../utils/UseApi";
 import EditMenu from "./EditMenu";
 import CenterControl from "./CenterControl";
 import AddNode from "./AddNode";
-import BottomBar from "./BottomBar";
+import TopBar from "./TopBar";
 import BinButton from "./BinButton";
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
@@ -399,7 +399,7 @@ const Canvas: React.FC = () => {
         />
       </div>
       {showAddMenu && <AddNode onClose={() => setShowAddMenu(false)} onAdd={handleAddFromMenu} modules={modules} />}
-      <BottomBar />
+      <TopBar />
       <BinButton ref={binButtonRef} />
       {selectedId && (
         <EditMenu
