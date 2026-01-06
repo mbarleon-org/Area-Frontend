@@ -100,7 +100,6 @@ const Canvas: React.FC = () => {
   }, [gridPx, offset.x, offset.y, scale]);
 
   const handleRemoveNode = useCallback((nodeId: string) => {
-    console.log('Remove node', nodeId);
     setNodes((ns) => ns.filter((n) => n.id !== nodeId));
     setLines((ls) => ls.filter((l) => l.a.nodeId !== nodeId && l.b.nodeId !== nodeId));
     setSelectedId((sid) => (sid === nodeId ? null : sid));
@@ -365,18 +364,10 @@ const Canvas: React.FC = () => {
               setPendingConnection(null);
             }}
             onDragEnd={({ id: draggedId, screenX, screenY }) => {
-              console.log('Node drag end', draggedId, screenX, screenY);
               if (!draggedId) return;
               const binEl = binButtonRef.current;
-              console.log('Bin element', binEl);
               if (!binEl) return;
               const rect = binEl.getBoundingClientRect();
-              console.log('Bin rect', rect);
-              console.log('Screen pos', screenX, screenY);
-              console.log(`screenX >= rect.left ${screenX} >= ${rect.left}`, screenX >= rect.left);
-              console.log(`screenX <= rect.right ${screenX} <= ${rect.right}`, screenX <= rect.right);
-              console.log(`screenY >= rect.top ${screenY} >= ${rect.top}`, screenY >= rect.top);
-              console.log(`screenY <= rect.bottom ${screenY} <= ${rect.bottom}`, screenY <= rect.bottom);
               const isOverBin =
                 screenX >= rect.left &&
                 screenX <= rect.right &&
