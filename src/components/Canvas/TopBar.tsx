@@ -8,6 +8,7 @@ const TopBar: React.FC = () => {
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [hoverMenu, setHoverMenu] = useState<string | null>(null);
+  const [hoverDropdownItem, setHoverDropdownItem] = useState<string | null>(null);
 
   const refs = {
     file: useRef<HTMLDivElement>(null),
@@ -44,8 +45,10 @@ const TopBar: React.FC = () => {
                 {menu.items.map(item => (
                   <button
                     key={item.label}
-                    style={styles.dropdownButton}
+                    style={{ ...styles.dropdownButton, background: hoverDropdownItem === item.label ? '#222' : 'transparent' }}
                     onClick={() => { item.action(); setOpenMenu(null); }}
+                    onMouseEnter={() => setHoverDropdownItem(item.label)}
+                    onMouseLeave={() => setHoverDropdownItem(null)}
                   >
                     {item.label}
                   </button>
@@ -92,7 +95,7 @@ const styles = {
     top: '100%',
     left: 0,
     background: 'transparent',
-    border: '1px solid #444',
+    border: '1px solid #ffffff68',
     borderRadius: 8,
     zIndex: 1700,
     minWidth: '300px',
@@ -107,6 +110,7 @@ const styles = {
     textAlign: 'left' as 'left',
     cursor: 'pointer',
     opacity: 1,
+    borderRadius: 8,
   },
 };
 
