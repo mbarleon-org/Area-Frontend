@@ -28,7 +28,7 @@ const TopBar: React.FC = () => {
             onMouseEnter={() => setIsButtonHovered(true)}
             onMouseLeave={() => setIsButtonHovered(false)}
           >
-            Fichier
+            File
           </button>
           {isDropdownOpen && (
             <div style={styles.dropdown}>
