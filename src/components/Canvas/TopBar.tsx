@@ -1,48 +1,59 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 const TopBar: React.FC = () => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isButtonHovered, setIsButtonHovered] = useState(false);
-  const [isDropdownButtonHovered, setIsDropdownButtonHovered] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const menus = [
+    { key: 'file', label: 'File', items: [{ label: 'Save automation', action: () => console.log('Save automation') }] },
+    { key: 'view', label: 'View', items: [{ label: 'View options', action: () => console.log('View options') }] },
+  ];
+
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [hoverMenu, setHoverMenu] = useState<string | null>(null);
+
+  const refs = {
+    file: useRef<HTMLDivElement>(null),
+    view: useRef<HTMLDivElement>(null),
+  };
 
   useEffect(() => {
-    if (!isDropdownOpen)
-      return;
+    if (!openMenu) return;
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
+      const ref = refs[openMenu as keyof typeof refs];
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpenMenu(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isDropdownOpen]);
+  }, [openMenu]);
 
   return (
     <div style={styles.container} aria-hidden={false}>
       <div style={styles.items}>
-        <div ref={dropdownRef} style={{ position: 'relative' }}>
-          <button
-            style={{ ...styles.buttons, background: isButtonHovered ? '#333' : 'transparent' }}
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            onMouseEnter={() => setIsButtonHovered(true)}
-            onMouseLeave={() => setIsButtonHovered(false)}
-          >
-            File
-          </button>
-          {isDropdownOpen && (
-            <div style={styles.dropdown}>
-              <button
-                style={{ ...styles.dropdownButton, background: isDropdownButtonHovered ? '#333' : 'transparent' }}
-                onClick={() => { setIsDropdownOpen(false); }}
-                onMouseEnter={() => setIsDropdownButtonHovered(true)}
-                onMouseLeave={() => setIsDropdownButtonHovered(false)}
-              >
-                Save automation
-              </button>
-            </div>
-          )}
-        </div>
+        {menus.map(menu => (
+          <div key={menu.key} ref={refs[menu.key as keyof typeof refs]} style={{ position: 'relative' }}>
+            <button
+              style={{ ...styles.buttons, background: hoverMenu === menu.key ? '#333' : 'transparent' }}
+              onClick={() => setOpenMenu(openMenu === menu.key ? null : menu.key)}
+              onMouseEnter={() => setHoverMenu(menu.key)}
+              onMouseLeave={() => setHoverMenu(null)}
+            >
+              {menu.label}
+            </button>
+            {openMenu === menu.key && (
+              <div style={styles.dropdown}>
+                {menu.items.map(item => (
+                  <button
+                    key={item.label}
+                    style={styles.dropdownButton}
+                    onClick={() => { item.action(); setOpenMenu(null); }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -67,11 +78,10 @@ const styles = {
   items: {
     display: 'flex',
     alignItems: 'center',
-    gap: 16,
   },
   buttons: {
-    padding: '4px 8px',
-    fontSize: 12,
+    padding: '4px 16px',
+    fontSize: 14,
     background: 'transparent',
     color: '#fff',
     border: 'none',
