@@ -237,9 +237,8 @@ const Canvas: React.FC = () => {
       setMobileNodes(ns => [...ns, { id, x, y, width: w, height: h, label: 'Node'}]);
     };
 
-    // Ajout de node uniquement si on tape sur le fond
+    // Ajout de node
     const handleBackgroundPress = (e: any) => {
-      // Vérifie si le tap est sur un node
       const cx = e.nativeEvent.locationX;
       const cy = e.nativeEvent.locationY;
       const tappedNode = mobileNodes.find(n => {
@@ -250,7 +249,6 @@ const Canvas: React.FC = () => {
         return cx >= left && cx <= right && cy >= top && cy <= bottom;
       });
       if (tappedNode) return;
-      // Ajoute un node sinon
       const w = 96;
       const h = 96;
       const snapOffX = computeSnapOffset(w, gridPx);
@@ -261,7 +259,7 @@ const Canvas: React.FC = () => {
       setMobileNodes(ns => [...ns, { id, x, y, width: w, height: h, label: 'Node'}]);
     };
 
-    // Drag global : un seul node à la fois
+    // Drag global
     const [dragNodeIdx, setDragNodeIdx] = useState<number | null>(null);
     const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
     const panResponder = PanResponder.create({
