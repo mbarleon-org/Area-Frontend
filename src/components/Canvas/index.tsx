@@ -1,6 +1,9 @@
+
+
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import Node from "./Node";
 import EditMenu from "./EditMenu";
+import { isWeb } from "../../utils/IsWeb";
 import CenterControl from "./CenterControl";
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
@@ -211,6 +214,19 @@ const Canvas: React.FC = () => {
     touchAction: "none",
   };
 
+// ------------------------------ Mobile view ------------------------------------
+  if (!isWeb) {
+    const { View, Text } = require('react-native');
+    return (
+      <View style={{ paddingLeft: 24, minHeight: '100%', backgroundColor: '#151316ff', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={mobileStyles.menuText}>
+          Привет, мир
+        </Text>
+      </View>
+    );
+  }
+
+// ------------------------------ Web view ----------------------------------------
 
   return (
     <div
@@ -307,6 +323,17 @@ const Canvas: React.FC = () => {
       )}
     </div>
   );
+};
+
+// StyleSheet pour le mobile
+const mobileStyles : any = {
+  menuText: {
+    fontSize: 24,
+    color: '#fff',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    margin: 8,
+  },
 };
 
 export default Canvas;
