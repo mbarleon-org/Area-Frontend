@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Feather } from '@expo/vector-icons';
 import { isWeb } from "../../utils/IsWeb";
 import { useToken } from "../../hooks/useToken";
-import { useNavigate, useInRouterContext } from 'react-router-dom';
+import { useNavigate, useInRouterContext } from '../../utils/router';
 
 let safeUseNavigation: any = () => ({
   navigate: (_: any) => { },

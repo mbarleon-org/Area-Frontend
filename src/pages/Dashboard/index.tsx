@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import '../../index.css';
 import { isWeb } from "../../utils/IsWeb";
 import Navbar from '../../components/Navbar';
+import { NavLink } from '../../utils/router';
 import { TextBase } from 'react-native';
 
 const NavLinkWrapper: React.FC<any> = ({ children, ...props }) => {
   if (typeof document !== 'undefined') {
-    const { NavLink } = require('react-router-dom');
     return <NavLink {...props}>{children}</NavLink>;
   }
   try {

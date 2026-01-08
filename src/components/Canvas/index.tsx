@@ -2,9 +2,13 @@
 
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import Node from "./Node";
+import { useApi } from "../../utils/UseApi";
 import EditMenu from "./EditMenu";
 import { isWeb } from "../../utils/IsWeb";
 import CenterControl from "./CenterControl";
+import AddNode from "./AddNode";
+import BottomBar from "./BottomBar";
+import BinButton from "./BinButton";
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
@@ -13,11 +17,12 @@ const Canvas: React.FC = () => {
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const initialPosSet = useRef(false);
+  const binButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
 
-  type NodeItem = { id: string; x: number; y: number; width?: number; height?: number; label?: string };
+  type NodeItem = { id: string; x: number; y: number; width?: number; height?: number; label?: string; icon?: string; module?: any; connectionPoints?: Array<{ side: 'left'|'right'|'top'|'bottom'; offset: number; size?: number }> };
   const [nodes, setNodes] = useState<NodeItem[]>([]);
   type EndpointRef = { nodeId?: string; side?: 'left' | 'right' | 'top' | 'bottom'; offset?: number; worldX?: number; worldY?: number; index?: number };
   type LineItem = { a: EndpointRef; b: EndpointRef; stroke?: string; strokeWidth?: number };
@@ -29,32 +34,86 @@ const Canvas: React.FC = () => {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const editMenuRef = useRef<import("./EditMenu").EditMenuHandle | null>(null);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const { get } = useApi();
+  const [modules, setModules] = useState<Array<{ name: string; data: any }>>([]);
 
   const computeSnapOffset = (worldSize: number, gridPx: number) => {
     const cells = Math.round(worldSize / gridPx);
     return (cells % 2 === 0) ? 0 : gridPx / 2;
   };
 
-  const handleAddNode = useCallback((e: React.MouseEvent) => {
+  const handleAddNode = useCallback(() => {
+    setShowAddMenu(true);
+  }, [offset.x, offset.y, scale, gridPx]);
+
+  const handleAddFromMenu = useCallback((node: any) => {
+    setNodes((ns) => [...ns, node]);
+    setShowAddMenu(false);
+  }, []);
+
+  type DragPayload = {
+    name: string;
+    module: any;
+    icon?: string | null;
+    width?: number;
+    height?: number;
+    connectionPoints?: Array<{ side: 'left'|'right'|'top'|'bottom'; offset: number; size?: number }>;
+  };
+
+  const handleDropOnCanvas = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
     const el = containerRef.current;
-    if (!el)
+    if (!el) return;
+
+    const json = e.dataTransfer.getData("application/json") || e.dataTransfer.getData("text/plain");
+    if (!json) return;
+    let payload: DragPayload | null = null;
+    try {
+      payload = JSON.parse(json);
+    } catch (err) {
       return;
+    }
+    if (!payload) return;
+
     const rect = el.getBoundingClientRect();
     const cx = e.clientX - rect.left;
     const cy = e.clientY - rect.top;
     const worldX = (cx - offset.x) / scale;
     const worldY = (cy - offset.y) / scale;
-    const w = 96;
-    const h = 96;
+    const w = payload.width || 240;
+    const h = payload.height || 120;
     const snapOffX = computeSnapOffset(w, gridPx);
     const snapOffY = computeSnapOffset(h, gridPx);
     const x = Math.round((worldX - snapOffX) / gridPx) * gridPx + snapOffX;
     const y = Math.round((worldY - snapOffY) / gridPx) * gridPx + snapOffY;
-    const id = `n${Date.now()}`;
-    setNodes(ns => [...ns, { id, x, y, width: w, height: h, label: 'Node'}] );
-  }, [offset.x, offset.y, scale, gridPx]);
+
+    const newNode: NodeItem = {
+      id: `n${Date.now()}`,
+      x,
+      y,
+      width: w,
+      height: h,
+      label: payload.name || "New Node",
+      icon: payload.icon || undefined,
+      module: payload.module,
+      connectionPoints: payload.connectionPoints,
+    };
+    setNodes((ns) => [...ns, newNode]);
+  }, [gridPx, offset.x, offset.y, scale]);
+
+  const handleRemoveNode = useCallback((nodeId: string) => {
+    console.log('Remove node', nodeId);
+    setNodes((ns) => ns.filter((n) => n.id !== nodeId));
+    setLines((ls) => ls.filter((l) => l.a.nodeId !== nodeId && l.b.nodeId !== nodeId));
+    setSelectedId((sid) => (sid === nodeId ? null : sid));
+  }, []);
 
   const handleCanvasClick = useCallback(() => {
+    if (showAddMenu) {
+      setShowAddMenu(false);
+      return;
+    }
     if (hoveredLineIndex !== null) {
       setLines(ls => ls.filter((_, i) => i !== hoveredLineIndex));
       setHoveredLineIndex(null);
@@ -65,9 +124,10 @@ const Canvas: React.FC = () => {
       return;
     }
     setSelectedId(null);
-  }, [hoveredLineIndex]);
+  }, [hoveredLineIndex, showAddMenu, setShowAddMenu, setLines, setHoveredLineIndex, setSelectedId]);
 
   const onDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (showAddMenu) return;
     dragging.current = true;
     const isTouch = "touches" in e;
     const p = isTouch ? (e as React.TouchEvent).touches[0] : (e as React.MouseEvent).nativeEvent;
@@ -75,9 +135,10 @@ const Canvas: React.FC = () => {
     if (typeof document !== 'undefined') (document.activeElement as HTMLElement)?.blur();
     if (!isTouch)
       (e as React.MouseEvent).preventDefault();
-  }, []);
+  }, [showAddMenu]);
 
   const onMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (showAddMenu) return;
     const p = "touches" in e ? (e as React.TouchEvent).touches[0] : (e as React.MouseEvent).nativeEvent;
     const clientX = p.clientX;
     const clientY = p.clientY;
@@ -104,8 +165,8 @@ const Canvas: React.FC = () => {
           if (node) {
             let wx = node.x;
             let wy = node.y;
-            const w = node.width || 96;
-            const h = node.height || 96;
+            const w = node.width || 240;
+            const h = node.height || 120;
             if (ep.side === 'right') {
               wx = node.x + w / 2; wy = node.y + (ep.offset || 0);
             } else if (ep.side === 'left') {
@@ -137,7 +198,7 @@ const Canvas: React.FC = () => {
     const threshold = 10;
     if (bestIndex !== null && bestDist <= threshold) setHoveredLineIndex(bestIndex);
     else setHoveredLineIndex(null);
-  }, [lines, nodes, offset.x, offset.y, scale]);
+  }, [lines, nodes, offset.x, offset.y, scale, showAddMenu]);
 
   const onUp = useCallback(() => {
     dragging.current = false;
@@ -148,6 +209,7 @@ const Canvas: React.FC = () => {
     if (!el)
         return;
     const wheel = (e: WheelEvent) => {
+      if (showAddMenu) return;
       e.preventDefault();
       const delta = -e.deltaY;
       const rect = el.getBoundingClientRect();
@@ -165,7 +227,7 @@ const Canvas: React.FC = () => {
     };
     el.addEventListener('wheel', wheel, { passive: false });
     return () => el.removeEventListener('wheel', wheel as EventListener);
-  }, [scale, setScale]);
+  }, [scale, setScale, showAddMenu]);
 
   useEffect(() => {
     if (initialPosSet.current) return;
@@ -174,17 +236,32 @@ const Canvas: React.FC = () => {
     const rect = el.getBoundingClientRect();
     const cx = rect.width / 2;
     const cy = rect.height / 2;
-    const w = 96;
-    const h = 96;
+    const w = 240;
+    const h = 120;
     const rawWorldX = (cx - offset.x) / scale;
     const rawWorldY = (cy - offset.y) / scale;
     const snapOffX = computeSnapOffset(w, gridPx);
     const snapOffY = computeSnapOffset(h, gridPx);
     const x = Math.round((rawWorldX - snapOffX) / gridPx) * gridPx + snapOffX;
     const y = Math.round((rawWorldY - snapOffY) / gridPx) * gridPx + snapOffY;
-    setNodes([{ id: 'n1', x, y, width: w, height: h, label: 'Loïs' }]);
+    setNodes([{ id: 'n1', x, y, width: w, height: h, label: 'Default' }]);
     initialPosSet.current = true;
   }, [offset.x, offset.y, scale]);
+
+  useEffect(() => {
+    let mounted = true;
+    get('/modules')
+      .then((res: any) => {
+        if (!mounted) return;
+        const modulesObj = res?.modules || res || {};
+        const list = Object.entries(modulesObj).map(([name, data]) => ({ name, data }));
+        setModules(list);
+      })
+      .catch((err: any) => {
+        console.error('Failed to load modules (canvas)', err);
+      });
+    return () => { mounted = false; };
+  }, [get]);
 
   const bgSize1 = `${gridPx * scale}px ${gridPx * scale}px`;
   const bgSize2 = `${gridPx * 8 * scale}px ${gridPx * 8 * scale}px`;
@@ -409,7 +486,7 @@ const Canvas: React.FC = () => {
       onTouchMove={onMove}
   onTouchEnd={onUp}
     >
-  <div style={canvasStyle} onClick={handleCanvasClick} onDoubleClick={handleAddNode}>
+  <div style={canvasStyle} onClick={handleCanvasClick} onDoubleClick={handleAddNode} onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnCanvas}>
         <svg style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
           {lines.map((l, i) => {
             const resolve = (ep: EndpointRef) => {
@@ -460,7 +537,8 @@ const Canvas: React.FC = () => {
             offset={offset}
             gridPx={gridPx}
             label={n.label}
-            connectionPoints={[{ side: 'right', offset: 0 }, { side: 'left', offset: 0 }, { side: 'top', offset: 0 }, { side: 'bottom', offset: 0 }]}
+            icon={n.icon ? <img src={n.icon} alt={n.label ?? n.id} style={{ width: '40px', height: '40px', objectFit: 'contain' }} /> : undefined}
+            connectionPoints={n.connectionPoints || [{ side: 'right', offset: 0 }, { side: 'left', offset: 0 }, { side: 'top', offset: 0 }, { side: 'bottom', offset: 0 }]}
             onConnectorClick={(info) => {
               if (!pendingConnection) {
                 setPendingConnection(info);
@@ -470,6 +548,29 @@ const Canvas: React.FC = () => {
               const b = info;
               setLines(ls => [...ls, { a: { nodeId: a.nodeId, side: a.side, offset: a.offset, worldX: a.worldX, worldY: a.worldY }, b: { nodeId: b.nodeId, side: b.side, offset: b.offset, worldX: b.worldX, worldY: b.worldY }, stroke: '#fff', strokeWidth: 4 }]);
               setPendingConnection(null);
+            }}
+            onDragEnd={({ id: draggedId, screenX, screenY }) => {
+              console.log('Node drag end', draggedId, screenX, screenY);
+              if (!draggedId) return;
+              const binEl = binButtonRef.current;
+              console.log('Bin element', binEl);
+              if (!binEl) return;
+              const rect = binEl.getBoundingClientRect();
+              console.log('Bin rect', rect);
+              console.log('Screen pos', screenX, screenY);
+              console.log(`screenX >= rect.left ${screenX} >= ${rect.left}`, screenX >= rect.left);
+              console.log(`screenX <= rect.right ${screenX} <= ${rect.right}`, screenX <= rect.right);
+              console.log(`screenY >= rect.top ${screenY} >= ${rect.top}`, screenY >= rect.top);
+              console.log(`screenY <= rect.bottom ${screenY} <= ${rect.bottom}`, screenY <= rect.bottom);
+              const isOverBin =
+                screenX >= rect.left &&
+                screenX <= rect.right &&
+                screenY >= rect.top &&
+                screenY <= rect.bottom;
+
+              if (isOverBin) {
+                handleRemoveNode(draggedId);
+              }
             }}
           />
         ))}
@@ -482,6 +583,9 @@ const Canvas: React.FC = () => {
           nodes={nodes}
         />
       </div>
+      {showAddMenu && <AddNode onClose={() => setShowAddMenu(false)} onAdd={handleAddFromMenu} modules={modules} />}
+      <BottomBar />
+      <BinButton ref={binButtonRef} />
       {selectedId && (
         <EditMenu
           node={nodes.find(n => n.id === selectedId) || null}
