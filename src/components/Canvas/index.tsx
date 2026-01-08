@@ -19,7 +19,21 @@ const Canvas: React.FC = () => {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
 
-  type NodeItem = { id: string; x: number; y: number; width?: number; height?: number; label?: string; icon?: string; module?: any; connectionPoints?: Array<{ side: 'left'|'right'|'top'|'bottom'; offset: number; size?: number }> };
+  type NodeItem = {
+    id: string;
+    x: number;
+    y: number;
+    width?: number;
+    height?: number;
+    label?: string;
+    icon?: string;
+    module?: any;
+    connectionPoints?: Array<{ side: 'left'|'right'|'top'|'bottom'; offset: number; size?: number }>;
+    inputs?: Record<string, string>;
+    outputs?: Record<string, string>;
+    options?: Record<string, any>;
+    credential_id?: string;
+  };
   const [nodes, setNodes] = useState<NodeItem[]>([]);
   type EndpointRef = { nodeId?: string; side?: 'left' | 'right' | 'top' | 'bottom'; offset?: number; worldX?: number; worldY?: number; index?: number };
   type LineItem = { a: EndpointRef; b: EndpointRef; stroke?: string; strokeWidth?: number };
@@ -390,7 +404,7 @@ const Canvas: React.FC = () => {
         />
       </div>
       {showAddMenu && <AddNode onClose={() => setShowAddMenu(false)} onAdd={handleAddFromMenu} modules={modules} />}
-      <TopBar />
+      <TopBar nodes={nodes} lines={lines} />
       <BinButton ref={binButtonRef} />
       {selectedId && (
         <EditMenu

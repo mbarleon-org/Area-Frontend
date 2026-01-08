@@ -1,9 +1,83 @@
 import React, { useState, useRef, useEffect } from 'react';
+import SaveWorkflowModal from './SaveWorkflowModal';
+import { convertCanvasToWorkflow, validateWorkflow, type NodeItem, type LineItem } from '../../utils/workflowConverter';
+import { useApi } from '../../utils/UseApi';
 
-const TopBar: React.FC = () => {
+type Props = {
+  nodes?: NodeItem[];
+  lines?: LineItem[];
+  onRecenter?: () => void;
+};
+
+const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter }) => {
+  const { post } = useApi();
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const handleSaveWorkflow = async (config: { name: string; description: string; enabled: boolean }) => {
+    setSaveLoading(true);
+    setSaveError(null);
+
+    try {
+      // Convert canvas to workflow
+      const workflow = convertCanvasToWorkflow(nodes, lines, {
+        name: config.name,
+        description: config.description,
+        enabled: config.enabled,
+      });
+
+      // Validate workflow
+      const validation = validateWorkflow(workflow);
+      if (!validation.valid) {
+        setSaveError(validation.errors.join(', '));
+        setSaveLoading(false);
+        return;
+      }
+
+      // Send to API
+      console.log('Saving workflow:', workflow);
+      await post('/workflows', workflow);
+
+      setShowSaveModal(false);
+      console.log('Workflow saved successfully:', workflow);
+    } catch (err: any) {
+      const message = err?.response?.data?.message || err?.message || 'Failed to save workflow';
+      setSaveError(message);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
   const menus = [
-    { key: 'file', label: 'File', items: [{ label: 'Save automation', action: () => console.log('Save automation') }] },
-    { key: 'view', label: 'View', items: [{ label: 'View options', action: () => console.log('View options') }] },
+    {
+      key: 'file',
+      label: 'File',
+      items: [
+        { label: 'Save workflow', action: () => setShowSaveModal(true) },
+        { label: 'Export as JSON', action: () => {
+          const workflow = convertCanvasToWorkflow(nodes, lines, {
+            name: 'Exported Workflow',
+            description: 'Exported from canvas',
+          });
+          const json = JSON.stringify(workflow, null, 2);
+          const blob = new Blob([json], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `workflow-${Date.now()}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }},
+      ]
+    },
+    {
+      key: 'view',
+      label: 'View',
+      items: [
+        { label: 'Recenter', action: () => onRecenter?.() || console.log('Recenter') },
+      ]
+    },
   ];
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -28,37 +102,49 @@ const TopBar: React.FC = () => {
   }, [openMenu]);
 
   return (
-    <div style={styles.container} aria-hidden={false}>
-      <div style={styles.items}>
-        {menus.map(menu => (
-          <div key={menu.key} ref={refs[menu.key as keyof typeof refs]} style={{ position: 'relative' }}>
-            <button
-              style={{ ...styles.buttons, background: hoverMenu === menu.key ? '#333' : 'transparent' }}
-              onClick={() => setOpenMenu(openMenu === menu.key ? null : menu.key)}
-              onMouseEnter={() => setHoverMenu(menu.key)}
-              onMouseLeave={() => setHoverMenu(null)}
-            >
-              {menu.label}
-            </button>
-            {openMenu === menu.key && (
-              <div style={styles.dropdown}>
-                {menu.items.map(item => (
-                  <button
-                    key={item.label}
-                    style={{ ...styles.dropdownButton, background: hoverDropdownItem === item.label ? '#222' : 'transparent' }}
-                    onClick={() => { item.action(); setOpenMenu(null); }}
-                    onMouseEnter={() => setHoverDropdownItem(item.label)}
-                    onMouseLeave={() => setHoverDropdownItem(null)}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+    <>
+      <div style={styles.container} aria-hidden={false}>
+        <div style={styles.items}>
+          {menus.map(menu => (
+            <div key={menu.key} ref={refs[menu.key as keyof typeof refs]} style={{ position: 'relative' }}>
+              <button
+                style={{ ...styles.buttons, background: hoverMenu === menu.key ? '#333' : 'transparent' }}
+                onClick={() => setOpenMenu(openMenu === menu.key ? null : menu.key)}
+                onMouseEnter={() => setHoverMenu(menu.key)}
+                onMouseLeave={() => setHoverMenu(null)}
+              >
+                {menu.label}
+              </button>
+              {openMenu === menu.key && (
+                <div style={styles.dropdown}>
+                  {menu.items.map(item => (
+                    <button
+                      key={item.label}
+                      style={{ ...styles.dropdownButton, background: hoverDropdownItem === item.label ? '#222' : 'transparent' }}
+                      onClick={() => { item.action(); setOpenMenu(null); }}
+                      onMouseEnter={() => setHoverDropdownItem(item.label)}
+                      onMouseLeave={() => setHoverDropdownItem(null)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+      <SaveWorkflowModal
+        isOpen={showSaveModal}
+        onClose={() => {
+          setShowSaveModal(false);
+          setSaveError(null);
+        }}
+        onSave={handleSaveWorkflow}
+        loading={saveLoading}
+        error={saveError}
+      />
+    </>
   );
 };
 
@@ -98,7 +184,7 @@ const styles = {
     border: '1px solid #ffffff68',
     borderRadius: 8,
     zIndex: 1700,
-    minWidth: '300px',
+    minWidth: '200px',
   },
   dropdownButton: {
     width: '100%',
