@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { requiredStyle } from './EditMenu/EditMenu.styles';
 
 type Props = {
   isOpen: boolean;
@@ -7,7 +8,7 @@ type Props = {
   initialName?: string;
   initialDescription?: string;
   loading?: boolean;
-  error?: string | null;
+  error?: string | string[] | null;
 };
 
 const SaveWorkflowModal: React.FC<Props> = ({
@@ -32,6 +33,27 @@ const SaveWorkflowModal: React.FC<Props> = ({
     }
   }, [isOpen, initialName, initialDescription]);
 
+  useEffect(() => {
+    if (!isOpen)
+      return;
+
+    if (typeof document === 'undefined' || typeof window === 'undefined')
+      return;
+
+    const previousOverflow = document.body.style.overflow;
+    const preventScroll = (e: Event) => e.preventDefault();
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('wheel', preventScroll, { passive: false });
+    window.addEventListener('touchmove', preventScroll, { passive: false });
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('wheel', preventScroll);
+      window.removeEventListener('touchmove', preventScroll);
+    };
+  }, [isOpen]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -41,7 +63,12 @@ const SaveWorkflowModal: React.FC<Props> = ({
   if (!isOpen) return null;
 
   return (
-    <div style={styles.overlay} onClick={onClose}>
+    <div
+      style={styles.overlay}
+      onClick={onClose}
+      onWheel={(e) => e.preventDefault()}
+      onTouchMove={(e) => e.preventDefault()}
+    >
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
           <h2 style={styles.title}>Save Workflow</h2>
@@ -50,7 +77,10 @@ const SaveWorkflowModal: React.FC<Props> = ({
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.field}>
-            <label style={styles.label}>Workflow Name *</label>
+            <label style={{ ...styles.label, display: 'flex', alignItems: 'center' }}>
+              <span>Workflow Name</span>
+              <span style={requiredStyle}>*</span>
+            </label>
             <input
               ref={nameInputRef}
               type="text"
@@ -90,7 +120,13 @@ const SaveWorkflowModal: React.FC<Props> = ({
 
           {error && (
             <div style={styles.error}>
-              {error}
+              {Array.isArray(error) ? (
+                <ul style={styles.errorList}>
+                  {error.map((msg, idx) => (
+                    <li key={`${msg}-${idx}`}>{msg}</li>
+                  ))}
+                </ul>
+              ) : error}
             </div>
           )}
 
@@ -218,6 +254,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     border: '1px solid rgba(255, 100, 100, 0.3)',
     color: '#ff8888',
     fontSize: 13,
+  },
+  errorList: {
+    margin: 0,
+    paddingLeft: 16,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
   },
   actions: {
     display: 'flex',

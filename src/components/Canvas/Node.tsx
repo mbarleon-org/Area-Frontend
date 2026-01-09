@@ -23,6 +23,7 @@ type NodeProps = {
   iconMaxPx?: number;
   iconMinPx?: number;
   onDragEnd?: (info: { id?: string; screenX: number; screenY: number }) => void;
+  disableDrag?: boolean;
 };
 
 const computeSnapOffset = (worldSize: number, gridPx: number) => {
@@ -30,7 +31,7 @@ const computeSnapOffset = (worldSize: number, gridPx: number) => {
   return (cells % 2 === 0) ? 0 : gridPx / 2;
 };
 
-const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, height = 96, scale, offset, gridPx, label, icon, connectionPoints, onConnectorClick, iconMaxPx = 64, iconMinPx = 12, onDragEnd }) => {
+const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, height = 96, scale, offset, gridPx, label, icon, connectionPoints, onConnectorClick, iconMaxPx = 64, iconMinPx = 12, onDragEnd, disableDrag = false }) => {
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const pointerOffset = useRef({ x: 0, y: 0 });
@@ -126,7 +127,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
     alignItems: 'center',
     justifyContent: 'center',
     color: '#fff',
-    cursor: dragging.current ? 'grabbing' : 'grab',
+    cursor: disableDrag ? 'default' : (dragging.current ? 'grabbing' : 'grab'),
     userSelect: 'none',
     touchAction: 'none',
     overflow: 'visible',
@@ -216,6 +217,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
       onDoubleClick={(e) => { e.stopPropagation(); }}
       onMouseDown={(e) => {
         e.stopPropagation();
+        if (disableDrag) return;
         dragging.current = true;
         lastPos.current = { x: e.clientX, y: e.clientY };
         dragStart.current = { x: e.clientX, y: e.clientY };
@@ -233,6 +235,7 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
       }}
       onTouchStart={(e) => {
         e.stopPropagation();
+        if (disableDrag) return;
         const t = e.touches[0];
         dragging.current = true;
         lastPos.current = { x: t.clientX, y: t.clientY };

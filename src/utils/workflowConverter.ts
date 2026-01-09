@@ -72,6 +72,24 @@ export type Workflow = {
   ownerTeams: string[];
 };
 
+export const getModuleProvider = (moduleData: any): string | null => {
+  if (!moduleData)
+    return null;
+  const keys = [
+    ...Object.keys(moduleData.actions || {}),
+    ...Object.keys(moduleData.triggers || {}),
+  ].map((k) => k.toLowerCase());
+
+  if (keys.some((k) => k.includes('gmail') || k.includes('google.mail')))
+    return 'gmail';
+  if (keys.some((k) => k.includes('redis')))
+    return 'redis';
+  if (keys.some((k) => k.includes('imap')))
+    return 'imap';
+
+  return null;
+};
+
 /**
  * Determines if a module is a trigger by checking if it has triggers defined
  */
@@ -165,6 +183,38 @@ function generateTriggerPath(workflowId: string, triggerType: string): string | 
 /**
  * Main function to convert canvas nodes and lines to a workflow structure
  */
+export const isEmptyValue = (val: any): boolean => {
+  if (val === null || val === undefined)
+    return true;
+  if (typeof val === 'string')
+    return val.trim() === '';
+  return false;
+};
+
+export const collectModuleSpecs = (moduleData: any) => {
+  const specs = { inputs: [] as any[], options: [] as any[] };
+  if (!moduleData)
+    return specs;
+
+  const firstActionSpec = moduleData.actions && Object.keys(moduleData.actions).length > 0
+    ? moduleData.actions[Object.keys(moduleData.actions)[0]]?.spec
+    : null;
+  const firstTriggerSpec = moduleData.triggers && Object.keys(moduleData.triggers).length > 0
+    ? moduleData.triggers[Object.keys(moduleData.triggers)[0]]?.spec
+    : null;
+
+  if (firstActionSpec?.inputs)
+    specs.inputs.push(...firstActionSpec.inputs);
+  if (firstActionSpec?.options)
+    specs.options.push(...firstActionSpec.options);
+  if (firstTriggerSpec?.inputs)
+    specs.inputs.push(...firstTriggerSpec.inputs);
+  if (firstTriggerSpec?.options)
+    specs.options.push(...firstTriggerSpec.options);
+
+  return specs;
+};
+
 export function convertCanvasToWorkflow(
   nodes: NodeItem[],
   lines: LineItem[],
@@ -264,6 +314,68 @@ export function convertCanvasToWorkflow(
     userTeams: [],
     ownerTeams: [],
   };
+}
+
+export function validateCanvasData(
+  nodes: NodeItem[],
+  lines: LineItem[],
+): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  const connectedNodeIds = new Set<string>();
+  const fullyConnectedLines = lines.filter((line) => line.a.nodeId && line.b.nodeId);
+
+  for (const line of fullyConnectedLines) {
+    if (line.a.nodeId)
+      connectedNodeIds.add(line.a.nodeId);
+    if (line.b.nodeId)
+      connectedNodeIds.add(line.b.nodeId);
+  }
+
+  if (fullyConnectedLines.length === 0)
+    errors.push('Please add at least one connection between nodes.');
+
+  for (const node of nodes) {
+    if (!node?.module)
+      continue;
+
+    const isConnected = connectedNodeIds.has(node.id);
+    if (!isConnected)
+      continue;
+
+    const provider = getModuleProvider(node.module);
+    if (provider && !node.credential_id)
+      errors.push(`Le node "${node.label || node.id}" require un credential pour ${provider}.`);
+
+    const { inputs, options } = collectModuleSpecs(node.module);
+    const requiredInputs = inputs.filter((input: any) => input?.required);
+    const requiredOptions = options.filter((option: any) => option?.required);
+
+    const missingInputs = requiredInputs.filter((input: any) =>
+      isEmptyValue(node.inputs?.[input.id]));
+    const missingOptions = requiredOptions.filter((option: any) =>
+      isEmptyValue((node.options ?? {})[option.id]));
+
+    if (missingInputs.length === 0 && missingOptions.length === 0)
+      continue;
+
+    const label = node.label || node.id;
+    const parts: string[] = [];
+
+    if (missingInputs.length > 0) {
+      const names = missingInputs.map((input: any) => input.pretty_name || input.id).join(', ');
+      parts.push(`required input${missingInputs.length > 1 ? 's' : ''} missing: ${names}`);
+    }
+
+    if (missingOptions.length > 0) {
+      const names = missingOptions.map((option: any) => option.pretty_name || option.id).join(', ');
+      parts.push(`required option${missingOptions.length > 1 ? 's' : ''} missing: ${names}`);
+    }
+
+    errors.push(`"${label}" node must fill ${parts.join(' | ')}.`);
+  }
+
+  return { valid: errors.length === 0, errors };
 }
 
 /**

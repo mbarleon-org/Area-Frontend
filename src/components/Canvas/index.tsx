@@ -16,6 +16,8 @@ const Canvas: React.FC = () => {
   const initialPosSet = useRef(false);
   const binButtonRef = useRef<HTMLButtonElement | null>(null);
 
+  type CredentialItem = { id: string; provider?: string; type?: string; name?: string; metadata?: Record<string, any> };
+
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
 
@@ -40,14 +42,51 @@ const Canvas: React.FC = () => {
   const [lines, setLines] = useState<LineItem[]>([]);
   const [pendingConnection, setPendingConnection] = useState<null | EndpointRef>(null);
   const [hoveredLineIndex, setHoveredLineIndex] = useState<number | null>(null);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [credentials, setCredentials] = useState<CredentialItem[]>([]);
 
   const gridPx = 24;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const isEditMenuOpen = selectedId !== null;
   const editMenuRef = useRef<import("./EditMenu").EditMenuHandle | null>(null);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const interactionLocked = showAddMenu || isEditMenuOpen || isSaveModalOpen;
   const { get } = useApi();
   const [modules, setModules] = useState<Array<{ name: string; data: any }>>([]);
+  const fetchCredentials = useCallback(async () => {
+    try {
+      const res = await get('/credentials');
+
+      const normalize = (raw: any): CredentialItem => {
+        // CORRECTION : On garde l'objet racine 'raw' qui contient id, name, type.
+        // On ne descend PAS dans raw.credential qui contient juste le blob crypté.
+        const base = raw || {};
+
+        // Calcul du provider basé sur le type (ex: 'gmail.email_app_password' -> 'gmail')
+        const provider = base.provider || (typeof base.type === 'string' ? base.type.split('.')?.[0] : undefined);
+
+        return { ...base, provider };
+      };
+
+      const arr = Array.isArray(res)
+        ? res
+        : Array.isArray((res as any)?.credentials)
+          ? (res as any).credentials
+          : Array.isArray((res as any)?.credentials?.credentials)
+            ? (res as any).credentials.credentials
+            : [];
+
+      console.log('Fetched credentials (canvas):', arr);
+      setCredentials(arr.map(normalize));
+    } catch (err: any) {
+      if (err?.response?.status === 404) {
+        setCredentials([]);
+      } else {
+        console.error('Failed to load credentials (canvas)', err);
+      }
+    }
+  }, [get]);
 
   const computeSnapOffset = (worldSize: number, gridPx: number) => {
     const cells = Math.round(worldSize / gridPx);
@@ -61,6 +100,12 @@ const Canvas: React.FC = () => {
   const handleAddFromMenu = useCallback((node: any) => {
     setNodes((ns) => [...ns, node]);
     setShowAddMenu(false);
+  }, []);
+
+  const handleRemoveNode = useCallback((nodeId: string) => {
+    setNodes((ns) => ns.filter((n) => n.id !== nodeId));
+    setLines((ls) => ls.filter((l) => l.a.nodeId !== nodeId && l.b.nodeId !== nodeId));
+    setSelectedId((sid) => (sid === nodeId ? null : sid));
   }, []);
 
   type DragPayload = {
@@ -113,12 +158,6 @@ const Canvas: React.FC = () => {
     setNodes((ns) => [...ns, newNode]);
   }, [gridPx, offset.x, offset.y, scale]);
 
-  const handleRemoveNode = useCallback((nodeId: string) => {
-    setNodes((ns) => ns.filter((n) => n.id !== nodeId));
-    setLines((ls) => ls.filter((l) => l.a.nodeId !== nodeId && l.b.nodeId !== nodeId));
-    setSelectedId((sid) => (sid === nodeId ? null : sid));
-  }, []);
-
   const handleCanvasClick = useCallback(() => {
     if (showAddMenu) {
       setShowAddMenu(false);
@@ -134,10 +173,10 @@ const Canvas: React.FC = () => {
       return;
     }
     setSelectedId(null);
-  }, [hoveredLineIndex, showAddMenu, setShowAddMenu, setLines, setHoveredLineIndex, setSelectedId]);
+  }, [hoveredLineIndex, showAddMenu]);
 
   const onDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (showAddMenu) return;
+    if (interactionLocked) return;
     dragging.current = true;
     const isTouch = "touches" in e;
     const p = isTouch ? (e as React.TouchEvent).touches[0] : (e as React.MouseEvent).nativeEvent;
@@ -145,10 +184,10 @@ const Canvas: React.FC = () => {
     if (typeof document !== 'undefined') (document.activeElement as HTMLElement)?.blur();
     if (!isTouch)
       (e as React.MouseEvent).preventDefault();
-  }, [showAddMenu]);
+  }, [interactionLocked]);
 
   const onMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (showAddMenu) return;
+    if (interactionLocked) return;
     const p = "touches" in e ? (e as React.TouchEvent).touches[0] : (e as React.MouseEvent).nativeEvent;
     const clientX = p.clientX;
     const clientY = p.clientY;
@@ -208,7 +247,7 @@ const Canvas: React.FC = () => {
     const threshold = 10;
     if (bestIndex !== null && bestDist <= threshold) setHoveredLineIndex(bestIndex);
     else setHoveredLineIndex(null);
-  }, [lines, nodes, offset.x, offset.y, scale, showAddMenu]);
+  }, [lines, nodes, offset.x, offset.y, scale, interactionLocked]);
 
   const onUp = useCallback(() => {
     dragging.current = false;
@@ -219,7 +258,7 @@ const Canvas: React.FC = () => {
     if (!el)
         return;
     const wheel = (e: WheelEvent) => {
-      if (showAddMenu) return;
+      if (interactionLocked) return;
       e.preventDefault();
       const delta = -e.deltaY;
       const rect = el.getBoundingClientRect();
@@ -237,7 +276,7 @@ const Canvas: React.FC = () => {
     };
     el.addEventListener('wheel', wheel, { passive: false });
     return () => el.removeEventListener('wheel', wheel as EventListener);
-  }, [scale, setScale, showAddMenu]);
+  }, [scale, setScale, interactionLocked]);
 
   useEffect(() => {
     if (initialPosSet.current) return;
@@ -272,6 +311,10 @@ const Canvas: React.FC = () => {
       });
     return () => { mounted = false; };
   }, [get]);
+
+  useEffect(() => {
+    fetchCredentials();
+  }, [fetchCredentials]);
 
   const bgSize1 = `${gridPx * scale}px ${gridPx * scale}px`;
   const bgSize2 = `${gridPx * 8 * scale}px ${gridPx * 8 * scale}px`;
@@ -367,7 +410,9 @@ const Canvas: React.FC = () => {
             label={n.label}
             icon={n.icon ? <img src={n.icon} alt={n.label ?? n.id} style={{ width: '40px', height: '40px', objectFit: 'contain' }} /> : undefined}
             connectionPoints={n.connectionPoints || [{ side: 'right', offset: 0 }, { side: 'left', offset: 0 }, { side: 'top', offset: 0 }, { side: 'bottom', offset: 0 }]}
+            disableDrag={isEditMenuOpen || isSaveModalOpen}
             onConnectorClick={(info) => {
+              if (interactionLocked) return;
               if (!pendingConnection) {
                 setPendingConnection(info);
                 return;
@@ -404,13 +449,20 @@ const Canvas: React.FC = () => {
         />
       </div>
       {showAddMenu && <AddNode onClose={() => setShowAddMenu(false)} onAdd={handleAddFromMenu} modules={modules} />}
-      <TopBar nodes={nodes} lines={lines} />
+      <TopBar
+        nodes={nodes}
+        lines={lines}
+        saveModalOpen={isSaveModalOpen}
+        setSaveModalOpen={setIsSaveModalOpen}
+      />
       <BinButton ref={binButtonRef} />
       {selectedId && (
         <EditMenu
           node={nodes.find(n => n.id === selectedId) || null}
           updateNode={(patch) => setNodes(ns => ns.map(n => n.id === selectedId ? { ...n, ...patch } : n))}
           onClose={() => setSelectedId(null)}
+          credentials={credentials}
+          refreshCredentials={fetchCredentials}
           ref={editMenuRef}
         />
       )}

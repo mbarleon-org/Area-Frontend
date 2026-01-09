@@ -1,25 +1,40 @@
 import React, { useState, useRef, useEffect } from 'react';
 import SaveWorkflowModal from './SaveWorkflowModal';
-import { convertCanvasToWorkflow, validateWorkflow, type NodeItem, type LineItem } from '../../utils/workflowConverter';
+import { convertCanvasToWorkflow, validateWorkflow, validateCanvasData, type NodeItem, type LineItem } from '../../utils/workflowConverter';
 import { useApi } from '../../utils/UseApi';
 
 type Props = {
   nodes?: NodeItem[];
   lines?: LineItem[];
   onRecenter?: () => void;
+  saveModalOpen: boolean;
+  setSaveModalOpen: (open: boolean) => void;
 };
 
-const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter }) => {
+const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter, saveModalOpen, setSaveModalOpen }) => {
   const { post } = useApi();
-  const [showSaveModal, setShowSaveModal] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string[] | null>(null);
 
   const handleSaveWorkflow = async (config: { name: string; description: string; enabled: boolean }) => {
     setSaveLoading(true);
     setSaveError(null);
 
     try {
+      if (!config.name.trim()) {
+        console.log('Workflow name is required');
+        setSaveError(['Workflow name is required']);
+        setSaveLoading(false);
+        return;
+      }
+
+      const canvasValidation = validateCanvasData(nodes, lines);
+      if (!canvasValidation.valid) {
+        setSaveError(canvasValidation.errors);
+        setSaveLoading(false);
+        return;
+      }
+
       // Convert canvas to workflow
       const workflow = convertCanvasToWorkflow(nodes, lines, {
         name: config.name,
@@ -30,7 +45,7 @@ const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter }) => {
       // Validate workflow
       const validation = validateWorkflow(workflow);
       if (!validation.valid) {
-        setSaveError(validation.errors.join(', '));
+        setSaveError(validation.errors);
         setSaveLoading(false);
         return;
       }
@@ -39,11 +54,11 @@ const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter }) => {
       console.log('Saving workflow:', workflow);
       await post('/workflows', workflow);
 
-      setShowSaveModal(false);
+      setSaveModalOpen(false);
       console.log('Workflow saved successfully:', workflow);
     } catch (err: any) {
       const message = err?.response?.data?.message || err?.message || 'Failed to save workflow';
-      setSaveError(message);
+      setSaveError([message]);
     } finally {
       setSaveLoading(false);
     }
@@ -54,7 +69,7 @@ const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter }) => {
       key: 'file',
       label: 'File',
       items: [
-        { label: 'Save workflow', action: () => setShowSaveModal(true) },
+        { label: 'Save workflow', action: () => setSaveModalOpen(true) },
         { label: 'Export as JSON', action: () => {
           const workflow = convertCanvasToWorkflow(nodes, lines, {
             name: 'Exported Workflow',
@@ -135,9 +150,9 @@ const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter }) => {
         </div>
       </div>
       <SaveWorkflowModal
-        isOpen={showSaveModal}
+        isOpen={saveModalOpen}
         onClose={() => {
-          setShowSaveModal(false);
+          setSaveModalOpen(false);
           setSaveError(null);
         }}
         onSave={handleSaveWorkflow}
