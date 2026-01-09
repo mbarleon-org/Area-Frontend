@@ -70,7 +70,7 @@ export type Workflow = {
   users: string[];
   userTeams: string[];
   ownerTeams: string[];
-  datas?: {
+  data?: {
     nodes: NodeItem[];
     lines: LineItem[];
   };
@@ -317,7 +317,7 @@ export function convertCanvasToWorkflow(
     users: [],
     userTeams: [],
     ownerTeams: [],
-    datas: {
+    data: {
       nodes,
       lines,
     },
