@@ -77,7 +77,6 @@ const Canvas: React.FC = () => {
             ? (res as any).credentials.credentials
             : [];
 
-      console.log('Fetched credentials (canvas):', arr);
       setCredentials(arr.map(normalize));
     } catch (err: any) {
       if (err?.response?.status === 404) {

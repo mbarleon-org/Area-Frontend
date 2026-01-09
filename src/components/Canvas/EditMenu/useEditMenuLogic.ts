@@ -35,11 +35,13 @@ export const useEditMenuLogic = ({
   const stripEngineFormat = (val: string): string => {
     if (!val)
       return val;
-    const trimmed = val.trim();
+
+    const raw = typeof val === 'string' ? val : String(val);
+    const trimmed = raw.trim();
     const match = trimmed.match(/^\$\{\{\s*'(.*)'\s*\}\}$/);
     if (match && match[1] !== undefined)
       return match[1].replace(/\\'/g, "'");
-    return trimmed;
+    return raw;
   };
 
   // --- State ---
@@ -60,19 +62,12 @@ export const useEditMenuLogic = ({
   const [selectedCredentialId, setSelectedCredentialId] = useState<string | null>(node?.credential_id || null);
 
   const provider = useMemo(() => getModuleProvider(node?.module), [node?.module]);
-  console.log('Credentials in EditMenu logic:', credentials)
   const availableCredentials = useMemo(() => {
     if (!credentials) return [];
 
     return credentials.filter((c) => {
-      // 1. Vérifie si le provider est explicitement 'gmail'
       const isGmailProvider = c.provider === 'gmail';
-
-      // 2. Vérifie le type (ex: 'gmail.email_app_password')
-      // On regarde si le type commence par 'gmail.' ou contient 'gmail'
       const isGmailType = c.type === 'gmail.email_app_password' || c.type?.startsWith('gmail.');
-
-      // 3. Fallback : on peut aussi checker le nom si besoin, mais le type est plus sûr
       return isGmailProvider || isGmailType;
     });
   }, [credentials]);
@@ -160,8 +155,11 @@ export const useEditMenuLogic = ({
   }, [onClose]);
 
   const formatForEngine = (val: string): string => {
-    if (!val) return val;
-    const trimmed = val.trim();
+    if (val === '')
+      return val;
+
+    const raw = typeof val === 'string' ? val : String(val);
+    const trimmed = raw.trim();
 
     if (
       trimmed.startsWith('${{') ||
@@ -172,7 +170,7 @@ export const useEditMenuLogic = ({
       return trimmed;
     }
 
-    const safeVal = trimmed.replace(/'/g, "\\'");
+    const safeVal = raw.replace(/'/g, "\\'");
     return `\${{ '${safeVal}' }}`;
   };
 

@@ -70,6 +70,10 @@ export type Workflow = {
   users: string[];
   userTeams: string[];
   ownerTeams: string[];
+  datas?: {
+    nodes: NodeItem[];
+    lines: LineItem[];
+  };
 };
 
 export const getModuleProvider = (moduleData: any): string | null => {
@@ -313,6 +317,10 @@ export function convertCanvasToWorkflow(
     users: [],
     userTeams: [],
     ownerTeams: [],
+    datas: {
+      nodes,
+      lines,
+    },
   };
 }
 
