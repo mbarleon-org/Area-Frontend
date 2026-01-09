@@ -7,6 +7,7 @@ type Props = {
   onSave: (config: { name: string; description: string; enabled: boolean }) => void;
   initialName?: string;
   initialDescription?: string;
+  initialEnabled?: boolean;
   loading?: boolean;
   error?: string | string[] | null;
 };
@@ -17,21 +18,23 @@ const SaveWorkflowModal: React.FC<Props> = ({
   onSave,
   initialName = '',
   initialDescription = '',
+  initialEnabled = true,
   loading = false,
   error = null,
 }) => {
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
-  const [enabled, setEnabled] = useState(true);
+  const [enabled, setEnabled] = useState(initialEnabled);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setName(initialName);
       setDescription(initialDescription);
+      setEnabled(initialEnabled);
       setTimeout(() => nameInputRef.current?.focus(), 100);
     }
-  }, [isOpen, initialName, initialDescription]);
+  }, [isOpen, initialName, initialDescription, initialEnabled]);
 
   useEffect(() => {
     if (!isOpen)

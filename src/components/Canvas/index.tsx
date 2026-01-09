@@ -6,10 +6,13 @@ import CenterControl from "./CenterControl";
 import AddNode from "./AddNode";
 import TopBar from "./TopBar";
 import BinButton from "./BinButton";
+import { useLocation } from "../../utils/router";
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
 const Canvas: React.FC = () => {
+  const location = useLocation();
+  const workflowFromState = (location as any)?.state?.workflow;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
@@ -53,19 +56,46 @@ const Canvas: React.FC = () => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const interactionLocked = showAddMenu || isEditMenuOpen || isSaveModalOpen;
   const { get } = useApi();
+    const recenterNodes = useCallback((items?: NodeItem[]) => {
+      const el = containerRef.current;
+      if (!el)
+        return;
+      const rect = el.getBoundingClientRect();
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const list = (items && items.length > 0) ? items : nodes;
+      if (!list || list.length === 0)
+        return;
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const n of list) {
+        minX = Math.min(minX, n.x - (n.width ?? 0) / 2);
+        minY = Math.min(minY, n.y - (n.height ?? 0) / 2);
+        maxX = Math.max(maxX, n.x + (n.width ?? 0) / 2);
+        maxY = Math.max(maxY, n.y + (n.height ?? 0) / 2);
+      }
+      if (!isFinite(minX))
+        return;
+
+      const bboxW = Math.max(1, maxX - minX);
+      const bboxH = Math.max(1, maxY - minY);
+      const padding = 120;
+      const scaleX = (rect.width - padding) / bboxW;
+      const scaleY = (rect.height - padding) / bboxH;
+      const targetScale = Math.max(0.2, Math.min(3, Math.min(scaleX, scaleY)));
+      const centerWorldX = (minX + maxX) / 2;
+      const centerWorldY = (minY + maxY) / 2;
+      setScale(targetScale);
+      setOffset({ x: cx - centerWorldX * targetScale, y: cy - centerWorldY * targetScale });
+    }, [nodes]);
   const [modules, setModules] = useState<Array<{ name: string; data: any }>>([]);
   const fetchCredentials = useCallback(async () => {
     try {
       const res = await get('/credentials');
 
       const normalize = (raw: any): CredentialItem => {
-        // CORRECTION : On garde l'objet racine 'raw' qui contient id, name, type.
-        // On ne descend PAS dans raw.credential qui contient juste le blob crypté.
         const base = raw || {};
-
-        // Calcul du provider basé sur le type (ex: 'gmail.email_app_password' -> 'gmail')
         const provider = base.provider || (typeof base.type === 'string' ? base.type.split('.')?.[0] : undefined);
-
         return { ...base, provider };
       };
 
@@ -244,8 +274,10 @@ const Canvas: React.FC = () => {
       if (dist < bestDist) { bestDist = dist; bestIndex = i; }
     }
     const threshold = 10;
-    if (bestIndex !== null && bestDist <= threshold) setHoveredLineIndex(bestIndex);
-    else setHoveredLineIndex(null);
+    if (bestIndex !== null && bestDist <= threshold)
+      setHoveredLineIndex(bestIndex);
+    else
+      setHoveredLineIndex(null);
   }, [lines, nodes, offset.x, offset.y, scale, interactionLocked]);
 
   const onUp = useCallback(() => {
@@ -257,7 +289,8 @@ const Canvas: React.FC = () => {
     if (!el)
         return;
     const wheel = (e: WheelEvent) => {
-      if (interactionLocked) return;
+      if (interactionLocked)
+        return;
       e.preventDefault();
       const delta = -e.deltaY;
       const rect = el.getBoundingClientRect();
@@ -276,6 +309,53 @@ const Canvas: React.FC = () => {
     el.addEventListener('wheel', wheel, { passive: false });
     return () => el.removeEventListener('wheel', wheel as EventListener);
   }, [scale, setScale, interactionLocked]);
+
+  useEffect(() => {
+    const layout = workflowFromState?.data || workflowFromState?.datas || workflowFromState?.canvas;
+    if (!layout)
+      return;
+
+    const safeNodes = Array.isArray(layout.nodes) ? layout.nodes : [];
+    const safeLines = Array.isArray(layout.lines) ? layout.lines : [];
+
+    const normalizedNodes = safeNodes.map((n: any) => {
+      const w = n?.width || 240;
+      const h = n?.height || 120;
+      const snapOffX = computeSnapOffset(w, gridPx);
+      const snapOffY = computeSnapOffset(h, gridPx);
+      const x = Math.round(((n?.x ?? 0) - snapOffX) / gridPx) * gridPx + snapOffX;
+      const y = Math.round(((n?.y ?? 0) - snapOffY) / gridPx) * gridPx + snapOffY;
+
+      return {
+        id: n?.id || `n${Date.now()}`,
+        x,
+        y,
+        width: w,
+        height: h,
+        label: n?.label,
+        icon: n?.icon,
+        module: n?.module,
+        connectionPoints: n?.connectionPoints,
+        inputs: n?.inputs,
+        outputs: n?.outputs,
+        options: n?.options,
+        credential_id: n?.credential_id,
+      } as NodeItem;
+    });
+
+    const normalizedLines = safeLines.map((l: any) => ({
+      a: l?.a || {},
+      b: l?.b || {},
+      stroke: l?.stroke || '#fff',
+      strokeWidth: l?.strokeWidth || 4,
+    } as LineItem));
+
+    initialPosSet.current = true;
+    setNodes(normalizedNodes);
+    setLines(normalizedLines);
+
+    setTimeout(() => recenterNodes(normalizedNodes), 30);
+  }, [workflowFromState]);
 
   useEffect(() => {
     if (initialPosSet.current) return;
@@ -452,7 +532,19 @@ const Canvas: React.FC = () => {
         nodes={nodes}
         lines={lines}
         saveModalOpen={isSaveModalOpen}
-        setSaveModalOpen={setIsSaveModalOpen}
+            setSaveModalOpen={(open) => {
+              if (open) {
+                setSelectedId(null);
+                setShowAddMenu(false);
+              }
+              setIsSaveModalOpen(open);
+            }}
+            initialName={workflowFromState?.name}
+            initialDescription={workflowFromState?.description}
+            initialEnabled={workflowFromState?.enabled}
+            existingWorkflowId={workflowFromState?.id}
+            existingWorkflowData={workflowFromState?.data || workflowFromState?.datas || workflowFromState?.canvas}
+            onRecenter={() => recenterNodes()}
       />
       <BinButton ref={binButtonRef} />
       {selectedId && (
