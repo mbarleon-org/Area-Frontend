@@ -73,6 +73,9 @@ export type Workflow = {
   data?: {
     nodes: NodeItem[];
     lines: LineItem[];
+    created_at?: number | string;
+    updated_at?: number | string;
+    [key: string]: any;
   };
 };
 
@@ -227,6 +230,7 @@ export function convertCanvasToWorkflow(
     description: string;
     version?: string;
     enabled?: boolean;
+    existingData?: Workflow['data'];
   }
 ): Workflow {
   const triggers: WorkflowTrigger[] = [];
@@ -305,6 +309,10 @@ export function convertCanvasToWorkflow(
     }
   }
 
+  const now = Date.now();
+  const previousData = (workflowConfig.existingData || {}) as Workflow['data'];
+  const createdAt = previousData?.created_at ?? now;
+
   return {
     id: workflowId,
     name: workflowConfig.name,
@@ -318,8 +326,11 @@ export function convertCanvasToWorkflow(
     userTeams: [],
     ownerTeams: [],
     data: {
+      ...previousData,
       nodes,
       lines,
+      created_at: createdAt,
+      updated_at: now,
     },
   };
 }

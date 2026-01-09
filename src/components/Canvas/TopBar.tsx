@@ -9,9 +9,14 @@ type Props = {
   onRecenter?: () => void;
   saveModalOpen: boolean;
   setSaveModalOpen: (open: boolean) => void;
+  initialName?: string;
+  initialDescription?: string;
+  initialEnabled?: boolean;
+  existingWorkflowId?: string;
+  existingWorkflowData?: any;
 };
 
-const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter, saveModalOpen, setSaveModalOpen }) => {
+const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter, saveModalOpen, setSaveModalOpen, initialName, initialDescription, initialEnabled, existingWorkflowId, existingWorkflowData }) => {
   const { post } = useApi();
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveError, setSaveError] = useState<string[] | null>(null);
@@ -40,7 +45,11 @@ const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter, saveModal
         name: config.name,
         description: config.description,
         enabled: config.enabled,
+        existingData: existingWorkflowData,
       });
+
+      if (existingWorkflowId)
+        workflow.id = existingWorkflowId;
 
       // Validate workflow
       const validation = validateWorkflow(workflow);
@@ -74,6 +83,7 @@ const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter, saveModal
           const workflow = convertCanvasToWorkflow(nodes, lines, {
             name: 'Exported Workflow',
             description: 'Exported from canvas',
+            existingData: existingWorkflowData,
           });
           const json = JSON.stringify(workflow, null, 2);
           const blob = new Blob([json], { type: 'application/json' });
@@ -90,7 +100,7 @@ const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter, saveModal
       key: 'view',
       label: 'View',
       items: [
-        { label: 'Recenter', action: () => onRecenter?.() || console.log('Recenter') },
+        { label: 'Recenter', action: () => onRecenter?.() },
       ]
     },
   ];
@@ -158,6 +168,9 @@ const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter, saveModal
         onSave={handleSaveWorkflow}
         loading={saveLoading}
         error={saveError}
+        initialName={initialName}
+        initialDescription={initialDescription}
+        initialEnabled={initialEnabled}
       />
     </>
   );
