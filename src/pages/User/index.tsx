@@ -4,6 +4,8 @@ import { isWeb } from "../../utils/IsWeb";
 import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useToken } from "../../hooks/useToken";
 import { useInRouterContext, useNavigate } from "../../utils/router";
+import { useApi } from "../../utils/UseApi";
+import { assetPath } from "../../utils/assets";
 
 
 if (isWeb) import('../../index.css');
@@ -22,17 +24,51 @@ const User: React.FC = () => {
   const [editHover, setEditHover] = React.useState(false);
   const [logoutHover, setLogoutHover] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
-  const [fullName, setFullName] = React.useState("Full Name : Loïs");
-  const [username, setUsername] = React.useState("Username : Le plus beau");
-  const [email, setEmail] = React.useState("Email : LadiesMan69@mommy.com");
-  const user_icon = require('../../../assets/user_icon2.png');
+  const [username, setUsername] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const user_icon = assetPath('/user_icon2.png');
   const { setToken } = useToken();
+  const { get, put } = useApi();
   const inRouter = useInRouterContext();
   const navigate = inRouter ? useNavigate() : ((to: string) => { if (typeof window !== 'undefined') window.location.href = to; });
 
   const navigationMobile = (!isWeb && typeof safeUseNavigation === 'function')
     ? safeUseNavigation()
     : { navigate: (_: any) => { } };
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await get('/users/me');
+        if (!mounted)
+          return;
+        setUsername(res?.username ?? "");
+        setEmail(res?.email ?? "");
+      } catch (err) {
+        console.error('Failed to fetch user profile', err);
+      } finally {
+        if (mounted)
+          setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [get]);
+
+  const handleSaveUsername = async () => {
+    setSaving(true);
+    try {
+      const res = await put('/users/me', { username });
+      setUsername(res?.username ?? username);
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Failed to update username', err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // ------------------------ Mobile View ------------------------
   if (!isWeb) {
@@ -46,49 +82,41 @@ const User: React.FC = () => {
           </View>
 
           <View style={mobileStyles.infoContainer}>
-            {isEditing ? (
-              <>
-                <Text style={mobileStyles.label}>Full Name</Text>
-                <TextInput
-                  style={mobileStyles.input}
-                  value={fullName}
-                  onChangeText={setFullName}
-                  placeholder="Full Name"
-                  placeholderTextColor="#888"
-                />
-
-                <Text style={mobileStyles.label}>Username</Text>
-                <TextInput
-                  style={mobileStyles.input}
-                  value={username}
-                  onChangeText={setUsername}
-                  placeholder="Username"
-                  placeholderTextColor="#888"
-                />
-
-                <Text style={mobileStyles.label}>Email</Text>
-                <TextInput
-                  style={mobileStyles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Email"
-                  placeholderTextColor="#888"
-                />
-              </>
+            {loading ? (
+              <Text style={mobileStyles.displayText}>Loading user...</Text>
             ) : (
               <>
-                <Text style={mobileStyles.displayText}>{fullName}</Text>
-                <Text style={mobileStyles.displayText}>{username}</Text>
-                <Text style={mobileStyles.displayText}>{email}</Text>
+                <Text style={mobileStyles.label}>Username</Text>
+                {isEditing ? (
+                  <TextInput
+                    style={mobileStyles.input}
+                    value={username}
+                    onChangeText={setUsername}
+                    placeholder="Username"
+                    placeholderTextColor="#888"
+                  />
+                ) : (
+                  <Text style={mobileStyles.displayText}>{username || 'No username set'}</Text>
+                )}
+
+                <Text style={mobileStyles.label}>Email</Text>
+                <Text style={mobileStyles.displayText}>{email || 'No email set'}</Text>
               </>
             )}
 
             <TouchableOpacity
               style={mobileStyles.editButton}
-              onPress={() => setIsEditing(!isEditing)}
+              onPress={() => {
+                if (isEditing) {
+                  handleSaveUsername();
+                } else {
+                  setIsEditing(true);
+                }
+              }}
+              disabled={saving || loading}
             >
               <Text style={mobileStyles.buttonText}>
-                {isEditing ? "Confirm" : "Edit"}
+                {isEditing ? (saving ? "Saving..." : "Confirm") : "Edit username"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -137,32 +165,23 @@ const User: React.FC = () => {
             <img src={user_icon} alt="user_icon" style={webStyles.avatarImg}/>
           </div>
           <div style={webStyles.info}>
-            {isEditing ? (
-              <>
-                <input
-                  style={webStyles.input}
-                  value={fullName}
-                  onChange={e => setFullName(e.target.value)}
-                  placeholder="Full Name"
-                />
-                <input
-                  style={webStyles.input}
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  placeholder="Username"
-                />
-                <input
-                  style={webStyles.input}
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="Email"
-                />
-              </>
+            {loading ? (
+              <p style={{ color: '#aaa' }}>Loading user...</p>
             ) : (
               <>
-                <h1 className="FullName">{fullName}</h1>
-                <h1 className="Username">{username}</h1>
-                <h1 className="Email">{email}</h1>
+                <label style={{ color: '#aaa', fontSize: '0.9em' }}>Username</label>
+                {isEditing ? (
+                  <input
+                    style={webStyles.input}
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    placeholder="Username"
+                  />
+                ) : (
+                  <h1 className="Username">{username || 'No username set'}</h1>
+                )}
+                <label style={{ color: '#aaa', fontSize: '0.9em' }}>Email</label>
+                <h1 className="Email">{email || 'No email set'}</h1>
               </>
             )}
             <button
@@ -174,9 +193,16 @@ const User: React.FC = () => {
               }}
               onMouseEnter={() => setEditHover(true)}
               onMouseLeave={() => setEditHover(false)}
-              onClick={() => setIsEditing(!isEditing)}
+              onClick={() => {
+                if (isEditing) {
+                  handleSaveUsername();
+                } else {
+                  setIsEditing(true);
+                }
+              }}
+              disabled={saving || loading}
             >
-              {isEditing ? "Confirm" : "Edit"}
+              {isEditing ? (saving ? "Saving..." : "Confirm") : "Edit username"}
             </button>
           </div>
         </div>
