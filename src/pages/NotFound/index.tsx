@@ -219,16 +219,15 @@ const webStyles: any = {
 		letterSpacing: 0.5,
 		cursor: "pointer",
 		boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
-		transition: "background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease",
-		background: "linear-gradient(90deg, #196d1cff 0%, #4CAF50 100%)",
-		border: '1px solid rgba(46, 204, 113, 0.18)',
+		transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        background: "rgba(26,26,28,0.8)",
+        border: '1px solid rgba(46, 204, 113, 0.5)',
 
 	},
 	buttonHover: {
-		background: "linear-gradient(90deg, #4CAF50 0%, #196d1cff 100%)",
+		background: 'rgba(46, 204, 113, 0.5)',
 		color: '#fff',
-		boxShadow: '0 12px 34px rgba(0,0,0,0.38)',
-		transform: 'translateY(-1px)',
+		boxShadow: '0 6px 18px rgba(0,0,0,0.28)',
 	},
 };
 
