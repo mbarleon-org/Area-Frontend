@@ -56,15 +56,12 @@ const mobileStyles = StyleSheet.create({
 const webStyles: { [k: string]: React.CSSProperties } = {
   page: {
     minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     background: '#151316ff',
     color: '#fff',
     boxSizing: 'border-box',
     marginLeft: '100px',
     width: '100%',
-    padding: '40px 24px',
+    padding: '30px',
   },
   card: {
     background: 'rgba(26,26,28,0.85)',
@@ -72,8 +69,11 @@ const webStyles: { [k: string]: React.CSSProperties } = {
     borderRadius: 14,
     padding: '32px',
     boxShadow: '0 18px 45px rgba(0,0,0,0.45)',
-    display: 'flex',
+    width: '100%',
+    minHeight: 'calc(100vh - 60px)',
+    boxSizing: 'border-box',
     flexDirection: 'column',
+    overflow: 'auto',
   },
   title: {
     margin: '0 0 12px 0',
