@@ -1,7 +1,7 @@
 import React from "react";
 import Navbar from "../../components/Navbar";
 import { isWeb } from "../../utils/IsWeb";
-import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity} from 'react-native';
 import { useToken } from "../../hooks/useToken";
 import { useInRouterContext, useNavigate } from "../../utils/router";
 import { useApi } from "../../utils/UseApi";
