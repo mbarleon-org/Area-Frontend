@@ -3,6 +3,7 @@ import { isWeb } from "../../utils/IsWeb";
 import { useApi } from "../../utils/UseApi";
 import NotFound from "../../pages/NotFound";
 import { View } from "react-native";
+import Navbar from "../Navbar";
 
 interface GuardProps {
   children: React.ReactNode;
@@ -29,15 +30,21 @@ const Guard: React.FC<GuardProps> = ({ children }) => {
   if (state === 'loading') {
     if (!isWeb) {
       return (
-        <View style={{ flex: 1, backgroundColor: '#151316ff', alignItems: 'center', justifyContent: 'center' }}>
-            {/* Avoid rendering content while checking access */}
-        </View>
+				<>
+					<Navbar />
+					<View style={{ flex: 1, backgroundColor: '#151316ff', alignItems: 'center', justifyContent: 'center' }}>
+							{/* Avoid rendering content while checking access */}
+					</View>
+				</>
       );
     }
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#151316ff', color: '#fff' }}>
-        {/* Avoid rendering content while checking access */}
-      </div>
+			<>
+				<Navbar />
+				<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#151316ff', color: '#fff' }}>
+					{/* Avoid rendering content while checking access */}
+				</div>
+			</>
     );
   }
 
