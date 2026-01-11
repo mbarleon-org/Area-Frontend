@@ -10,6 +10,8 @@ import PasswordReset from "../../pages/PasswordReset";
 import Automations from "../../pages/Automations";
 import User from "../../pages/User";
 import NotFound from "../../pages/NotFound";
+import AdminPanel from "../../pages/AdminPanel";
+import Guard from "../../components/Guard";
 
 interface Router {
   path: string;
@@ -82,6 +84,17 @@ const ROUTES: Router[] = [
     label: "User",
     navbar: true,
     security: "public",
+  },
+  {
+    path: "/admin",
+    element: (
+      <Guard>
+        <AdminPanel />
+      </Guard>
+    ),
+    label: "Admin",
+    navbar: false,
+    security: "admin",
   },
   {
     path: "*",
