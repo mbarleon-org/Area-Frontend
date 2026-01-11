@@ -28,7 +28,7 @@ const User: React.FC = () => {
   const [email, setEmail] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
-  const user_icon = isWeb ? assetPath('/user_icon2.png') : require('../../assets/user_icon2.png');
+  const user_icon = isWeb ? assetPath('/user_icon2.png') : require('../../../public/user_icon2.png');
   const { setToken } = useToken();
   const { get, put } = useApi();
   const inRouter = useInRouterContext();
