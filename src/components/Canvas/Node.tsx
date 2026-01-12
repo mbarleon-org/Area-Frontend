@@ -158,7 +158,6 @@ const Node: React.FC<NodeProps> = ({ pos, setPos, onSelect, id, width = 96, heig
         worldY = pos.y + height / 2;
         worldX = pos.x + off;
       }
-      console.log('Connector clicked:', { nodeId: id, side, offset: off, worldX, worldY, index });
       onConnectorClick?.({ nodeId: id, side, offset: off, worldX, worldY, index });
     };
 
