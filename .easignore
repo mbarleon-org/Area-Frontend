@@ -1,0 +1,15 @@
+.git
+.gitignore
+.expo
+.expo-shared
+node_modules
+dist
+build
+coverage
+*.log
+.env
+.env.*
+*.env
+web
+ios
+android
