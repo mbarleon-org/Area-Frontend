@@ -183,7 +183,7 @@ const CenterControl: React.FC<Props> = ({ containerRef, offset, setOffset, scale
       style={{
         position: 'absolute',
         right: 32,
-        bottom: 32,
+        bottom: 50,
         zIndex: 1000,
         background: '#2b2b2b',
         color: '#fff',
