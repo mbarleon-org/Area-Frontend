@@ -60,12 +60,20 @@ const Login: React.FC = () => {
   // ------------------------ Mobile View ------------------------
   if (!isWeb) {
     const RN = require('react-native');
-    const { View, Text, TextInput, TouchableOpacity, ScrollView } = RN;
+    const { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } = RN;
 
     return (
-      <View style={mobileStyles.fullScreen}>
+      <KeyboardAvoidingView
+        style={mobileStyles.fullScreen}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
         <Navbar />
-        <ScrollView contentContainerStyle={mobileStyles.container}>
+        <ScrollView
+          contentContainerStyle={mobileStyles.container}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={mobileStyles.card}>
             <View style={mobileStyles.Login}>
               <Text style={mobileStyles.heading}>Login</Text>
@@ -151,7 +159,7 @@ const Login: React.FC = () => {
             </View>
           </View>
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
     );
   }
 

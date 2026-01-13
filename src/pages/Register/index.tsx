@@ -92,13 +92,21 @@ const Register: React.FC = () => {
   // ------------------------ Mobile view ------------------------
   if (!isWeb) {
     const RN = require('react-native');
-    const { View, Text, TextInput, TouchableOpacity, ScrollView } = RN;
+    const { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } = RN;
 
     return (
       <>
-        <View style={mobileStyles.fullScreen}>
+        <KeyboardAvoidingView
+          style={mobileStyles.fullScreen}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={-100}
+        >
           <Navbar />
-          <ScrollView contentContainerStyle={mobileStyles.container}>
+          <ScrollView
+            contentContainerStyle={mobileStyles.container}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <View style={mobileStyles.card}>
               <View style={mobileStyles.Register}>
                 <Text style={mobileStyles.heading}>Register</Text>
@@ -178,7 +186,7 @@ const Register: React.FC = () => {
               </View>
             </View>
           </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
       </>
     )
   }

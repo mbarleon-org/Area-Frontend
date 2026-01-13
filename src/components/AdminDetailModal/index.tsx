@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Switch, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Switch, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { isWeb } from '../../utils/IsWeb';
 import { getFieldsForType } from '../../constants/AdminFieldConfig';
 import type { FieldConfig } from '../../constants/AdminFieldConfig';
@@ -193,54 +193,63 @@ const AdminDetailModal: React.FC<AdminDetailModalProps> = ({ visible, data, onCl
   if (!isWeb) {
     return (
       <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-        <View style={mobileStyles.overlay}>
-          <View style={[mobileStyles.modal, isUserType && mobileStyles.modalWide]}>
-            <Text style={mobileStyles.title}>
-              {data.type.charAt(0).toUpperCase() + data.type.slice(1)} Details
-            </Text>
-            <View style={isUserType ? mobileStyles.twoColumnLayout : undefined}>
-              <ScrollView style={[mobileStyles.scrollContent, isUserType && mobileStyles.leftColumn]}>
-                {fields.map(renderField)}
-                {isTeamType && (
-                  <View style={mobileStyles.section}>
-                    <Text style={mobileStyles.sectionTitle}>Members</Text>
-                    {renderTeamMembers('mobile')}
+        <KeyboardAvoidingView
+          style={mobileStyles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={mobileStyles.overlay}>
+            <View style={[mobileStyles.modal, isUserType && mobileStyles.modalWide]}>
+              <Text style={mobileStyles.title}>
+                {data.type.charAt(0).toUpperCase() + data.type.slice(1)} Details
+              </Text>
+              <View style={isUserType ? mobileStyles.twoColumnLayout : undefined}>
+                <ScrollView
+                  style={[mobileStyles.scrollContent, isUserType && mobileStyles.leftColumn]}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                >
+                  {fields.map(renderField)}
+                  {isTeamType && (
+                    <View style={mobileStyles.section}>
+                      <Text style={mobileStyles.sectionTitle}>Members</Text>
+                      {renderTeamMembers('mobile')}
+                    </View>
+                  )}
+                </ScrollView>
+                {isUserType && get && post && del && (
+                  <View style={mobileStyles.rightColumn}>
+                    <UserTeamManager
+                      userId={data.id}
+                      userTeams={userTeams}
+                      get={get}
+                      post={post}
+                      del={del}
+                      onTeamsChange={handleTeamsChange}
+                    />
                   </View>
                 )}
-              </ScrollView>
-              {isUserType && get && post && del && (
-                <View style={mobileStyles.rightColumn}>
-                  <UserTeamManager
-                    userId={data.id}
-                    userTeams={userTeams}
-                    get={get}
-                    post={post}
-                    del={del}
-                    onTeamsChange={handleTeamsChange}
-                  />
-                </View>
-              )}
-            </View>
-            <View style={mobileStyles.actions}>
-              <TouchableOpacity
-                style={mobileStyles.cancelBtn}
-                onPress={onClose}
-                disabled={saving}
-              >
-                <Text style={mobileStyles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[mobileStyles.applyBtn, saving && mobileStyles.applyBtnDisabled]}
-                onPress={handleSave}
-                disabled={saving}
-              >
-                <Text style={mobileStyles.applyBtnText}>
-                  {saving ? 'Saving...' : 'Apply'}
-                </Text>
-              </TouchableOpacity>
+              </View>
+              <View style={mobileStyles.actions}>
+                <TouchableOpacity
+                  style={mobileStyles.cancelBtn}
+                  onPress={onClose}
+                  disabled={saving}
+                >
+                  <Text style={mobileStyles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[mobileStyles.applyBtn, saving && mobileStyles.applyBtnDisabled]}
+                  onPress={handleSave}
+                  disabled={saving}
+                >
+                  <Text style={mobileStyles.applyBtnText}>
+                    {saving ? 'Saving...' : 'Apply'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     );
   }
@@ -317,6 +326,9 @@ const AdminDetailModal: React.FC<AdminDetailModalProps> = ({ visible, data, onCl
 };
 
 const mobileStyles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+  },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.7)',
