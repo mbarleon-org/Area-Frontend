@@ -188,9 +188,29 @@ const AdminPanel: React.FC = () => {
           });
           break;
         }
-        case 'credential':
-          await credentialsApi.update(put, id, changes);
+        case 'credential': {
+          const current = selectedItem?.raw as any;
+          const name = (changes as any).name ?? current?.name ?? '';
+          const description = (changes as any).description ?? current?.description ?? '';
+          const credentialType = (changes as any).type ?? current?.type ?? '';
+          const version = (changes as any).version ?? current?.version;
+          const data = (changes as any).data ?? current?.data;
+
+          if (!credentialType) {
+            console.error('Missing credential type; aborting update to avoid 500');
+            return false;
+          }
+
+          await credentialsApi.update(put, id, {
+            id,
+            name,
+            description,
+            type: credentialType,
+            ...(version ? { version } : {}),
+            ...(data ? { data } : {}),
+          });
           break;
+        }
         default:
           // fallback to generic put
           await put(`/${type}s/${id}`, changes);

@@ -27,6 +27,8 @@ export interface AdminCredential {
   name: string;
   description: string;
   type: string;
+  version?: string;
+  data?: Record<string, any>;
 }
 
 export type AdminDataItem = AdminUser | AdminTeam | AdminWorkflow | AdminCredential;
