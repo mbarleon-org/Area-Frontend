@@ -3,7 +3,7 @@ import Navbar from "../../components/Navbar";
 import { isWeb } from "../../utils/IsWeb";
 import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useToken } from "../../hooks/useToken";
-import { useInRouterContext, useNavigate } from "react-router-dom";
+import { useInRouterContext, useNavigate } from "../../utils/router";
 
 
 if (isWeb) import('../../index.css');
