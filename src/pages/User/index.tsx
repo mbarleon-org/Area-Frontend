@@ -1,7 +1,7 @@
 import React from "react";
 import Navbar from "../../components/Navbar";
 import { isWeb } from "../../utils/IsWeb";
-import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity} from 'react-native';
 import { useToken } from "../../hooks/useToken";
 import { useInRouterContext, useNavigate } from "../../utils/router";
 import { useApi } from "../../utils/UseApi";
@@ -23,16 +23,19 @@ try {
 const User: React.FC = () => {
   const [editHover, setEditHover] = React.useState(false);
   const [logoutHover, setLogoutHover] = React.useState(false);
+  const [adminHover, setAdminHover] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [username, setUsername] = React.useState("");
   const [email, setEmail] = React.useState("");
+  const [isAdmin, setIsAdmin] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
-  const user_icon = assetPath('/user_icon2.png');
+  const user_icon = isWeb ? assetPath('/user_icon2.png') : require('../../../public/user_icon2.png');
   const { setToken } = useToken();
   const { get, put } = useApi();
   const inRouter = useInRouterContext();
   const navigate = inRouter ? useNavigate() : ((to: string) => { if (typeof window !== 'undefined') window.location.href = to; });
+  const [fetchAttempt, setFetchAttempt] = React.useState(0);
 
   const navigationMobile = (!isWeb && typeof safeUseNavigation === 'function')
     ? safeUseNavigation()
@@ -40,22 +43,36 @@ const User: React.FC = () => {
 
   React.useEffect(() => {
     let mounted = true;
-    (async () => {
+    const doFetch = async () => {
       try {
         const res = await get('/users/me');
         if (!mounted)
           return;
         setUsername(res?.username ?? "");
         setEmail(res?.email ?? "");
-      } catch (err) {
-        console.error('Failed to fetch user profile', err);
+        setIsAdmin(res?.isAdmin ?? false);
+      } catch (err: any) {
+        if (fetchAttempt >= 1)
+          console.error('Failed to fetch user profile', err);
+        const status = err?.response?.status;
+        // Retry once on 401 because on mobile the token might not be ready yet (idk why)
+        if ((status === 401 || status === 0) && fetchAttempt < 1) {
+          setFetchAttempt((s) => s + 1);
+          setTimeout(() => {
+            if (!mounted)
+              return;
+            doFetch();
+          }, 500);
+          return;
+        }
       } finally {
         if (mounted)
           setLoading(false);
       }
-    })();
+    };
+    doFetch();
     return () => { mounted = false; };
-  }, [get]);
+  }, [get, fetchAttempt]);
 
   const handleSaveUsername = async () => {
     setSaving(true);
@@ -75,10 +92,10 @@ const User: React.FC = () => {
     return (
       <View style={mobileStyles.mainContainer}>
         <Navbar />
-        <ScrollView contentContainerStyle={mobileStyles.scrollContainer}>
 
+        <View style={mobileStyles.content}>
           <View style={mobileStyles.iconContainer}>
-            <Image source={user_icon} style={mobileStyles.avatarImg} />
+            <Image source={user_icon as any} style={mobileStyles.avatarImg} />
           </View>
 
           <View style={mobileStyles.infoContainer}>
@@ -120,20 +137,28 @@ const User: React.FC = () => {
               </Text>
             </TouchableOpacity>
           </View>
+        </View>
 
-          <View style={mobileStyles.bottomBar}>
+        <View style={mobileStyles.bottomBar}>
+          {isAdmin && (
             <TouchableOpacity
-              style={mobileStyles.logoutButton}
+              style={mobileStyles.adminPanelButton}
               onPress={() => {
-                setToken(null);
-                navigationMobile.navigate('Login');
+                navigationMobile.navigate('Admin');
               }}
             >
-              <Text style={mobileStyles.logoutButtonText}>Logout</Text>
-            </TouchableOpacity>
-          </View>
-
-        </ScrollView>
+              <Text style={mobileStyles.adminPanelButtonText}>Admin Panel</Text>
+            </TouchableOpacity>)}
+          <TouchableOpacity
+            style={mobileStyles.logoutButton}
+            onPress={() => {
+              setToken(null);
+              navigationMobile.navigate('Login');
+            }}
+          >
+            <Text style={mobileStyles.logoutButtonText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -142,6 +167,20 @@ const User: React.FC = () => {
   return (
     <>
       <Navbar />
+      {isAdmin && (<button
+        style={{
+          ...webStyles.adminButton,
+          ...webStyles.adminTopRight,
+          background: adminHover ? '#dcdcdc' : 'transparent',
+          color: adminHover ? '#151316' : '#fff',
+          border: '1px solid #dcdcdc',
+        }}
+        onMouseEnter={() => setAdminHover(true)}
+        onMouseLeave={() => setAdminHover(false)}
+        onClick={() => { navigate('/admin'); }}
+      >
+        Admin Panel
+      </button>)}
       <button
         style={{
           ...webStyles.logoutButton,
@@ -217,8 +256,8 @@ const mobileStyles = StyleSheet.create({
     backgroundColor: "#151316ff",
   },
   scrollContainer: {
-    paddingTop: 120,
-    paddingBottom: 40,
+    paddingTop: 0,
+    paddingBottom: 0,
     paddingHorizontal: 20,
   },
   topBar: {
@@ -226,11 +265,19 @@ const mobileStyles = StyleSheet.create({
     justifyContent: 'flex-end',
     marginBottom: 20,
   },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
   bottomBar: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 380,
-    marginRight: 10,
+    padding: 16,
+    borderTopWidth: 0,
+    alignSelf: 'stretch',
+    backgroundColor: 'transparent',
+    paddingBottom: 24,
   },
   iconContainer: {
     alignSelf: 'center',
@@ -252,7 +299,7 @@ const mobileStyles = StyleSheet.create({
     width: '100%',
     alignItems: 'flex-start',
     paddingRight: 20,
-    marginLeft: 40,
+    marginLeft: 24,
   },
   displayText: {
     color: '#fff',
@@ -289,7 +336,7 @@ const mobileStyles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-    logoutButton: {
+  logoutButton: {
     backgroundColor: '#e74c3c',
     paddingVertical: 12,
     paddingHorizontal: 30,
@@ -297,6 +344,18 @@ const mobileStyles = StyleSheet.create({
   },
   logoutButtonText: {
     color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  adminPanelButton: {
+    backgroundColor: '#dcdcdc',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  adminPanelButtonText: {
+    color: '#000',
     fontWeight: 'bold',
     fontSize: 14,
   }
@@ -362,6 +421,26 @@ const webStyles: { [k: string]: React.CSSProperties } = {
     top: 24,
     right: 24,
     boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+  },
+  adminTopRight: {
+    position: "absolute",
+    top: 24,
+    right: 140,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+  },
+  adminButton: {
+    width: "auto",
+    minWidth: 100,
+    padding: "10px 24px",
+    borderRadius: "8px",
+    border: "1px solid #dcdcdc",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: 600,
+    letterSpacing: "1px",
+    transition: "background 0.18s ease, color 0.18s ease",
+    zIndex: 11,
+    background: 'transparent',
   },
   input: {
     width: "100%",

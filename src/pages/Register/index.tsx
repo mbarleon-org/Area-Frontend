@@ -2,7 +2,6 @@ import React from "react";
 import Navbar from "../../components/Navbar";
 import { useToast } from "../../components/Toast";
 import { isWeb } from "../../utils/IsWeb";
-// react-native components are required dynamically inside the mobile branch
 import { useApi } from "../../utils/UseApi";
 
 let safeUseNavigation: any = () => ({

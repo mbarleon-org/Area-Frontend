@@ -45,7 +45,6 @@ const PasswordReset: React.FC = () => {
     setCookie('token', token, { path: '/' });
     const payload = decodeJwtPayload(token);
     setTokenData({ token, payload, context });
-    console.log('Token data set:', tokenData);
   }, []);
 
   const handleSubmit = async (e?: React.FormEvent) => {

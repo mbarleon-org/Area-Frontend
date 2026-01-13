@@ -27,7 +27,6 @@ const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter, saveModal
 
     try {
       if (!config.name.trim()) {
-        console.log('Workflow name is required');
         setSaveError(['Workflow name is required']);
         setSaveLoading(false);
         return;
@@ -60,11 +59,9 @@ const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter, saveModal
       }
 
       // Send to API
-      console.log('Saving workflow:', workflow);
       await post('/workflows', workflow);
 
       setSaveModalOpen(false);
-      console.log('Workflow saved successfully:', workflow);
     } catch (err: any) {
       const message = err?.response?.data?.message || err?.message || 'Failed to save workflow';
       setSaveError([message]);

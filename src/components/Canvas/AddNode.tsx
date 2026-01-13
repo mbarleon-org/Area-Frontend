@@ -57,7 +57,6 @@ const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose, modules: pa
         connectionPoints: getConnectionPointsForModule(m.name || ""),
     };
     if (onAdd) onAdd(node);
-    else console.log('Add node', node);
     if (onClose) onClose();
   };
 

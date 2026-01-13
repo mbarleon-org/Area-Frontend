@@ -539,7 +539,7 @@ const Canvas: React.FC = () => {
               }
               setIsSaveModalOpen(open);
             }}
-            initialName={workflowFromState?.name}
+            initialName={workflowFromState?.pretty_name || workflowFromState?.name}
             initialDescription={workflowFromState?.description}
             initialEnabled={workflowFromState?.enabled}
             existingWorkflowId={workflowFromState?.id}

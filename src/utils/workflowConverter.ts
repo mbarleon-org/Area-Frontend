@@ -61,6 +61,7 @@ export type WorkflowAction = {
 export type Workflow = {
   id: string;
   name: string;
+  pretty_name?: string;
   version: string;
   description: string;
   enabled: boolean;
@@ -316,6 +317,7 @@ export function convertCanvasToWorkflow(
   return {
     id: workflowId,
     name: workflowConfig.name,
+    pretty_name: workflowConfig.name,
     version: workflowConfig.version || '1.0.0',
     description: workflowConfig.description,
     enabled: workflowConfig.enabled ?? true,
@@ -364,7 +366,7 @@ export function validateCanvasData(
 
     const provider = getModuleProvider(node.module);
     if (provider && !node.credential_id)
-      errors.push(`Le node "${node.label || node.id}" require un credential pour ${provider}.`);
+      errors.push(`The node "${node.label || node.id}" requires a credential for ${provider}.`);
 
     const { inputs, options } = collectModuleSpecs(node.module);
     const requiredInputs = inputs.filter((input: any) => input?.required);

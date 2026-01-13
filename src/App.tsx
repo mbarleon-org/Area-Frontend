@@ -37,10 +37,12 @@ const App: React.FC = () => {
               <NavigationContainer>
                 <Stack.Navigator screenOptions={{ headerShown: false }}>
                   {ROUTES.map((r: any) => {
-                    const Component = (r.element as any)?.type || (() => r.element);
-                    // use r.label or a safe key as screen name
                     const screenName = r.label || r.path || String(r.path);
-                    return <Stack.Screen key={r.path} name={screenName} component={Component} />;
+                    return (
+                      <Stack.Screen key={r.path} name={screenName}>
+                        {() => r.element}
+                      </Stack.Screen>
+                    );
                   })}
                 </Stack.Navigator>
               </NavigationContainer>

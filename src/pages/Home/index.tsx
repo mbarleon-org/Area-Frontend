@@ -59,7 +59,7 @@ const Home: React.FC = () => {
 
         const normalizedData = Array.isArray(sortedList) ? sortedList.map((item: any) => ({
           id: item.id || Math.random(),
-          title: item.name || 'Unnamed',
+          title: item.pretty_name || item.name || 'Unnamed',
           subtitle: item.version ? `v${item.version}` : (item.provider || ''),
           description: item.description || 'No description available',
           enabled: item.enabled !== undefined ? item.enabled : true,
@@ -98,7 +98,7 @@ const Home: React.FC = () => {
     if (!confirmTarget)
       return;
     try {
-      // await del(`/workflows/${confirmTarget.id}`);
+      await del(`/workflows/${confirmTarget.id}`);
       setConfirmTarget(null);
       setMenuOpenId(null);
       fetchData();
@@ -572,7 +572,7 @@ const webStyles: any = {
   },
   moreBtnHover: {
     background: 'rgba(255,255,255,0.08)',
-    borderColor: 'rgba(255,255,255,0.35)',
+    border: '1px solid rgba(255,255,255,0.35)',
   },
   dropdown: {
     position: 'absolute',
@@ -605,10 +605,10 @@ const webStyles: any = {
     transition: 'all 0.18s ease',
   },
   toggleEnable: {
-    borderColor: 'rgba(46, 204, 113, 0.5)',
+    border: '1px solid rgba(46, 204, 113, 0.5)',
   },
   toggleDisable: {
-    borderColor: 'rgba(231, 76, 60, 0.5)',
+    border: '1px solid rgba(231, 76, 60, 0.5)',
   },
   toggleHoverEnabled: {
     background: 'rgba(231, 76, 60, 0.5)',
