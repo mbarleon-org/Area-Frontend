@@ -96,7 +96,7 @@ const Navbar: React.FC = () => {
                   <Feather name="home" size={20} color="#fff" style={mobileStyles.icon} />
                   <Text style={mobileStyles.menuText}>Home</Text>
                 </TouchableOpacity>
-                {/* <TouchableOpacity onPress={() => goTo('/dashboard')} style={mobileStyles.menuItem}>
+                <TouchableOpacity onPress={() => goTo('/dashboard')} style={mobileStyles.menuItem}>
                   <Feather name="grid" size={20} color="#fff" style={mobileStyles.icon} />
                   <Text style={mobileStyles.menuText}>Dashboard</Text>
                 </TouchableOpacity>
@@ -109,7 +109,7 @@ const Navbar: React.FC = () => {
                 <TouchableOpacity onPress={() => goTo('/explore')} style={mobileStyles.menuItem}>
                   <Feather name="compass" size={20} color="#fff" style={mobileStyles.icon} />
                   <Text style={mobileStyles.menuText}>Explore</Text>
-                </TouchableOpacity> */}
+                </TouchableOpacity>
               </View>
 
               <View style={mobileStyles.divider} />
