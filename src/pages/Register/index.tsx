@@ -3,6 +3,7 @@ import Navbar from "../../components/Navbar";
 import { useToast } from "../../components/Toast";
 import { isWeb } from "../../utils/IsWeb";
 import { useApi } from "../../utils/UseApi";
+import ApiConfigInput from "../../components/ApiConfigInput";
 
 let safeUseNavigation: any = () => ({
   navigate: (_: any) => { },
@@ -20,6 +21,7 @@ const Register: React.FC = () => {
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [needPassword, setNeedPassword] = React.useState<boolean>(false);
+  const [showConfig, setShowConfig] = React.useState(false);
   const { post, get } = useApi();
   const [buttonHover, setButtonHover] = React.useState(false);
   const [buttonActive, setButtonActive] = React.useState(false);
@@ -157,6 +159,22 @@ const Register: React.FC = () => {
                 <TouchableOpacity onPress={() => navigationMobile.reset ? navigationMobile.reset({ index: 0, routes: [{ name: 'Login' }] }) : navigationMobile.navigate('Login')}>
                   <Text style={mobileStyles.login}>Already have an account</Text>
                 </TouchableOpacity>
+
+                {/* Server Configuration Toggle */}
+                <TouchableOpacity
+                  onPress={() => setShowConfig(!showConfig)}
+                  style={mobileStyles.configToggle}
+                >
+                  <Text style={mobileStyles.configToggleText}>
+                    {showConfig ? '▲ Hide Server Config' : '▼ Server Config'}
+                  </Text>
+                </TouchableOpacity>
+
+                {showConfig && (
+                  <View style={mobileStyles.configContainer}>
+                    <ApiConfigInput showReset={true} />
+                  </View>
+                )}
               </View>
             </View>
           </ScrollView>
@@ -437,6 +455,25 @@ const mobileStyles: any = {
   providerText: {
     color: '#fff',
     fontSize: 20,
+  },
+  configToggle: {
+    marginTop: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  configToggleText: {
+    color: '#666',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  configContainer: {
+    width: '100%',
+    marginTop: 10,
+    padding: 16,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   }
 };
 

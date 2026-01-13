@@ -6,6 +6,7 @@ import { useToken } from "../../hooks/useToken";
 import { useInRouterContext, useNavigate } from "../../utils/router";
 import { useApi } from "../../utils/UseApi";
 import { assetPath } from "../../utils/assets";
+import ApiConfigInput from "../../components/ApiConfigInput";
 
 
 if (isWeb) import('../../index.css');
@@ -30,6 +31,7 @@ const User: React.FC = () => {
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const [showConfig, setShowConfig] = React.useState(false);
   const user_icon = isWeb ? assetPath('/user_icon2.png') : require('../../../public/user_icon2.png');
   const { setToken } = useToken();
   const { get, put } = useApi();
@@ -136,6 +138,22 @@ const User: React.FC = () => {
                 {isEditing ? (saving ? "Saving..." : "Confirm") : "Edit username"}
               </Text>
             </TouchableOpacity>
+
+            {/* Server Configuration Toggle */}
+            <TouchableOpacity
+              onPress={() => setShowConfig(!showConfig)}
+              style={mobileStyles.configToggle}
+            >
+              <Text style={mobileStyles.configToggleText}>
+                {showConfig ? '▲ Hide Server Config' : '▼ Server Config'}
+              </Text>
+            </TouchableOpacity>
+
+            {showConfig && (
+              <View style={mobileStyles.configContainer}>
+                <ApiConfigInput showReset={true} />
+              </View>
+            )}
           </View>
         </View>
 
@@ -358,6 +376,25 @@ const mobileStyles = StyleSheet.create({
     color: '#000',
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  configToggle: {
+    marginTop: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  configToggleText: {
+    color: '#666',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  configContainer: {
+    width: '100%',
+    marginTop: 12,
+    padding: 16,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   }
 });
 

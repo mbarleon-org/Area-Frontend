@@ -5,6 +5,7 @@ import { isWeb } from "../../utils/IsWeb";
 import { useApi } from '../../utils/UseApi';
 import { useToken } from '../../hooks/useToken';
 import { useNavigate } from '../../utils/router';
+import ApiConfigInput from '../../components/ApiConfigInput';
 
 if (isWeb) import('../../index.css');
 
@@ -26,6 +27,7 @@ const Home: React.FC = () => {
   const [hoveredToggleId, setHoveredToggleId] = useState<string | null>(null);
   const [hoveredMoreId, setHoveredMoreId] = useState<string | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<{ id: string; title: string } | null>(null);
+  const [showConfig, setShowConfig] = useState(false);
 
   const fetchData = useCallback(() => {
     if (!token)
@@ -127,6 +129,23 @@ const Home: React.FC = () => {
           <Navbar />
           <View style={mobileStyles.centerContainer}>
             <Text style={mobileStyles.title}>Welcome to the AREA Home Page</Text>
+            <Text style={mobileStyles.subtitle}>Please log in to access your workflows and credentials.</Text>
+
+            {/* Server Configuration Toggle */}
+            <TouchableOpacity
+              onPress={() => setShowConfig(!showConfig)}
+              style={mobileStyles.configToggle}
+            >
+              <Text style={mobileStyles.configToggleText}>
+                {showConfig ? '▲ Hide Server Config' : '▼ Server Config'}
+              </Text>
+            </TouchableOpacity>
+
+            {showConfig && (
+              <View style={mobileStyles.configContainer}>
+                <ApiConfigInput showReset={true} />
+              </View>
+            )}
           </View>
         </View>
       );
@@ -340,6 +359,32 @@ const mobileStyles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  subtitle: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  configToggle: {
+    marginTop: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  configToggleText: {
+    color: '#666',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  configContainer: {
+    width: '90%',
+    maxWidth: 400,
+    marginTop: 15,
+    padding: 20,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   filterScroll: {
     flexGrow: 0,

@@ -4,6 +4,7 @@ import ROUTES from './constants/Router';
 import { CookiesProvider } from 'react-cookie';
 import { ToastProvider } from './components/Toast';
 import { BrowserRouter, Routes, Route } from './utils/router';
+import { ApiConfigProvider } from './contexts/ApiConfigContext';
 
 const detectIsWeb = (): boolean => {
   try {
@@ -32,22 +33,24 @@ const App: React.FC = () => {
 
       return (
         <CookiesProvider>
-          <SafeAreaProvider>
-            <ToastProvider>
-              <NavigationContainer>
-                <Stack.Navigator screenOptions={{ headerShown: false }}>
-                  {ROUTES.map((r: any) => {
-                    const screenName = r.label || r.path || String(r.path);
-                    return (
-                      <Stack.Screen key={r.path} name={screenName}>
-                        {() => r.element}
-                      </Stack.Screen>
-                    );
-                  })}
-                </Stack.Navigator>
-              </NavigationContainer>
-            </ToastProvider>
-          </SafeAreaProvider>
+          <ApiConfigProvider>
+            <SafeAreaProvider>
+              <ToastProvider>
+                <NavigationContainer>
+                  <Stack.Navigator screenOptions={{ headerShown: false }}>
+                    {ROUTES.map((r: any) => {
+                      const screenName = r.label || r.path || String(r.path);
+                      return (
+                        <Stack.Screen key={r.path} name={screenName}>
+                          {() => r.element}
+                        </Stack.Screen>
+                      );
+                    })}
+                  </Stack.Navigator>
+                </NavigationContainer>
+              </ToastProvider>
+            </SafeAreaProvider>
+          </ApiConfigProvider>
         </CookiesProvider>
       );
     } catch (e) {
@@ -57,15 +60,17 @@ const App: React.FC = () => {
 
   return (
     <CookiesProvider>
-      <ToastProvider>
-        <BrowserRouter>
-          <Routes>
-            {ROUTES.map((r: any) => (
-              <Route key={r.path} path={r.path} element={r.element} />
-            ))}
-          </Routes>
-        </BrowserRouter>
-      </ToastProvider>
+      <ApiConfigProvider>
+        <ToastProvider>
+          <BrowserRouter>
+            <Routes>
+              {ROUTES.map((r: any) => (
+                <Route key={r.path} path={r.path} element={r.element} />
+              ))}
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
+      </ApiConfigProvider>
     </CookiesProvider>
   );
 };

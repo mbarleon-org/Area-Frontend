@@ -4,6 +4,7 @@ import { isWeb } from "../../utils/IsWeb";
 import { useApi } from "../../utils/UseApi";
 import { useToast } from "../../components/Toast";
 import { useToken } from "../../hooks/useToken";
+import ApiConfigInput from "../../components/ApiConfigInput";
 
 let safeUseNavigation: any = () => ({
   navigate: (_: any) => { },
@@ -22,6 +23,7 @@ if (!isWeb) {
 const Login: React.FC = () => {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [showConfig, setShowConfig] = React.useState(false);
   const { post } = useApi();
   const { showToast } = useToast();
   const { setToken } = useToken();
@@ -119,6 +121,33 @@ const Login: React.FC = () => {
               <TouchableOpacity onPress={() => navigation.reset ? navigation.reset({ index: 0, routes: [{ name: 'Register' }] }) : navigation.navigate('Register')}>
                 <Text style={mobileStyles.register}>Don't have an account</Text>
               </TouchableOpacity>
+
+              {/* Server Configuration Toggle */}
+              <TouchableOpacity
+                onPress={() => setShowConfig(!showConfig)}
+                style={mobileStyles.configToggle}
+              >
+                <Text style={mobileStyles.configToggleText}>
+                  {showConfig ? '▲ Hide Server Config' : '▼ Server Config'}
+                </Text>
+              </TouchableOpacity>
+
+              {showConfig && (
+                <View style={mobileStyles.configContainer}>
+                  <ApiConfigInput
+                    showReset={true}
+                    onSave={() => showToast({
+                      message: 'Server address saved!',
+                      duration: 3000,
+                      barColor: '#4CAF50',
+                      backgroundColor: '#222',
+                      textColor: '#fff',
+                      position: 'bottom',
+                      transitionSide: 'left'
+                    })}
+                  />
+                </View>
+              )}
             </View>
           </View>
         </ScrollView>
@@ -283,7 +312,26 @@ const mobileStyles: any = {
   providerText: {
     color: '#fff',
     fontSize: 20,
-  }
+  },
+  configToggle: {
+    marginTop: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  configToggleText: {
+    color: '#666',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  configContainer: {
+    width: '100%',
+    marginTop: 10,
+    padding: 16,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
 };
 
 const webStyles: { [k: string]: React.CSSProperties } = {
