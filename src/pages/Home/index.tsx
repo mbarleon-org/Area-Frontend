@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Navbar from "../../components/Navbar";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { isWeb } from "../../utils/IsWeb";
 import { useApi } from '../../utils/UseApi';
 import { useToken } from '../../hooks/useToken';
-import { useNavigate } from '../../utils/router';
 
 if (isWeb) import('../../index.css');
 
@@ -17,17 +16,11 @@ const FILTERS = [
 
 const Home: React.FC = () => {
   const { token } = useToken();
-  const { get, post, del } = useApi();
-  const navigate = useNavigate();
+  const { get } = useApi();
   const [activeFilter, setActiveFilter] = useState(FILTERS[0].id);
   const [data, setData] = useState<any[] | null>(null);
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
-  const [hoveredToggleId, setHoveredToggleId] = useState<string | null>(null);
-  const [hoveredMoreId, setHoveredMoreId] = useState<string | null>(null);
-  const [confirmTarget, setConfirmTarget] = useState<{ id: string; title: string } | null>(null);
 
-  const fetchData = useCallback(() => {
+  useEffect(() => {
     if (!token)
       return;
     let mounted = true;
@@ -39,32 +32,12 @@ const Home: React.FC = () => {
         if (!mounted)
           return;
         const list = res?.workflows || res?.credentials || [];
-        const isWorkflow = currentFilter.id.includes('workflow');
-        const parseTimestamp = (value: any) => {
-          if (typeof value === 'number')
-            return value;
-          if (typeof value === 'string') {
-            const parsed = Date.parse(value);
-            return Number.isFinite(parsed) ? parsed : 0;
-          }
-          return 0;
-        };
-        const getUpdatedAt = (item: any) => parseTimestamp(
-          item?.updated_at ?? item?.updatedAt ?? item?.data?.updated_at ?? item?.datas?.updated_at ?? item?.canvas?.updated_at
-        );
-
-        const sortedList = Array.isArray(list)
-          ? (isWorkflow ? [...list].sort((a, b) => getUpdatedAt(b) - getUpdatedAt(a)) : list)
-          : [];
-
-        const normalizedData = Array.isArray(sortedList) ? sortedList.map((item: any) => ({
+        const normalizedData = Array.isArray(list) ? list.map((item: any) => ({
           id: item.id || Math.random(),
           title: item.name || 'Unnamed',
           subtitle: item.version ? `v${item.version}` : (item.provider || ''),
           description: item.description || 'No description available',
           enabled: item.enabled !== undefined ? item.enabled : true,
-          raw: item,
-          type: isWorkflow ? 'workflow' : 'credential',
         })) : [];
         setData(normalizedData);
       })
@@ -72,52 +45,7 @@ const Home: React.FC = () => {
         if (mounted) setData([]);
       });
     return () => { mounted = false; };
-  }, [activeFilter, get, token]);
-
-  useEffect(() => {
-    const cleanup = fetchData();
-    return cleanup;
-  }, [fetchData]);
-
-  const isWorkflowFilter = activeFilter.includes('workflow');
-  const isMyWorkflows = activeFilter === 'my_workflows';
-
-  const handleEdit = (item: any) => {
-    if (!isWorkflowFilter)
-      return;
-    navigate('/automations', { state: { workflow: item.raw || item } });
-  };
-
-  const handleDelete = async (item: any) => {
-    if (!isMyWorkflows)
-      return;
-    setConfirmTarget({ id: item.id, title: item.title || item.name || 'this workflow' });
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!confirmTarget)
-      return;
-    try {
-      // await del(`/workflows/${confirmTarget.id}`);
-      setConfirmTarget(null);
-      setMenuOpenId(null);
-      fetchData();
-    } catch (err) {
-      console.error('Failed to delete workflow', err);
-    }
-  };
-
-  const handleToggleEnable = async (item: any) => {
-    if (!isWorkflowFilter)
-      return;
-    const action = item.enabled ? 'disable' : 'enable';
-    try {
-      await post(`/workflows/${item.id}/${action}`, {});
-      setData((prev) => prev ? prev.map((d) => d.id === item.id ? { ...d, enabled: !d.enabled } : d) : prev);
-    } catch (err) {
-      console.error('Failed to toggle workflow', err);
-    }
-  };
+  }, [get, activeFilter, token]);
 
   // ------------------------ Not Logged In View ------------------------
   if (!token) {
@@ -181,29 +109,15 @@ const Home: React.FC = () => {
               <Text style={mobileStyles.cardBody}>{item.description}</Text>
 
               <View style={[
-                mobileStyles.footerRow,
+                mobileStyles.statusBadge,
+                item.enabled ? mobileStyles.statusEnabled : mobileStyles.statusDisabled
               ]}>
-                <View style={[
-                  mobileStyles.statusBadge,
-                  item.enabled ? mobileStyles.statusEnabled : mobileStyles.statusDisabled
+                <Text style={[
+                  mobileStyles.statusText,
+                  item.enabled ? mobileStyles.textEnabled : mobileStyles.textDisabled
                 ]}>
-                  <Text style={[
-                    mobileStyles.statusText,
-                    item.enabled ? mobileStyles.textEnabled : mobileStyles.textDisabled
-                  ]}>
-                    {item.enabled ? "Enabled" : "Disabled"}
-                  </Text>
-                </View>
-                {isWorkflowFilter && (
-                  <TouchableOpacity
-                    style={mobileStyles.toggleBtn}
-                    onPress={() => handleToggleEnable(item)}
-                  >
-                    <Text style={mobileStyles.toggleBtnText}>
-                      {item.enabled ? 'Disable' : 'Enable'}
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                  {item.enabled ? "Enabled" : "Disabled"}
+                </Text>
               </View>
             </View>
           ))}
@@ -244,57 +158,14 @@ const Home: React.FC = () => {
           {data && data.map((item: any) => (
             <div key={item.id} style={webStyles.column}>
               <div style={webStyles.itemWrapper}>
-                <div
-                  style={{
-                    ...webStyles.card,
-                    ...(hoveredCardId === item.id ? webStyles.cardHover : {}),
-                  }}
-                  onMouseEnter={() => setHoveredCardId(item.id)}
-                  onMouseLeave={() => setHoveredCardId((prev) => (prev === item.id ? null : prev))}
-                >
+                <div style={webStyles.card}>
                     <div style={webStyles.cardHeader}>
                       <div style={webStyles.cardTitle}>{item.title}</div>
-                      <div style={webStyles.headerRight}>
-                        {item.subtitle && <div style={{...webStyles.status, ...(item.enabled ? webStyles.statusEnabled : webStyles.statusDisabled)}}>{item.enabled ? "Enabled" : "Disabled"}</div>}
-                        {isMyWorkflows && (
-                          <div style={webStyles.moreWrapper}>
-                            <button
-                              style={{
-                                ...webStyles.moreBtn,
-                                ...(hoveredMoreId === item.id ? webStyles.moreBtnHover : {}),
-                              }}
-                              onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === item.id ? null : item.id); }}
-                              onMouseEnter={() => setHoveredMoreId(item.id)}
-                              onMouseLeave={() => setHoveredMoreId((prev) => (prev === item.id ? null : prev))}
-                            >
-                              ⋯
-                            </button>
-                            {menuOpenId === item.id && (
-                              <div style={webStyles.dropdown}>
-                                <button style={webStyles.dropdownItem} onClick={() => { handleEdit(item); setMenuOpenId(null); }}>Edit</button>
-                                <button style={webStyles.dropdownItem} onClick={() => { handleDelete(item); }}>Delete</button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                      {item.subtitle && <div style={webStyles.version}>{item.subtitle}</div>}
                     </div>
                     <div style={webStyles.cardBody}>{item.description}</div>
-                    <div style={webStyles.cardFooterRow}>
-                      {isWorkflowFilter && (
-                        <button
-                          style={{
-                            ...webStyles.toggleBtn,
-                            ...(item.enabled ? webStyles.toggleDisable : webStyles.toggleEnable),
-                            ...(hoveredToggleId === item.id ? (item.enabled ? webStyles.toggleHoverEnabled : webStyles.toggleHoverDisabled) : {}),
-                          }}
-                          onMouseEnter={() => setHoveredToggleId(item.id)}
-                          onMouseLeave={() => setHoveredToggleId((prev) => (prev === item.id ? null : prev))}
-                          onClick={() => handleToggleEnable(item)}
-                        >
-                          {item.enabled ? 'Disable' : 'Enable'}
-                        </button>
-                      )}
+                    <div style={{ ...webStyles.cardFooter, ...(item.enabled ? webStyles.statusEnabled : webStyles.statusDisabled) }}>
+                      {item.enabled ? "Enabled" : "Disabled"}
                     </div>
                 </div>
               </div>
@@ -302,19 +173,6 @@ const Home: React.FC = () => {
           ))}
         </div>
       </div>
-
-      {confirmTarget && (
-        <div style={webStyles.confirmOverlay} onClick={() => setConfirmTarget(null)}>
-          <div style={webStyles.confirmModal} onClick={(e) => e.stopPropagation()}>
-            <div style={webStyles.confirmTitle}>Delete workflow?</div>
-            <div style={webStyles.confirmText}>You are about to delete "{confirmTarget.title}". This action cannot be undone.</div>
-            <div style={webStyles.confirmActions}>
-              <button style={webStyles.confirmCancel} onClick={() => setConfirmTarget(null)}>Cancel</button>
-              <button style={webStyles.confirmDelete} onClick={handleConfirmDelete}>Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
@@ -404,12 +262,6 @@ const mobileStyles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 12,
   },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 12,
-  },
   statusEnabled: {
     backgroundColor: 'rgba(46, 204, 113, 0.12)'
   },
@@ -426,16 +278,6 @@ const mobileStyles = StyleSheet.create({
   textDisabled: {
     color: '#e74c3c'
   },
-  toggleBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: '#2c3e50',
-  },
-  toggleBtnText: {
-    color: '#fff',
-    fontWeight: '600'
-  }
 });
 
 const webStyles: any = {
@@ -480,14 +322,6 @@ const webStyles: any = {
     display: 'flex',
     flexDirection: 'column',
     width: '100%',
-    position: 'relative',
-    transition: 'transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease',
-  },
-  cardHover: {
-    transform: 'scale(1.01)',
-    border: '1px solid rgba(255,255,255,0.14)',
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
   },
   cardHeader: {
     display: 'flex',
@@ -500,16 +334,10 @@ const webStyles: any = {
     fontWeight: 600,
     fontSize: '14px',
   },
-  headerRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
   version: {
     fontSize: '12px',
     padding: '4px 8px',
     borderRadius: 12,
-    background: 'rgba(255,255,255,0.08)',
   },
   statusEnabled: {
     background: 'rgba(46, 204, 113, 0.12)',
@@ -524,12 +352,13 @@ const webStyles: any = {
     opacity: 0.9,
     marginBottom: '8px',
   },
-  cardFooterRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: '12px',
-    marginTop: '8px',
+  cardFooter: {
+    fontSize: '12px',
+    opacity: 0.9,
+    padding: '4px 8px',
+    borderRadius: 12,
+    display: 'inline-block',
+    alignSelf: 'flex-start',
   },
   filterBar: {
     display: 'flex',
@@ -553,127 +382,6 @@ const webStyles: any = {
   filterBtnActive: {
     color: '#fff',
     background: 'rgba(255,255,255,0.1)',
-  },
-  moreWrapper: {
-    position: 'relative',
-  },
-  moreBtn: {
-    background: 'transparent',
-    border: '1px solid rgba(255,255,255,0.15)',
-    color: '#fff',
-    borderRadius: 6,
-    width: 28,
-    height: 28,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    transition: 'background 0.15s ease, border-color 0.15s ease',
-  },
-  moreBtnHover: {
-    background: 'rgba(255,255,255,0.08)',
-    borderColor: 'rgba(255,255,255,0.35)',
-  },
-  dropdown: {
-    position: 'absolute',
-    top: 32,
-    right: 0,
-    background: '#1f1f24',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 8,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-    minWidth: 140,
-    zIndex: 10,
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  dropdownItem: {
-    padding: '10px 12px',
-    background: 'transparent',
-    color: '#fff',
-    border: 'none',
-    textAlign: 'left' as any,
-    cursor: 'pointer',
-  },
-  toggleBtn: {
-    padding: '6px 12px',
-    borderRadius: 10,
-    border: '1px solid rgba(255,255,255,0.14)',
-    background: 'transparent',
-    color: '#fff',
-    cursor: 'pointer',
-    transition: 'all 0.18s ease',
-  },
-  toggleEnable: {
-    borderColor: 'rgba(46, 204, 113, 0.5)',
-  },
-  toggleDisable: {
-    borderColor: 'rgba(231, 76, 60, 0.5)',
-  },
-  toggleHoverEnabled: {
-    background: 'rgba(231, 76, 60, 0.5)',
-    color: '#fff',
-    boxShadow: '0 6px 18px rgba(0,0,0,0.28)',
-  },
-  toggleHoverDisabled: {
-    background: 'rgba(46, 204, 113, 0.5)',
-    color: '#fff',
-    boxShadow: '0 6px 18px rgba(0,0,0,0.28)',
-  },
-  confirmOverlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.55)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 3000,
-  },
-  confirmModal: {
-    background: '#1f1f24',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 10,
-    padding: 20,
-    width: '90%',
-    maxWidth: 420,
-    boxShadow: '0 12px 32px rgba(0,0,0,0.45)',
-    color: '#fff',
-  },
-  confirmTitle: {
-    fontSize: 18,
-    fontWeight: 700,
-    marginBottom: 8,
-  },
-  confirmText: {
-    fontSize: 14,
-    opacity: 0.9,
-    marginBottom: 16,
-  },
-  confirmActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: 10,
-  },
-  confirmCancel: {
-    padding: '8px 14px',
-    borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.18)',
-    background: 'transparent',
-    color: '#fff',
-    cursor: 'pointer',
-  },
-  confirmDelete: {
-    padding: '8px 14px',
-    borderRadius: 8,
-    border: '1px solid rgba(231,76,60,0.45)',
-    background: 'rgba(231,76,60,0.7)',
-    color: '#fff',
-    cursor: 'pointer',
-  },
-  status: {
-    fontSize: 12,
-    padding: '4px 8px',
-    borderRadius: 12,
   },
 };
 
