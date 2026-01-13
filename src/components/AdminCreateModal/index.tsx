@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
 import { isWeb } from '../../utils/IsWeb';
+import { useApi } from '../../utils/UseApi';
 
 type CreateType = 'user' | 'team';
 
 interface AdminCreateModalProps {
   visible: boolean;
   onClose: () => void;
-  onCreateUser: (data: { username: string; email: string }) => Promise<boolean>;
+  onCreateUser: (data: { username: string; email: string; password?: string }) => Promise<boolean>;
   onCreateTeam: (data: { name: string }) => Promise<boolean>;
 }
 
@@ -20,10 +21,12 @@ const AdminCreateModal: React.FC<AdminCreateModalProps> = ({
   const [activeTab, setActiveTab] = useState<CreateType>('user');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [needPassword, setNeedPassword] = useState<boolean>(false);
 
   // User fields
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   // Team fields
   const [teamName, setTeamName] = useState('');
@@ -34,9 +37,26 @@ const AdminCreateModal: React.FC<AdminCreateModalProps> = ({
   const [hoverTabUser, setHoverTabUser] = useState(false);
   const [hoverTabTeam, setHoverTabTeam] = useState(false);
 
+  const { get } = useApi();
+
+  useEffect(() => {
+    if (!visible) return;
+    let mounted = true;
+    (async () => {
+      try {
+        await get('/auth/supports_check_email');
+        if (mounted) setNeedPassword(false);
+      } catch (e) {
+        if (mounted) setNeedPassword(true);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [visible, get]);
+
   const resetForm = () => {
     setUsername('');
     setEmail('');
+    setPassword('');
     setTeamName('');
     setError(null);
   };
@@ -53,12 +73,32 @@ const AdminCreateModal: React.FC<AdminCreateModalProps> = ({
     try {
       let success = false;
       if (activeTab === 'user') {
+        const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/;
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,}$/;
+
         if (!username.trim() || !email.trim()) {
           setError('All fields are required');
           setSaving(false);
           return;
         }
-        success = await onCreateUser({ username: username.trim(), email: email.trim() });
+        if (!emailPattern.test(email.trim())) {
+          setError('Enter a valid email');
+          setSaving(false);
+          return;
+        }
+        if (needPassword) {
+          if (password.length < 8 || !passwordPattern.test(password)) {
+            setError('Password must be at least 8 characters, include a letter, a number, and a special character.');
+            setSaving(false);
+            return;
+          }
+        }
+
+        success = await onCreateUser({
+          username: username.trim(),
+          email: email.trim(),
+          ...(needPassword ? { password } : {}),
+        });
       } else {
         if (!teamName.trim()) {
           setError('Team name is required');
@@ -136,6 +176,19 @@ const AdminCreateModal: React.FC<AdminCreateModalProps> = ({
                     autoCapitalize="none"
                   />
                 </View>
+                {needPassword && (
+                  <View style={mobileStyles.fieldRow}>
+                    <Text style={mobileStyles.fieldLabel}>Password</Text>
+                    <TextInput
+                      style={mobileStyles.fieldInput}
+                      value={password}
+                      onChangeText={setPassword}
+                      placeholder="Enter password"
+                      placeholderTextColor="#666"
+                      secureTextEntry
+                    />
+                  </View>
+                )}
               </View>
             )}
 
@@ -234,6 +287,18 @@ const AdminCreateModal: React.FC<AdminCreateModalProps> = ({
                 placeholder="Enter email"
               />
             </div>
+              {needPassword && (
+                <div style={webStyles.fieldRow}>
+                  <label style={webStyles.fieldLabel}>Password</label>
+                  <input
+                    type="password"
+                    style={webStyles.fieldInput}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                  />
+                </div>
+              )}
           </div>
         )}
 

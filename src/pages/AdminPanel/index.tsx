@@ -230,7 +230,7 @@ const AdminPanel: React.FC = () => {
     setSelectedItem(null);
   };
 
-  const handleCreateUser = async (userData: { username: string; email: string }): Promise<boolean> => {
+  const handleCreateUser = async (userData: { username: string; email: string; password?: string }): Promise<boolean> => {
     try {
       await post('/users', userData);
       fetchData();
