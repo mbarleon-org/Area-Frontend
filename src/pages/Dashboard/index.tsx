@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import '../../index.css';
+import { isWeb } from "../../utils/IsWeb";
 import Navbar from '../../components/Navbar';
-import { NavLink } from '../../utils/router';
+import { TextBase } from 'react-native';
 
 const NavLinkWrapper: React.FC<any> = ({ children, ...props }) => {
   if (typeof document !== 'undefined') {
+    const { NavLink } = require('react-router-dom');
     return <NavLink {...props}>{children}</NavLink>;
   }
   try {
@@ -19,6 +21,8 @@ const NavLinkWrapper: React.FC<any> = ({ children, ...props }) => {
   }
 };
 
+
+
 const Dashboard: React.FC = () => {
   const [automations] = useState([
     { id: 1, name: 'Backup DB nightly (Fake data)', desc: 'Nightly saving (Fake data)', status: 'OK', lastRun: '2025-11-24 02:00' },
@@ -26,6 +30,40 @@ const Dashboard: React.FC = () => {
     { id: 3, name: 'Generate report (Fake data)', desc: 'Daily report generation (Fake data)', status: 'Running', lastRun: '2025-11-24 11:03' },
   ] as Array<{ id: number; name: string; desc: string; status: string; lastRun: string }> );
 
+  // ------------------------ Mobile view ------------------------
+  if (!isWeb) {
+    const { View, Text, TouchableOpacity, ScrollView } = require('react-native');
+    const { useNavigation } = require('@react-navigation/native');
+    const navigation = useNavigation();
+    return (
+      <>
+        <Navbar />
+        <ScrollView style={{ flex: 1, backgroundColor: "#151316", marginTop: 93}}>
+          <View style ={{ padding: 16}}>
+            <TouchableOpacity
+              style={{ backgroundColor: "#2b2b2b", padding: 12, borderRadius: 6, marginBottom: 16 }}
+              onPress={() => navigation.navigate('Automations')}
+            >
+              <Text style={{ color: "#fff", textAlign: "center" }}>+ New automation</Text>
+            </TouchableOpacity>
+            <Text style={{ color: "#fff", fontSize: 20, marginBottom: 16 }}>Automations</Text>
+            {automations.map(a => (
+              <View key={a.id} style ={{ backgroundColor: "#222", borderRadius: 8, padding: 12, marginBottom: 12}}>
+                <Text style={{ color: "#fff", fontWeight: "bold" }}>{a.name}</Text>
+                <Text style={{ color: "#aaa", marginBottom: 4 }}>{a.desc}</Text>
+                <Text style={{ color: "#888", fontSize: 12}}>Last run: {a.lastRun}</Text>
+                <Text style={{
+                  color: a.status === "OK" ? "#2ecc71" : a.status === "Running" ? "#f1c40f" : "#e74c3c",
+                  fontWeight: "bold"
+                }}>{a.status}</Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </>
+    );
+  }
+  // ------------------------ Web view ---------------------------
   return (
     <>
       <Navbar />
