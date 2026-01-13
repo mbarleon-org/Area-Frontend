@@ -9,6 +9,7 @@ import Register from "../../pages/Register"
 import PasswordReset from "../../pages/PasswordReset";
 import Automations from "../../pages/Automations";
 import User from "../../pages/User";
+import NotFound from "../../pages/NotFound";
 
 interface Router {
   path: string;
@@ -80,6 +81,13 @@ const ROUTES: Router[] = [
     element: <User />,
     label: "User",
     navbar: true,
+    security: "public",
+  },
+  {
+    path: "*",
+    element: <NotFound />,
+    label: "NotFound",
+    navbar: false,
     security: "public",
   },
 ];
