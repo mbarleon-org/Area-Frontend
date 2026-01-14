@@ -1,11 +1,12 @@
 import React from "react";
 import Navbar from "../../components/Navbar";
 import { isWeb } from "../../utils/IsWeb";
-import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity} from 'react-native';
+import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useToken } from "../../hooks/useToken";
 import { useInRouterContext, useNavigate } from "../../utils/router";
 import { useApi } from "../../utils/UseApi";
 import { assetPath } from "../../utils/assets";
+import ApiConfigInput from "../../components/ApiConfigInput";
 
 
 if (isWeb) import('../../index.css');
@@ -30,6 +31,7 @@ const User: React.FC = () => {
   const [isAdmin, setIsAdmin] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const [showConfig, setShowConfig] = React.useState(false);
   const user_icon = isWeb ? assetPath('/user_icon2.png') : require('../../../public/user_icon2.png');
   const { setToken } = useToken();
   const { get, put } = useApi();
@@ -90,76 +92,102 @@ const User: React.FC = () => {
   // ------------------------ Mobile View ------------------------
   if (!isWeb) {
     return (
-      <View style={mobileStyles.mainContainer}>
+      <KeyboardAvoidingView
+        style={mobileStyles.mainContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
         <Navbar />
 
-        <View style={mobileStyles.content}>
-          <View style={mobileStyles.iconContainer}>
-            <Image source={user_icon as any} style={mobileStyles.avatarImg} />
+        <ScrollView
+          contentContainerStyle={mobileStyles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={mobileStyles.content}>
+            <View style={mobileStyles.iconContainer}>
+              <Image source={user_icon as any} style={mobileStyles.avatarImg} />
+            </View>
+
+            <View style={mobileStyles.infoContainer}>
+              {loading ? (
+                <Text style={mobileStyles.displayText}>Loading user...</Text>
+              ) : (
+                <>
+                  <Text style={mobileStyles.label}>Username</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={mobileStyles.input}
+                      value={username}
+                      onChangeText={setUsername}
+                      placeholder="Username"
+                      placeholderTextColor="#888"
+                    />
+                  ) : (
+                    <Text style={mobileStyles.displayText}>{username || 'No username set'}</Text>
+                  )}
+
+                  <Text style={mobileStyles.label}>Email</Text>
+                  <Text style={mobileStyles.displayText}>{email || 'No email set'}</Text>
+                </>
+              )}
+
+              <TouchableOpacity
+                style={mobileStyles.editButton}
+                onPress={() => {
+                  if (isEditing) {
+                    handleSaveUsername();
+                  } else {
+                    setIsEditing(true);
+                  }
+                }}
+                disabled={saving || loading}
+              >
+                <Text style={mobileStyles.buttonText}>
+                  {isEditing ? (saving ? "Saving..." : "Confirm") : "Edit username"}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Server Configuration Toggle */}
+              <TouchableOpacity
+                onPress={() => setShowConfig(!showConfig)}
+                style={mobileStyles.configToggle}
+              >
+                <Text style={mobileStyles.configToggleText}>
+                  {showConfig ? '▲ Hide Server Config' : '▼ Server Config'}
+                </Text>
+              </TouchableOpacity>
+
+              {showConfig && (
+                <View style={mobileStyles.configContainer}>
+                  <ApiConfigInput showReset={true} />
+                </View>
+              )}
+            </View>
           </View>
 
-          <View style={mobileStyles.infoContainer}>
-            {loading ? (
-              <Text style={mobileStyles.displayText}>Loading user...</Text>
-            ) : (
-              <>
-                <Text style={mobileStyles.label}>Username</Text>
-                {isEditing ? (
-                  <TextInput
-                    style={mobileStyles.input}
-                    value={username}
-                    onChangeText={setUsername}
-                    placeholder="Username"
-                    placeholderTextColor="#888"
-                  />
-                ) : (
-                  <Text style={mobileStyles.displayText}>{username || 'No username set'}</Text>
-                )}
-
-                <Text style={mobileStyles.label}>Email</Text>
-                <Text style={mobileStyles.displayText}>{email || 'No email set'}</Text>
-              </>
-            )}
-
+          <View style={mobileStyles.bottomBar}>
+            {isAdmin && (
+              <TouchableOpacity
+                style={mobileStyles.adminPanelButton}
+                onPress={() => {
+                  navigationMobile.navigate('Admin');
+                }}
+              >
+                <Text style={mobileStyles.adminPanelButtonText}>Admin Panel</Text>
+              </TouchableOpacity>)}
             <TouchableOpacity
-              style={mobileStyles.editButton}
+              style={mobileStyles.logoutButton}
               onPress={() => {
-                if (isEditing) {
-                  handleSaveUsername();
-                } else {
-                  setIsEditing(true);
-                }
+                setToken(null);
+                navigationMobile.navigate('Login');
               }}
-              disabled={saving || loading}
             >
-              <Text style={mobileStyles.buttonText}>
-                {isEditing ? (saving ? "Saving..." : "Confirm") : "Edit username"}
-              </Text>
+              <Text style={mobileStyles.logoutButtonText}>Logout</Text>
             </TouchableOpacity>
           </View>
-        </View>
-
-        <View style={mobileStyles.bottomBar}>
-          {isAdmin && (
-            <TouchableOpacity
-              style={mobileStyles.adminPanelButton}
-              onPress={() => {
-                navigationMobile.navigate('Admin');
-              }}
-            >
-              <Text style={mobileStyles.adminPanelButtonText}>Admin Panel</Text>
-            </TouchableOpacity>)}
-          <TouchableOpacity
-            style={mobileStyles.logoutButton}
-            onPress={() => {
-              setToken(null);
-              navigationMobile.navigate('Login');
-            }}
-          >
-            <Text style={mobileStyles.logoutButtonText}>Logout</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -254,6 +282,10 @@ const mobileStyles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     backgroundColor: "#151316ff",
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
   },
   scrollContainer: {
     paddingTop: 0,
@@ -358,6 +390,25 @@ const mobileStyles = StyleSheet.create({
     color: '#000',
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  configToggle: {
+    marginTop: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  configToggleText: {
+    color: '#666',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  configContainer: {
+    width: '100%',
+    marginTop: 12,
+    padding: 16,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   }
 });
 

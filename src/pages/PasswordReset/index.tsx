@@ -78,22 +78,32 @@ const PasswordReset: React.FC = () => {
   // ------------------------ Mobile view ------------------------
   if (!isWeb) {
     const RN = require('react-native');
-    const { View, Text, TextInput, TouchableOpacity } = RN;
+    const { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } = RN;
     return (
-      <View style={mobileStyles.container}>
+      <KeyboardAvoidingView
+        style={mobileStyles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
         <Navbar />
-        <View style={mobileStyles.content}>
-          <Text style={mobileStyles.title}>Set your password</Text>
-          {tokenData && tokenData.payload ? (
-            <Text style={mobileStyles.email}>{tokenData.payload.email || tokenData.payload.username}</Text>
-          ) : null}
-          <TextInput placeholder="New password" secureTextEntry value={password} onChangeText={setPassword} style={mobileStyles.input} />
-          <TextInput placeholder="Confirm password" secureTextEntry value={confirm} onChangeText={setConfirm} style={mobileStyles.input} />
-          <TouchableOpacity onPress={handleSubmit} style={mobileStyles.button}>
-            <Text style={mobileStyles.buttonText}>{loading ? 'Saving...' : 'Set password'}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        <ScrollView
+          contentContainerStyle={mobileStyles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={mobileStyles.content}>
+            <Text style={mobileStyles.title}>Set your password</Text>
+            {tokenData && tokenData.payload ? (
+              <Text style={mobileStyles.email}>{tokenData.payload.email || tokenData.payload.username}</Text>
+            ) : null}
+            <TextInput placeholder="New password" secureTextEntry value={password} onChangeText={setPassword} style={mobileStyles.input} placeholderTextColor="#888" />
+            <TextInput placeholder="Confirm password" secureTextEntry value={confirm} onChangeText={setConfirm} style={mobileStyles.input} placeholderTextColor="#888" />
+            <TouchableOpacity onPress={handleSubmit} style={mobileStyles.button}>
+              <Text style={mobileStyles.buttonText}>{loading ? 'Saving...' : 'Set password'}</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -120,6 +130,10 @@ const mobileStyles: any = {
   container: {
     flex: 1,
     backgroundColor: '#151316ff',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   content: {
     padding: 20,

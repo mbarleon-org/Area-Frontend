@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { isWeb } from '../../utils/IsWeb';
 import { useApi } from '../../utils/UseApi';
 
@@ -126,9 +126,18 @@ const AdminCreateModal: React.FC<AdminCreateModalProps> = ({
   if (!isWeb) {
     return (
       <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-        <View style={mobileStyles.overlay}>
-          <View style={mobileStyles.modal}>
-            <Text style={mobileStyles.title}>Create Mode</Text>
+        <KeyboardAvoidingView
+          style={mobileStyles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={mobileStyles.overlay}>
+            <ScrollView
+              contentContainerStyle={mobileStyles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={mobileStyles.modal}>
+                <Text style={mobileStyles.title}>Create Mode</Text>
 
             {/* Tabs */}
             <View style={mobileStyles.tabs}>
@@ -224,8 +233,10 @@ const AdminCreateModal: React.FC<AdminCreateModalProps> = ({
                 <Text style={mobileStyles.addBtnText}>{saving ? 'Adding...' : 'Add'}</Text>
               </TouchableOpacity>
             </View>
+              </View>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     );
   }
@@ -355,6 +366,13 @@ const AdminCreateModal: React.FC<AdminCreateModalProps> = ({
 };
 
 const mobileStyles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.7)',
