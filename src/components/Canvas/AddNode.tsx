@@ -67,7 +67,7 @@ const AddNode: React.FC<Props> = ({ position = null, onAdd, onClose, modules: pa
       module: m.data,
       icon,
       width: 240,
-      height: 120,
+      height: 144,
         connectionPoints: getConnectionPointsForModule(m.name || ""),
     };
     e.dataTransfer.setData("application/json", JSON.stringify(payload));
