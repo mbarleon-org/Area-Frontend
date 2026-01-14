@@ -7,6 +7,7 @@ import AddNode from "./AddNode";
 import TopBar from "./TopBar";
 import BinButton from "./BinButton";
 import { useLocation } from "../../utils/router";
+import { computeConnectionRender } from "./connectionMath";
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
@@ -468,10 +469,37 @@ const Canvas: React.FC = () => {
               }
               return { x: 0, y: 0 };
             };
+
             const a = resolve(l.a);
             const b = resolve(l.b);
             const isHovered = hoveredLineIndex === i;
-            return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={isHovered ? '#ff8b8b' : (l.stroke || '#ffffff')} strokeWidth={l.strokeWidth} />;
+            const strokeColor = isHovered ? '#ff8b8b' : (l.stroke || '#ffffff');
+            const strokeWidth = l.strokeWidth;
+            const rendered = computeConnectionRender(a, b);
+
+            if (rendered.type === 'bezier') {
+              return (
+                <path
+                  key={i}
+                  d={rendered.d}
+                  stroke={strokeColor}
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                />
+              );
+            }
+
+            return (
+              <line
+                key={i}
+                x1={rendered.p0.x}
+                y1={rendered.p0.y}
+                x2={rendered.p3.x}
+                y2={rendered.p3.y}
+                stroke={strokeColor}
+                strokeWidth={strokeWidth}
+              />
+            );
           })}
         </svg>
         {nodes.map(n => (
