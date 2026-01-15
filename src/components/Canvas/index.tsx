@@ -7,6 +7,7 @@ import AddNode from "./AddNode";
 import TopBar from "./TopBar";
 import BinButton from "./BinButton";
 import { useLocation } from "../../utils/router";
+import { isWeb } from "../../utils/IsWeb";
 import { routeConnection } from "./connectionRouter";
 import type { Side } from "./connectionMath";
 
@@ -93,6 +94,15 @@ const Canvas: React.FC = () => {
   }, [nodes]);
 
   const [modules, setModules] = useState<Array<{ name: string; data: any }>>([]);
+
+  if (!isWeb) {
+    const { View, Text } = require('react-native');
+    return (
+      <View style={{ flex: 1, padding: 24, backgroundColor: '#151316ff', justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: '#fff' }}>Canvas is only available on web.</Text>
+      </View>
+    );
+  }
 
   const fetchCredentials = useCallback(async () => {
     try {
@@ -427,8 +437,9 @@ const Canvas: React.FC = () => {
       onTouchEnd={onUp}
     >
       <div style={canvasStyle} onClick={handleCanvasClick} onDoubleClick={handleAddNode} onDragOver={(e) => e.preventDefault()} onDrop={handleDropOnCanvas}>
-        <svg style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible' }}>
-          <g transform={`translate(${offset.x}, ${offset.y}) scale(${scale})`}>
+        {isWeb && (
+          <svg style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible' }}>
+            <g transform={`translate(${offset.x}, ${offset.y}) scale(${scale})`}>
             {lines.map((l, i) => {
               const start = resolveEndpoint(l.a);
               const end = resolveEndpoint(l.b);
@@ -500,8 +511,9 @@ const Canvas: React.FC = () => {
 
                return <path d={rendered.d} stroke={isSnapped ? "#fff" : "#aaa"} strokeWidth={isSnapped ? 4 : 2} fill="none" strokeDasharray={isSnapped ? "" : "5,5"} />;
             })()}
-          </g>
-        </svg>
+            </g>
+          </svg>
+        )}
         {nodes.map(n => (
           <Node
             key={n.id} id={n.id}

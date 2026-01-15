@@ -11,3 +11,4 @@ export const Link: FC<WithChildren> = passthrough;
 export const NavLink: FC<WithChildren> = passthrough;
 export const useNavigate = () => () => {};
 export const useInRouterContext = () => false;
+export const useLocation = () => ({ pathname: '', search: '', hash: '', state: undefined, key: '' });
