@@ -13,6 +13,11 @@ import type { Side } from "./connectionMath";
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
+const computeSnapOffset = (worldSize: number, gridPx: number) => {
+  const cells = Math.round(worldSize / gridPx);
+  return (cells % 2 === 0) ? 0 : gridPx / 2;
+};
+
 const Canvas: React.FC = () => {
   const location = useLocation();
   const workflowFromState = (location as any)?.state?.workflow;
@@ -95,14 +100,198 @@ const Canvas: React.FC = () => {
 
   const [modules, setModules] = useState<Array<{ name: string; data: any }>>([]);
 
+  // ------------------------------ Mobile view ------------------------------------
   if (!isWeb) {
-    const { View, Text } = require('react-native');
+    const { View, Text, TouchableOpacity, Dimensions, PanResponder } = require('react-native');
+    const window = Dimensions.get('window');
+    const [mobileNodes, setMobileNodes] = useState<NodeItem[]>([{ id: 'n1', x: window.width/2, y: window.height/2, width: 96, height: 96, label: 'Loïs' }]);
+    const [mobileOffset, setMobileOffset] = useState({ x: 0, y: 0 });
+    const [menuNodeIdx, setMenuNodeIdx] = useState<number | null>(null);
+    const [editLabel, setEditLabel] = useState('');
+
+    // Ajout de node sur tap
+    const handleAddNodeMobile = (e: any) => {
+      const cx = e.nativeEvent.locationX;
+      const cy = e.nativeEvent.locationY;
+      const w = 96;
+      const h = 96;
+      const snapOffX = computeSnapOffset(w, gridPx);
+      const snapOffY = computeSnapOffset(h, gridPx);
+      const x = Math.round((cx - snapOffX) / gridPx) * gridPx + snapOffX;
+      const y = Math.round((cy - snapOffY) / gridPx) * gridPx + snapOffY;
+      const id = `n${Date.now()}`;
+      setMobileNodes(ns => [...ns, { id, x, y, width: w, height: h, label: 'Node'}]);
+    };
+
+    // Ajout de node sur double tap
+    let lastTap = useRef<number>(0);
+    const handleBackgroundPress = (e: any) => {
+      const now = Date.now();
+      const DOUBLE_PRESS_DELAY = 300;
+      if (lastTap.current && (now - lastTap.current) < DOUBLE_PRESS_DELAY) {
+        // Double tap détecté
+        const cx = e.nativeEvent.locationX;
+        const cy = e.nativeEvent.locationY;
+        const tappedNode = mobileNodes.find(n => {
+          const left = n.x + mobileOffset.x - (n.width || 96)/2;
+          const top = n.y + mobileOffset.y - (n.height || 96)/2;
+          const right = left + (n.width || 96);
+          const bottom = top + (n.height || 96);
+          return cx >= left && cx <= right && cy >= top && cy <= bottom;
+        });
+        if (tappedNode) {
+          lastTap.current = 0;
+          return;
+        }
+        const w = 96;
+        const h = 96;
+        const snapOffX = computeSnapOffset(w, gridPx);
+        const snapOffY = computeSnapOffset(h, gridPx);
+        const x = Math.round((cx - snapOffX) / gridPx) * gridPx + snapOffX;
+        const y = Math.round((cy - snapOffY) / gridPx) * gridPx + snapOffY;
+        const id = `n${Date.now()}`;
+        setMobileNodes(ns => [...ns, { id, x, y, width: w, height: h, label: 'Node'}]);
+        lastTap.current = 0;
+      } else {
+        lastTap.current = now;
+      }
+    };
+
+    // Drag global
+    const [dragNodeIdx, setDragNodeIdx] = useState<number | null>(null);
+    const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+    const panResponder = PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: (_evt: any, gestureState: any) => {
+        if (dragNodeIdx !== null) {
+          setDragPos({ x: mobileNodes[dragNodeIdx].x, y: mobileNodes[dragNodeIdx].y });
+        }
+      },
+      onPanResponderMove: (_evt: any, gestureState: any) => {
+        if (dragNodeIdx !== null && dragPos) {
+          setDragPos({
+            x: mobileNodes[dragNodeIdx].x + gestureState.dx,
+            y: mobileNodes[dragNodeIdx].y + gestureState.dy,
+          });
+        }
+      },
+      onPanResponderRelease: (_evt: any, gestureState: any) => {
+        if (dragNodeIdx !== null) {
+          const n = mobileNodes[dragNodeIdx];
+          const w = n.width || 96;
+          const h = n.height || 96;
+          const snapOffX = computeSnapOffset(w, gridPx);
+          const snapOffY = computeSnapOffset(h, gridPx);
+          const x = Math.round((n.x + gestureState.dx - snapOffX) / gridPx) * gridPx + snapOffX;
+          const y = Math.round((n.y + gestureState.dy - snapOffY) / gridPx) * gridPx + snapOffY;
+          setMobileNodes(ns => ns.map((node, i) => i === dragNodeIdx ? { ...node, x, y } : node));
+          setDragNodeIdx(null);
+          setDragPos(null);
+        }
+      },
+    });
+
     return (
-      <View style={{ flex: 1, padding: 24, backgroundColor: '#151316ff', justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: '#fff' }}>Canvas is only available on web.</Text>
+      <View style={{ flex: 1, backgroundColor: '#151316ff', position: 'relative' }}>
+        <TouchableOpacity
+          activeOpacity={1}
+          style={{ flex: 1, position: 'relative', width: window.width, height: window.height }}
+          onPress={handleBackgroundPress}
+        >
+          {mobileNodes.map((n, idx) => {
+            const left = (dragNodeIdx === idx && dragPos ? dragPos.x : n.x) + mobileOffset.x - (n.width || 96)/2;
+            const top = (dragNodeIdx === idx && dragPos ? dragPos.y : n.y) + mobileOffset.y - (n.height || 96)/2;
+            return (
+              <TouchableOpacity
+                key={n.id}
+                activeOpacity={0.8}
+                style={{
+                  position: 'absolute',
+                  left,
+                  top,
+                  width: n.width || 96,
+                  height: n.height || 96,
+                  backgroundColor: '#202020',
+                  borderColor: '#fff',
+                  borderWidth: 2,
+                  borderRadius: 8,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                onPressIn={() => setDragNodeIdx(idx)}
+                onLongPress={() => {
+                  setMenuNodeIdx(idx);
+                  setEditLabel(n.label || '');
+                }}
+                {...(dragNodeIdx === idx ? panResponder.panHandlers : {})}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>{n.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </TouchableOpacity>
+        {/* Menu modal pour édition/suppression d'un node */}
+        {menuNodeIdx !== null && (
+          <View style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: window.width,
+            height: window.height,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 100,
+          }}>
+            <View style={{ backgroundColor: '#222', borderRadius: 12, padding: 24, width: 280, alignItems: 'center' }}>
+              <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Edit Node</Text>
+              <View style={{ width: '100%', marginBottom: 16 }}>
+                <Text style={{ color: '#fff', marginBottom: 4 }}>Label</Text>
+                {/* TextInput natif pour édition du label */}
+                {(() => {
+                  const { TextInput } = require('react-native');
+                  return (
+                    <TextInput
+                      style={{ backgroundColor: '#333', color: '#fff', borderRadius: 6, padding: 8, fontSize: 16 }}
+                      value={editLabel}
+                      onChangeText={setEditLabel}
+                      placeholder="Node name"
+                      placeholderTextColor="#888"
+                    />
+                  );
+                })()}
+              </View>
+              <TouchableOpacity
+                style={{ backgroundColor: '#4CAF50', borderRadius: 6, padding: 10, marginBottom: 8, width: '100%' }}
+                onPress={() => {
+                  setMobileNodes(ns => ns.map((node, i) => i === menuNodeIdx ? { ...node, label: editLabel } : node));
+                  setMenuNodeIdx(null);
+                }}
+              >
+                <Text style={{ color: '#fff', textAlign: 'center' }}>Save</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ backgroundColor: '#cd1d1d', borderRadius: 6, padding: 10, width: '100%' }}
+                onPress={() => {
+                  setMobileNodes(ns => ns.filter((_, i) => i !== menuNodeIdx));
+                  setMenuNodeIdx(null);
+                }}
+              >
+                <Text style={{ color: '#fff', textAlign: 'center' }}>Delete</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ marginTop: 8, width: '100%' }}
+                onPress={() => setMenuNodeIdx(null)}
+              >
+                <Text style={{ color: '#fff', textAlign: 'center' }}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </View>
     );
   }
+  // ------------------------------Web view------------------------------------
 
   const fetchCredentials = useCallback(async () => {
     try {
@@ -119,11 +308,6 @@ const Canvas: React.FC = () => {
       else console.error('Failed to load credentials', err);
     }
   }, [get]);
-
-  const computeSnapOffset = (worldSize: number, gridPx: number) => {
-    const cells = Math.round(worldSize / gridPx);
-    return (cells % 2 === 0) ? 0 : gridPx / 2;
-  };
 
   const handleAddNode = useCallback(() => setShowAddMenu(true), []);
 
