@@ -106,7 +106,7 @@ const ApiConfigInput: React.FC<ApiConfigInputProps> = ({
     return (
       <View style={[mobileStyles.container, compact && mobileStyles.containerCompact]}>
         {!compact && (
-          <Text style={mobileStyles.label}>Server Address</Text>
+          <Text style={mobileStyles.label}>Server Address (URL)</Text>
         )}
 
         {showCurrentUrl && baseUrl && !compact && (
@@ -114,6 +114,10 @@ const ApiConfigInput: React.FC<ApiConfigInputProps> = ({
             Current: {baseUrl}
           </Text>
         )}
+
+        <Text style={mobileStyles.currentUrl}>
+          Ex: http://192.168.1.15:8080
+        </Text>
 
         <View style={[mobileStyles.inputRow, compact && mobileStyles.inputRowCompact]}>
           <TextInput
@@ -183,8 +187,8 @@ const mobileStyles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    color: '#888',
-    fontSize: 12,
+    color: '#fff',
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
     textTransform: 'uppercase',
