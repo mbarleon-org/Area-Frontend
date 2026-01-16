@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, PanResponder } from 'react-native';
 
 type NodeItem = {
   id: string;
@@ -27,20 +27,78 @@ type NodeProps = {
   selected: boolean;
 };
 
-const Node: React.FC<NodeProps> = ({ node, scale, offset, onPress, onRemove, selected }) => {
+const Node: React.FC<NodeProps> = ({ node, scale, offset, onPress, onRemove, onUpdate, selected }) => {
   const width = node.width || 240;
   const height = node.height || 144;
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const isDragging = useRef(false);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Convert world coordinates to screen coordinates
   const screenX = node.x * scale + offset.x;
   const screenY = node.y * scale + offset.y;
 
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
+
+      onPanResponderGrant: (_evt, _gestureState) => {
+        isDragging.current = false;
+        dragStartPos.current = { x: node.x, y: node.y };
+
+        // Start long press timer
+        longPressTimer.current = setTimeout(() => {
+          if (!isDragging.current) {
+            onPress();
+          }
+        }, 500);
+      },
+
+      onPanResponderMove: (_evt, gestureState) => {
+        // If moved more consider it a drag
+        if (Math.abs(gestureState.dx) > 0 || Math.abs(gestureState.dy) > 5) {
+          isDragging.current = true;
+
+          if (longPressTimer.current) {
+            clearTimeout(longPressTimer.current);
+            longPressTimer.current = null;
+          }
+
+          // Update node position in world coordinates
+          const newX = dragStartPos.current.x + gestureState.dx / scale;
+          const newY = dragStartPos.current.y + gestureState.dy / scale;
+          onUpdate({ x: newX, y: newY });
+        }
+      },
+
+      onPanResponderRelease: () => {
+        // Clear long press timer
+        if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current);
+          longPressTimer.current = null;
+        }
+        isDragging.current = false;
+      },
+
+      onPanResponderTerminate: () => {
+        // Clear long press timer
+        if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current);
+          longPressTimer.current = null;
+        }
+        isDragging.current = false;
+      },
+    })
+  ).current;
+
   console.log('Node', node.id, 'at screen pos:', screenX, screenY, 'scale:', scale);
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.8}
+    <View
+      {...panResponder.panHandlers}
       style={[
         styles.node,
         {
@@ -86,16 +144,7 @@ const Node: React.FC<NodeProps> = ({ node, scale, offset, onPress, onRemove, sel
         />
       ))}
 
-      {/* Delete button when selected */}
-      {selected && (
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={onRemove}
-        >
-          <Text style={styles.deleteText}>×</Text>
-        </TouchableOpacity>
-      )}
-    </TouchableOpacity>
+    </View>
   );
 };
 

@@ -1,9 +1,13 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { View, StyleSheet, Dimensions, PanResponder } from 'react-native';
+import { View, StyleSheet, Dimensions, PanResponder, TouchableOpacity, Text } from 'react-native';
 import { useApi } from '../../utils/UseApi';
 import { useLocation } from '../../utils/router';
 import Node from './Node.tsx';
 import AddNode from './AddNode.tsx';
+import EditMenu from './EditMenu';
+import type { EditMenuHandle } from './EditMenu/EditMenu.types';
+import Svg, { Path } from 'react-native-svg';
+import { routeConnection } from './connectionRouter';
 
 const computeSnapOffset = (worldSize: number, gridPx: number) => {
   const cells = Math.round(worldSize / gridPx);
@@ -40,13 +44,17 @@ const MobileCanva: React.FC = () => {
   const [modules, setModules] = useState<Array<{ name: string; data: any }>>([]);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [lines, setLines] = useState<LineItem[]>([]);
+
+  const editMenuRef = useRef<EditMenuHandle | null>(null);
+
+  type LineItem = { a: EndpointRef; b: EndpointRef; stroke?: string; strokeWidth?: number };
+  type EndpointRef = { nodeId?: string; side?: 'left' | 'right' | 'top' | 'bottom'; offset?: number };
 
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const lastTouchDistance = useRef<number | null>(null);
   const lastScale = useRef(1);
-  const lastTapTime = useRef(0);
-  const tapLocation = useRef({ x: 0, y: 0 });
   const initialPosSet = useRef(false);
   const containerSize = useRef(Dimensions.get('window'));
 
@@ -153,10 +161,12 @@ const MobileCanva: React.FC = () => {
 
   const handleRemoveNode = useCallback((nodeId: string) => {
     setNodes((ns) => ns.filter((n) => n.id !== nodeId));
+    setLines((ls) => ls.filter((l) => l.a.nodeId !== nodeId && l.b.nodeId !== nodeId));
     setSelectedId((sid) => (sid === nodeId ? null : sid));
   }, []);
 
   const handleNodePress = useCallback((nodeId: string) => {
+    console.log('Node pressed:', nodeId);
     setSelectedId(nodeId);
   }, []);
 
@@ -166,35 +176,25 @@ const MobileCanva: React.FC = () => {
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => !showAddMenu,
-      onMoveShouldSetPanResponder: () => !showAddMenu,
+      onStartShouldSetPanResponder: (evt) => {
+        // Capture immediately for pinch gestures (2 fingers)
+        return evt.nativeEvent.touches.length === 2;
+      },
+      onStartShouldSetPanResponderCapture: (evt) => {
+        // Don't capture if it's a single touch (let nodes handle it)
+        return evt.nativeEvent.touches.length === 2;
+      },
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Only capture if there's actual movement
+        return !showAddMenu && (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5 || evt.nativeEvent.touches.length === 2);
+      },
+      onMoveShouldSetPanResponderCapture: (evt) => {
+        // Don't capture if it's a single touch on a node
+        return evt.nativeEvent.touches.length === 2;
+      },
 
       onPanResponderGrant: (evt, gestureState) => {
         const touches = evt.nativeEvent.touches;
-
-        // Store tap location
-        if (touches.length === 1) {
-          tapLocation.current = { x: gestureState.x0, y: gestureState.y0 };
-        }
-
-        // Double tap to open add menu or create node
-        const now = Date.now();
-        if (now - lastTapTime.current < 300 && touches.length === 1) {
-          // Create node at tap location
-          const worldX = (tapLocation.current.x - offset.x) / scale;
-          const worldY = (tapLocation.current.y - offset.y) / scale;
-          const newNode: NodeItem = {
-            id: `node-${Date.now()}`,
-            x: worldX,
-            y: worldY,
-            label: `Node ${nodes.length + 1}`,
-          };
-          setNodes(prev => [...prev, newNode]);
-          console.log('Node created at', worldX, worldY);
-          lastTapTime.current = 0;
-          return;
-        }
-        lastTapTime.current = now;
 
         if (touches.length === 2) {
           // Pinch to zoom
@@ -239,9 +239,55 @@ const MobileCanva: React.FC = () => {
 
   console.log('Rendering', nodes.length, 'nodes');
 
+  const resolveEndpoint = useCallback((ep: EndpointRef) => {
+    if (ep.nodeId) {
+      const node = nodes.find(n => n.id === ep.nodeId);
+      if (node) {
+        let wx = node.x;
+        let wy = node.y;
+        const w = node.width || 240;
+        const h = node.height || 144;
+        if (ep.side === 'right') { wx = node.x + w / 2; wy = node.y + (ep.offset || 0); }
+        else if (ep.side === 'left') { wx = node.x - w / 2; wy = node.y + (ep.offset || 0); }
+        else if (ep.side === 'top') { wy = node.y - h / 2; wx = node.x + (ep.offset || 0); }
+        else if (ep.side === 'bottom') { wy = node.y + h / 2; wx = node.x + (ep.offset || 0); }
+        return { x: wx, y: wy, side: ep.side || 'right' };
+      }
+    }
+    return { x: 0, y: 0, side: 'right' as const };
+  }, [nodes]);
+
   return (
     <View style={styles.container} {...panResponder.panHandlers}>
       <View style={styles.canvas}>
+        {/* Render connection lines */}
+        <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+          {lines.map((line, idx) => {
+            const epA = resolveEndpoint(line.a);
+            const epB = resolveEndpoint(line.b);
+            const screenA = {
+              x: epA.x * scale + offset.x,
+              y: epA.y * scale + offset.y,
+            };
+            const screenB = {
+              x: epB.x * scale + offset.x,
+              y: epB.y * scale + offset.y,
+            };
+
+            const obstacles: any[] = [];
+            const routed = routeConnection(screenA, screenB, epA.side, epB.side, obstacles);
+            return (
+              <Path
+                key={idx}
+                d={routed.d}
+                stroke={line.stroke || '#fff'}
+                strokeWidth={(line.strokeWidth || 4) * scale}
+                fill="none"
+              />
+            );
+          })}
+        </Svg>
+
         {/* Render nodes */}
         {nodes.map(node => (
           <Node
@@ -257,6 +303,26 @@ const MobileCanva: React.FC = () => {
         ))}
       </View>
 
+      {/* Edit Menu */}
+      {selectedId && (
+        <>
+          {console.log('Rendering EditMenu for node:', selectedId)}
+          <EditMenu
+            ref={editMenuRef}
+            node={nodes.find(n => n.id === selectedId) || null}
+            updateNode={(updates) => handleUpdateNode(selectedId, updates)}
+            onClose={() => setSelectedId(null)}
+            onDelete={() => {
+              if (selectedId) {
+                handleRemoveNode(selectedId);
+              }
+            }}
+            credentials={credentials}
+            refreshCredentials={fetchCredentials}
+          />
+        </>
+      )}
+
       {/* Add Node Menu */}
       {showAddMenu && (
         <AddNode
@@ -269,6 +335,14 @@ const MobileCanva: React.FC = () => {
           gridPx={gridPx}
         />
       )}
+
+      {/* Add Node Button */}
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => setShowAddMenu(true)}
+      >
+        <Text style={styles.addButtonText}>+</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -281,6 +355,28 @@ const styles = StyleSheet.create({
   canvas: {
     flex: 1,
     position: 'relative',
+  },
+  addButton: {
+    position: 'absolute',
+    bottom: 24,
+    left: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#6366f1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: 'bold',
+    lineHeight: 32,
   },
 });
 
