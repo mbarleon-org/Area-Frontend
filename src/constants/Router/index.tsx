@@ -2,8 +2,6 @@ import type { ReactNode } from "react";
 
 import Home from "../../pages/Home";
 import Dashboard from "../../pages/Dashboard";
-import Apps from "../../pages/Apps";
-import Explore from "../../pages/Explore";
 import Login from "../../pages/Login"
 import Register from "../../pages/Register"
 import PasswordReset from "../../pages/PasswordReset";
@@ -33,20 +31,6 @@ const ROUTES: Router[] = [
     path: "/dashboard",
     element: <Dashboard />,
     label: "Dashboard",
-    navbar: true,
-    security: "public",
-  },
-  {
-    path: "/apps",
-    element: <Apps />,
-    label: "Apps",
-    navbar: true,
-    security: "public",
-  },
-  {
-    path: "/explore",
-    element: <Explore />,
-    label: "Explore",
     navbar: true,
     security: "public",
   },
