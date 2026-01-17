@@ -9,6 +9,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Animated }
 import Svg, { Defs, Rect, RadialGradient as SvgRadialGradient, Stop } from 'react-native-svg';
 import { webStyles, mobileStyles } from './Dashboard.styles';
 import AddCredentialModal from '../../components/Dashboard/AddCredentialModal';
+import { TeamSelector, AddMemberModal } from '../../components/UserTeamManager';
+import type { Team } from '../../components/UserTeamManager';
 
 const FILTERS = [
   { id: 'public_workflows', label: 'Public Workflows', endpoint: '/workflows/public' },
@@ -44,6 +46,8 @@ const Dashboard: React.FC = () => {
   const [showConfig, setShowConfig] = useState(false);
   const [showAddCredential, setShowAddCredential] = useState(false);
 
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [showAddMember, setShowAddMember] = useState(false);
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -220,6 +224,13 @@ const Dashboard: React.FC = () => {
             <Text style={mobileStyles.actionButtonText}>+ New Automation</Text>
           </TouchableOpacity>
 
+          {/* Team Selector */}
+          <TeamSelector
+            selectedTeam={selectedTeam}
+            onTeamSelect={setSelectedTeam}
+            onAddMemberPress={() => setShowAddMember(true)}
+          />
+
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={mobileStyles.filterScroll}>
               {FILTERS.map((f) => {
@@ -314,6 +325,15 @@ const Dashboard: React.FC = () => {
           />
         )}
 
+        {/* Add Team Member Modal */}
+        {showAddMember && (
+          <AddMemberModal
+            team={selectedTeam}
+            onClose={() => setShowAddMember(false)}
+            onSuccess={() => setShowAddMember(false)}
+          />
+        )}
+
         <Modal animationType="fade" transparent={true} visible={!!confirmTarget} onRequestClose={() => setConfirmTarget(null)}>
             <View style={mobileStyles.modalOverlay}>
                 <View style={mobileStyles.modalContent}>
@@ -342,6 +362,7 @@ const Dashboard: React.FC = () => {
         {`
           ::selection { background-color: #ffffff; color: #000000; }
           @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
           .animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
           .hover-card { transition: all 0.3s ease; }
           .hover-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.2) !important; background: rgba(255,255,255,0.05) !important; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
@@ -368,6 +389,15 @@ const Dashboard: React.FC = () => {
             <NavLinkWrapper to="/automations" style={{ textDecoration: 'none' }}>
               <button style={webStyles.addButton} className="btn-hover">+ New Automation</button>
             </NavLinkWrapper>
+
+            {/* Team Selector */}
+            <div style={{ marginLeft: 'auto' }}>
+              <TeamSelector
+                selectedTeam={selectedTeam}
+                onTeamSelect={setSelectedTeam}
+                onAddMemberPress={() => setShowAddMember(true)}
+              />
+            </div>
           </div>
           <div style={webStyles.centerContent}>
             <div style={webStyles.filterBar}>
@@ -462,6 +492,15 @@ const Dashboard: React.FC = () => {
             setShowAddCredential(false);
             fetchData();
           }}
+        />
+      )}
+
+      {/* Add Team Member Modal */}
+      {showAddMember && (
+        <AddMemberModal
+          team={selectedTeam}
+          onClose={() => setShowAddMember(false)}
+          onSuccess={() => setShowAddMember(false)}
         />
       )}
     </>
