@@ -371,7 +371,8 @@ const webStyles: any = {
     flexDirection: 'column',
     alignItems: 'center',
     position: 'relative',
-    overflow: 'hidden',
+    overflowY: 'auto',
+    overflowX: 'hidden',
   },
   gridBackground: {
     position: 'fixed',
