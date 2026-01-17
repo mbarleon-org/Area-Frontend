@@ -24,12 +24,14 @@ interface TeamSelectorProps {
   onTeamSelect?: (team: Team | null) => void;
   onAddMemberPress: (team: Team) => void;
   selectedTeam: Team | null;
+  currentUserId?: string | null;
 }
 
 const TeamSelector: React.FC<TeamSelectorProps> = ({
   onTeamSelect,
   onAddMemberPress,
   selectedTeam,
+  currentUserId,
 }) => {
   const { get } = useApi();
   const [teams, setTeams] = useState<Team[]>([]);
@@ -85,8 +87,33 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
   }, [onTeamSelect]);
 
   const handleAddPress = useCallback(() => {
-    onAddMemberPress(selectedTeam!);
+    if (!selectedTeam) return;
+    onAddMemberPress(selectedTeam);
   }, [selectedTeam, onAddMemberPress]);
+
+  const isOwnedByViewer = useCallback(
+    (team: Team): boolean => {
+      if (!currentUserId) return false;
+      const ownersArray = (team as any)?.owners;
+      const possibleOwnerIds = [
+        team.owner_id,
+        (team as any)?.ownerId,
+        (team as any)?.owner?.id,
+        (team as any)?.owner?.user_id,
+        ...(Array.isArray(ownersArray) ? ownersArray.map((o: any) => o?.id || o?.user_id) : []),
+      ].filter(Boolean) as string[];
+
+      return possibleOwnerIds.some((oid) => oid === currentUserId);
+    },
+    [currentUserId]
+  );
+
+  const renderCrown = (visible: boolean) => {
+    console.log('Crown visible:', visible);
+    if (!visible) return null;
+    console.log('Rendering crown');
+    return <span style={webStyles.crown} aria-label="Owner">👑</span>;
+  };
 
   // ------------------------ Web View ------------------------
   if (isWeb) {
@@ -96,9 +123,10 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
           <button
             style={webStyles.selectorButton}
             onClick={() => setIsOpen(!isOpen)}
-            className="btn-hover"
+            className="btn-hover ix-pressable ix-team-dropdown"
           >
             <span style={webStyles.selectorLabel}>
+              {renderCrown(selectedTeam ? isOwnedByViewer(selectedTeam) : false)}
               {loading ? 'Loading...' : (selectedTeam?.name || 'Select Team')}
             </span>
             <span style={webStyles.chevron}>{isOpen ? '▲' : '▼'}</span>
@@ -107,7 +135,7 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
           <button
             style={webStyles.addButton}
             onClick={handleAddPress}
-            className="btn-icon-hover"
+            className="btn-icon-hover ix-pressable"
             title="Manage teams"
           >
             +
@@ -123,10 +151,13 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
                   ...webStyles.dropdownItem,
                   backgroundColor: selectedTeam?.id === team.id ? 'rgba(255,255,255,0.08)' : 'transparent',
                 }}
-                className="dropdown-item-hover"
+                className="dropdown-item-hover ix-pressable"
                 onClick={() => handleSelect(team)}
               >
-                {team.name}
+                <span style={webStyles.dropdownItemLabel}>
+                  {renderCrown(isOwnedByViewer(team))}
+                  {team.name}
+                </span>
               </button>
             ))}
           </div>
@@ -151,6 +182,7 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
           activeOpacity={0.7}
         >
           <Text style={mobileStyles.selectorLabel} numberOfLines={1}>
+            {(selectedTeam && isOwnedByViewer(selectedTeam)) ? '👑 ' : ''}
             {loading ? 'Loading...' : (selectedTeam?.name || 'Select Team')}
           </Text>
           <Text style={mobileStyles.chevron}>▼</Text>
@@ -199,7 +231,7 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
                       selectedTeam?.id === team.id && mobileStyles.teamItemTextSelected,
                     ]}
                   >
-                    {team.name}
+                    {isOwnedByViewer(team) ? '👑 ' : ''}{team.name}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -250,6 +282,9 @@ const webStyles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
   },
   chevron: {
     fontSize: '10px',
@@ -297,11 +332,22 @@ const webStyles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     transition: 'background 0.15s ease',
   },
+  dropdownItemLabel: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
   emptyState: {
     padding: '16px',
     color: '#666',
     fontSize: '13px',
     textAlign: 'center',
+  },
+  crown: {
+    fontSize: '14px',
+    color: '#f5c542',
+    display: 'inline-block',
+    marginRight: '2px',
   },
 };
 

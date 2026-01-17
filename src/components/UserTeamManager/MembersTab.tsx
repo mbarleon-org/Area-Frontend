@@ -4,6 +4,8 @@ import type { Team } from './TeamSelector';
 import type { TeamMember, TeamDetails } from './teamUtils';
 import TeamDropdown from './TeamDropdown';
 import TeamStatsBar from './TeamStatsBar';
+import MemberCard from './MemberCard';
+import TeamSettings from './TeamSettings';
 import {
   View,
   Text,
@@ -24,6 +26,15 @@ export interface MembersTabProps {
   sortedMembers: TeamMember[];
   onAddMemberClick: () => void;
   successMessage: string | null;
+  isOwner: boolean;
+  currentUserId?: string | null;
+  onPromote: (member: TeamMember) => void;
+  onDemote: (member: TeamMember) => void;
+  onRemove: (member: TeamMember) => void;
+  memberActionLoading: boolean;
+  memberActionError: string | null;
+  onTeamUpdated: (updatedTeam: Team) => void;
+  onTeamDeleted: () => void;
 }
 
 const MembersTab: React.FC<MembersTabProps> = ({
@@ -38,12 +49,33 @@ const MembersTab: React.FC<MembersTabProps> = ({
   sortedMembers,
   onAddMemberClick,
   successMessage,
+  isOwner,
+  currentUserId,
+  onPromote,
+  onDemote,
+  onRemove,
+  memberActionLoading,
+  memberActionError,
+  onTeamUpdated,
+  onTeamDeleted,
 }) => {
+  const headingLabel = isOwner ? 'Manage Team' : 'Team Members';
+
   // ------------------------ Web View ------------------------
   if (isWeb) {
     return (
       <>
-        {/* Team Selector */}
+        <div style={webStyles.headingRow}>
+          <div style={webStyles.heading}>{headingLabel}</div>
+          {memberActionError && <div style={webStyles.error}>{memberActionError}</div>}
+          {successMessage && !memberActionError && (
+            <div style={webStyles.success}>
+              <span style={webStyles.successIcon}>✓</span>
+              {successMessage}
+            </div>
+          )}
+        </div>
+
         <div style={webStyles.section}>
           <label style={webStyles.label}>Select Team</label>
           <TeamDropdown
@@ -56,8 +88,18 @@ const MembersTab: React.FC<MembersTabProps> = ({
           />
         </div>
 
-        {/* Team Stats Bar */}
         {teamDetails && <TeamStatsBar teamDetails={teamDetails} />}
+
+        {selectedTeam && isOwner && (
+          <div style={webStyles.section}>
+            <TeamSettings
+              team={selectedTeam}
+              isOwner={isOwner}
+              onTeamUpdated={onTeamUpdated}
+              onTeamDeleted={onTeamDeleted}
+            />
+          </div>
+        )}
 
         {/* Members List */}
         <div style={webStyles.listContainer}>
@@ -82,42 +124,22 @@ const MembersTab: React.FC<MembersTabProps> = ({
           ) : (
             <div style={webStyles.list}>
               {sortedMembers.map((member) => (
-                <div key={member.id} style={webStyles.card}>
-                  <div style={webStyles.avatar}>
-                    {member.avatar ? (
-                      <img src={member.avatar} alt={member.username} style={webStyles.avatarImage} />
-                    ) : (
-                      <span style={webStyles.avatarFallback}>
-                        {member.username.charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                    {member.role === 'owner' && (
-                      <span style={webStyles.crown}>👑</span>
-                    )}
-                  </div>
-                  <div style={webStyles.info}>
-                    <div style={webStyles.nameRow}>
-                      <span style={webStyles.name}>{member.username}</span>
-                      {member.role === 'owner' && (
-                        <span style={webStyles.badge}>Owner</span>
-                      )}
-                    </div>
-                    {member.email && (
-                      <span style={webStyles.email}>{member.email}</span>
-                    )}
-                  </div>
-                </div>
+                  <MemberCard
+                    key={member.id}
+                    member={member}
+                    isViewerOwner={isOwner}
+                    isCurrentUser={!!currentUserId && member.id === currentUserId}
+                    onPromoteToOwner={() => onPromote(member)}
+                    onDemoteToMember={() => onDemote(member)}
+                    onRemoveMember={() => onRemove(member)}
+                    actionsDisabled={memberActionLoading}
+                  />
               ))}
             </div>
           )}
         </div>
-
-        {/* Success Message */}
-        {successMessage && (
-          <div style={webStyles.success}>
-            <span style={webStyles.successIcon}>✓</span>
-            {successMessage}
-          </div>
+        {memberActionLoading && (
+          <div style={webStyles.inlineInfo}>Processing action...</div>
         )}
       </>
     );
@@ -126,7 +148,14 @@ const MembersTab: React.FC<MembersTabProps> = ({
   // ------------------------ Mobile View ------------------------
   return (
     <>
-      {/* Team Selector */}
+      <View style={mobileStyles.headingRow}>
+        <Text style={mobileStyles.heading}>{headingLabel}</Text>
+        {memberActionError && <Text style={mobileStyles.error}>{memberActionError}</Text>}
+        {successMessage && !memberActionError && (
+          <Text style={mobileStyles.successText}>✓ {successMessage}</Text>
+        )}
+      </View>
+
       <View style={mobileStyles.section}>
         <Text style={mobileStyles.label}>Select Team</Text>
         <TeamDropdown
@@ -139,10 +168,19 @@ const MembersTab: React.FC<MembersTabProps> = ({
         />
       </View>
 
-      {/* Stats Bar */}
       {teamDetails && <TeamStatsBar teamDetails={teamDetails} />}
 
-      {/* Members List */}
+      {selectedTeam && isOwner && (
+        <View style={mobileStyles.section}>
+          <TeamSettings
+            team={selectedTeam}
+            isOwner={isOwner}
+            onTeamUpdated={onTeamUpdated}
+            onTeamDeleted={onTeamDeleted}
+          />
+        </View>
+      )}
+
       {loadingMembers ? (
         <View style={mobileStyles.loading}>
           <ActivityIndicator size="small" color="#fff" />
@@ -164,39 +202,23 @@ const MembersTab: React.FC<MembersTabProps> = ({
       ) : (
         <View style={mobileStyles.list}>
           {sortedMembers.map((member) => (
-            <View key={member.id} style={mobileStyles.card}>
-              <View style={mobileStyles.avatarContainer}>
-                <View style={mobileStyles.avatar}>
-                  <Text style={mobileStyles.avatarText}>
-                    {member.username.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-                {member.role === 'owner' && (
-                  <Text style={mobileStyles.crown}>👑</Text>
-                )}
-              </View>
-              <View style={mobileStyles.info}>
-                <View style={mobileStyles.nameRow}>
-                  <Text style={mobileStyles.name}>{member.username}</Text>
-                  {member.role === 'owner' && (
-                    <View style={mobileStyles.badge}>
-                      <Text style={mobileStyles.badgeText}>Owner</Text>
-                    </View>
-                  )}
-                </View>
-                {member.email && (
-                  <Text style={mobileStyles.email}>{member.email}</Text>
-                )}
-              </View>
-            </View>
+            <MemberCard
+              key={member.id}
+              member={member}
+              isViewerOwner={isOwner}
+              isCurrentUser={!!currentUserId && member.id === currentUserId}
+              onPromoteToOwner={() => onPromote(member)}
+              onDemoteToMember={() => onDemote(member)}
+              onRemoveMember={() => onRemove(member)}
+              actionsDisabled={memberActionLoading}
+            />
           ))}
         </View>
       )}
 
-      {/* Success Message */}
-      {successMessage && (
-        <View style={mobileStyles.success}>
-          <Text style={mobileStyles.successText}>✓ {successMessage}</Text>
+      {memberActionLoading && (
+        <View style={mobileStyles.inlineInfo}>
+          <Text style={mobileStyles.inlineInfoText}>Processing action...</Text>
         </View>
       )}
     </>
@@ -205,6 +227,31 @@ const MembersTab: React.FC<MembersTabProps> = ({
 
 // ------------------------ Web Styles ------------------------
 const webStyles: Record<string, React.CSSProperties> = {
+  headingRow: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    marginBottom: '16px',
+  },
+  heading: {
+    fontSize: '18px',
+    fontWeight: 700,
+    color: '#fff',
+  },
+  error: {
+    padding: '10px 12px',
+    borderRadius: '8px',
+    background: 'rgba(231,76,60,0.1)',
+    border: '1px solid rgba(231,76,60,0.25)',
+    color: '#e74c3c',
+    fontSize: '13px',
+    fontWeight: 500,
+  },
+  inlineInfo: {
+    marginTop: '8px',
+    color: '#aaa',
+    fontSize: '12px',
+  },
   section: {
     marginBottom: '20px',
   },
@@ -369,6 +416,24 @@ const webStyles: Record<string, React.CSSProperties> = {
 
 // ------------------------ Mobile Styles ------------------------
 const mobileStyles = StyleSheet.create({
+  headingRow: {
+    marginBottom: 12,
+  },
+  heading: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  error: {
+    marginTop: 6,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: 'rgba(231,76,60,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(231,76,60,0.25)',
+    color: '#e74c3c',
+    fontSize: 13,
+  },
   section: {
     marginBottom: 20,
   },
@@ -495,6 +560,14 @@ const mobileStyles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  inlineInfo: {
+    marginTop: 8,
+    alignItems: 'flex-start',
+  },
+  inlineInfoText: {
+    color: '#aaa',
+    fontSize: 12,
   },
 });
 

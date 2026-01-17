@@ -29,7 +29,7 @@ const TeamDropdown: React.FC<TeamDropdownProps> = ({
   if (isWeb) {
     return (
       <div style={webStyles.wrapper}>
-        <button style={webStyles.button} onClick={onToggle}>
+        <button style={webStyles.button} onClick={onToggle} className="btn-hover ix-pressable ix-team-dropdown">
           <span style={webStyles.label}>
             {loading ? 'Loading...' : (selectedTeam?.name || 'Select a team')}
           </span>
@@ -47,6 +47,7 @@ const TeamDropdown: React.FC<TeamDropdownProps> = ({
                   ...webStyles.item,
                   backgroundColor: selectedTeam?.id === t.id ? 'rgba(255,255,255,0.08)' : 'transparent',
                 }}
+                className="dropdown-item-hover ix-pressable"
                 onClick={() => onSelect(t)}
               >
                 {t.name}

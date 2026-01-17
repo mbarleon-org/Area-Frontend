@@ -14,7 +14,9 @@ export interface MemberCardProps {
   isViewerOwner: boolean;
   isCurrentUser: boolean;
   onPromoteToOwner: (member: TeamMember) => void;
+  onDemoteToMember: (member: TeamMember) => void;
   onRemoveMember: (member: TeamMember) => void;
+  actionsDisabled?: boolean;
 }
 
 const MemberCard: React.FC<MemberCardProps> = ({
@@ -22,7 +24,9 @@ const MemberCard: React.FC<MemberCardProps> = ({
   isViewerOwner,
   isCurrentUser,
   onPromoteToOwner,
+  onDemoteToMember,
   onRemoveMember,
+  actionsDisabled,
 }) => {
   // ------------------------ Web View ------------------------
   if (isWeb) {
@@ -68,7 +72,9 @@ const MemberCard: React.FC<MemberCardProps> = ({
             member={member}
             isCurrentUser={isCurrentUser}
             onPromoteToOwner={onPromoteToOwner}
+            onDemoteToMember={onDemoteToMember}
             onRemoveMember={onRemoveMember}
+            disabled={actionsDisabled}
           />
         )}
       </div>
@@ -125,7 +131,9 @@ const MemberCard: React.FC<MemberCardProps> = ({
           member={member}
           isCurrentUser={isCurrentUser}
           onPromoteToOwner={onPromoteToOwner}
+          onDemoteToMember={onDemoteToMember}
           onRemoveMember={onRemoveMember}
+          disabled={actionsDisabled}
         />
       )}
     </View>

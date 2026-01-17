@@ -14,14 +14,18 @@ export interface RoleActionMenuProps {
   member: TeamMember;
   isCurrentUser: boolean;
   onPromoteToOwner: (member: TeamMember) => void;
+  onDemoteToMember: (member: TeamMember) => void;
   onRemoveMember: (member: TeamMember) => void;
+  disabled?: boolean;
 }
 
 const RoleActionMenu: React.FC<RoleActionMenuProps> = ({
   member,
   isCurrentUser,
   onPromoteToOwner,
+  onDemoteToMember,
   onRemoveMember,
+  disabled,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
@@ -47,6 +51,7 @@ const RoleActionMenu: React.FC<RoleActionMenuProps> = ({
   }, [menuOpen]);
 
   const handleToggleMenu = () => {
+    if (disabled) return;
     if (isWeb && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       setMenuPosition({
@@ -67,6 +72,11 @@ const RoleActionMenu: React.FC<RoleActionMenuProps> = ({
     onRemoveMember(member);
   };
 
+  const handleDemote = () => {
+    setMenuOpen(false);
+    onDemoteToMember(member);
+  };
+
   // ------------------------ Web View ------------------------
   if (isWeb) {
     return (
@@ -75,6 +85,8 @@ const RoleActionMenu: React.FC<RoleActionMenuProps> = ({
           ref={buttonRef}
           style={webStyles.menuButton}
           onClick={handleToggleMenu}
+          disabled={disabled}
+          className="btn-icon-hover ix-pressable"
           title="Actions"
         >
           ⋮
@@ -95,9 +107,22 @@ const RoleActionMenu: React.FC<RoleActionMenuProps> = ({
               <button
                 style={webStyles.menuItemGold}
                 onClick={handlePromote}
+                className="ix-menu-item ix-gold"
               >
                 <span style={webStyles.menuItemIcon}>👑</span>
                 <span>Promote to Owner</span>
+              </button>
+            )}
+
+            {/* Demote to Member - only for owners */}
+            {member.role === 'owner' && !isCurrentUser && (
+              <button
+                style={webStyles.menuItemNeutral}
+                onClick={handleDemote}
+                className="ix-menu-item ix-neutral"
+              >
+                <span style={webStyles.menuItemIcon}>⬇️</span>
+                <span>Demote to Member</span>
               </button>
             )}
 
@@ -106,6 +131,7 @@ const RoleActionMenu: React.FC<RoleActionMenuProps> = ({
               <button
                 style={webStyles.menuItemDanger}
                 onClick={handleRemove}
+                className="ix-menu-item ix-danger"
               >
                 <span style={webStyles.menuItemIcon}>🗑️</span>
                 <span>Remove {member.role === 'owner' ? 'Owner' : 'Member'}</span>
@@ -116,7 +142,7 @@ const RoleActionMenu: React.FC<RoleActionMenuProps> = ({
             {isCurrentUser && (
               <div style={webStyles.menuItemDisabled}>
                 <span style={webStyles.menuItemIcon}>ℹ️</span>
-                <span>This is you</span>
+                <span>This is you. (You silly goose)</span>
               </div>
             )}
           </div>
@@ -131,6 +157,7 @@ const RoleActionMenu: React.FC<RoleActionMenuProps> = ({
       <TouchableOpacity
         style={mobileStyles.menuButton}
         onPress={handleToggleMenu}
+        disabled={disabled}
       >
         <Text style={mobileStyles.menuButtonText}>⋮</Text>
       </TouchableOpacity>
@@ -178,6 +205,17 @@ const RoleActionMenu: React.FC<RoleActionMenuProps> = ({
                 </TouchableOpacity>
               )}
 
+              {/* Demote to Member */}
+              {member.role === 'owner' && (
+                <TouchableOpacity
+                  style={mobileStyles.actionItemNeutral}
+                  onPress={handleDemote}
+                >
+                  <Text style={mobileStyles.actionIcon}>⬇️</Text>
+                  <Text style={mobileStyles.actionTextNeutral}>Demote to Member</Text>
+                </TouchableOpacity>
+              )}
+
               {/* Remove */}
               {!isCurrentUser && (
                 <TouchableOpacity
@@ -195,7 +233,7 @@ const RoleActionMenu: React.FC<RoleActionMenuProps> = ({
               {isCurrentUser && (
                 <View style={mobileStyles.actionItemDisabled}>
                   <Text style={mobileStyles.actionIcon}>ℹ️</Text>
-                  <Text style={mobileStyles.actionTextDisabled}>This is you</Text>
+                  <Text style={mobileStyles.actionTextDisabled}>This is you. (You silly goose)</Text>
                 </View>
               )}
             </View>
@@ -257,6 +295,21 @@ const webStyles: Record<string, React.CSSProperties> = {
     textAlign: 'left',
     cursor: 'pointer',
     transition: 'background 0.15s',
+  },
+  menuItemNeutral: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px 16px',
+    background: 'rgba(255, 255, 255, 0.04)',
+    border: 'none',
+    color: '#e0e0e0',
+    fontSize: '14px',
+    fontWeight: 500,
+    textAlign: 'left',
+    cursor: 'pointer',
+    transition: 'background 0.15s, color 0.15s',
   },
   menuItemDanger: {
     width: '100%',
@@ -373,6 +426,14 @@ const mobileStyles = StyleSheet.create({
     backgroundColor: 'rgba(245, 175, 25, 0.1)',
     borderRadius: 10,
   },
+  actionItemNeutral: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 10,
+  },
   actionItemDanger: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -394,6 +455,11 @@ const mobileStyles = StyleSheet.create({
   },
   actionTextGold: {
     color: '#f5af19',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  actionTextNeutral: {
+    color: '#e0e0e0',
     fontSize: 15,
     fontWeight: '600',
   },

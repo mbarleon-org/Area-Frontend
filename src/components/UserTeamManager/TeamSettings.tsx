@@ -32,6 +32,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [pressedButton, setPressedButton] = useState<string | null>(null);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -156,6 +157,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({
                   }}
                   onClick={handleSaveName}
                   disabled={saving}
+                  className="btn-hover ix-pressable"
                 >
                   {saving ? '...' : 'Save'}
                 </button>
@@ -163,6 +165,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({
                   style={webStyles.cancelEditButton}
                   onClick={handleCancelEdit}
                   disabled={saving}
+                  className="btn-hover ix-pressable"
                 >
                   Cancel
                 </button>
@@ -176,6 +179,7 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({
                 <button
                   style={webStyles.editButton}
                   onClick={() => setIsEditing(true)}
+                  className="btn-hover ix-pressable"
                 >
                   Edit
                 </button>
@@ -185,23 +189,25 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({
           {saveError && <p style={webStyles.errorText}>{saveError}</p>}
         </div>
 
-        {/* Danger Zone */}
-        <div style={webStyles.dangerZone}>
-          <div style={webStyles.dangerHeader}>
-            <span style={webStyles.dangerIcon}>⚠️</span>
-            <span style={webStyles.dangerTitle}>Danger Zone</span>
+        {isEditing && (
+          <div style={webStyles.dangerZone}>
+            <div style={webStyles.dangerHeader}>
+              <span style={webStyles.dangerIcon}>⚠️</span>
+              <span style={webStyles.dangerTitle}>Danger Zone</span>
+            </div>
+            <p style={webStyles.dangerDescription}>
+              Deleting a team is permanent. All members will lose access immediately.
+            </p>
+            <button
+              style={webStyles.deleteButton}
+              onClick={() => setShowDeleteModal(true)}
+              className="btn-hover ix-danger-btn"
+            >
+              Delete Team
+            </button>
+            {deleteError && <p style={webStyles.errorText}>{deleteError}</p>}
           </div>
-          <p style={webStyles.dangerDescription}>
-            Deleting a team is permanent. All members will lose access immediately.
-          </p>
-          <button
-            style={webStyles.deleteButton}
-            onClick={() => setShowDeleteModal(true)}
-          >
-            Delete Team
-          </button>
-          {deleteError && <p style={webStyles.errorText}>{deleteError}</p>}
-        </div>
+        )}
 
         {/* Delete Confirmation Modal */}
         <ConfirmationModal
@@ -239,8 +245,14 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({
               editable={!saving}
             />
             <TouchableOpacity
-              style={[mobileStyles.saveButton, saving && mobileStyles.buttonDisabled]}
+              style={[
+                mobileStyles.saveButton,
+                saving && mobileStyles.buttonDisabled,
+                pressedButton === 'save' && mobileStyles.pressed,
+              ]}
               onPress={handleSaveName}
+              onPressIn={() => setPressedButton('save')}
+              onPressOut={() => setPressedButton(null)}
               disabled={saving}
             >
               {saving ? (
@@ -250,8 +262,13 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({
               )}
             </TouchableOpacity>
             <TouchableOpacity
-              style={mobileStyles.cancelEditButton}
+              style={[
+                mobileStyles.cancelEditButton,
+                pressedButton === 'cancel' && mobileStyles.pressed,
+              ]}
               onPress={handleCancelEdit}
+              onPressIn={() => setPressedButton('cancel')}
+              onPressOut={() => setPressedButton(null)}
               disabled={saving}
             >
               <Text style={mobileStyles.cancelEditButtonText}>Cancel</Text>
@@ -266,8 +283,13 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({
               )}
             </View>
             <TouchableOpacity
-              style={mobileStyles.editButton}
+              style={[
+                mobileStyles.editButton,
+                pressedButton === 'edit' && mobileStyles.pressed,
+              ]}
               onPress={() => setIsEditing(true)}
+              onPressIn={() => setPressedButton('edit')}
+              onPressOut={() => setPressedButton(null)}
             >
               <Text style={mobileStyles.editButtonText}>Edit</Text>
             </TouchableOpacity>
@@ -276,23 +298,29 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({
         {saveError && <Text style={mobileStyles.errorText}>{saveError}</Text>}
       </View>
 
-      {/* Danger Zone */}
-      <View style={mobileStyles.dangerZone}>
-        <View style={mobileStyles.dangerHeader}>
-          <Text style={mobileStyles.dangerIcon}>⚠️</Text>
-          <Text style={mobileStyles.dangerTitle}>Danger Zone</Text>
+      {isEditing && (
+        <View style={mobileStyles.dangerZone}>
+          <View style={mobileStyles.dangerHeader}>
+            <Text style={mobileStyles.dangerIcon}>⚠️</Text>
+            <Text style={mobileStyles.dangerTitle}>Danger Zone</Text>
+          </View>
+          <Text style={mobileStyles.dangerDescription}>
+            Deleting a team is permanent. All members will lose access immediately.
+          </Text>
+          <TouchableOpacity
+            style={[
+              mobileStyles.deleteButton,
+              pressedButton === 'delete' && mobileStyles.pressedDanger,
+            ]}
+            onPress={() => setShowDeleteModal(true)}
+            onPressIn={() => setPressedButton('delete')}
+            onPressOut={() => setPressedButton(null)}
+          >
+            <Text style={mobileStyles.deleteButtonText}>Delete Team</Text>
+          </TouchableOpacity>
+          {deleteError && <Text style={mobileStyles.errorText}>{deleteError}</Text>}
         </View>
-        <Text style={mobileStyles.dangerDescription}>
-          Deleting a team is permanent. All members will lose access immediately.
-        </Text>
-        <TouchableOpacity
-          style={mobileStyles.deleteButton}
-          onPress={() => setShowDeleteModal(true)}
-        >
-          <Text style={mobileStyles.deleteButtonText}>Delete Team</Text>
-        </TouchableOpacity>
-        {deleteError && <Text style={mobileStyles.errorText}>{deleteError}</Text>}
-      </View>
+      )}
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
@@ -537,6 +565,14 @@ const mobileStyles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  pressed: {
+    transform: [{ scale: 0.96 }],
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  pressedDanger: {
+    transform: [{ scale: 0.96 }],
+    backgroundColor: 'rgba(231,76,60,0.25)',
   },
   errorText: {
     marginTop: 8,

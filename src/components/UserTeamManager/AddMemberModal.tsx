@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { isWeb } from '../../utils/IsWeb';
 import { useApi } from '../../utils/UseApi';
 import type { Team } from './TeamSelector';
@@ -11,6 +11,7 @@ import {
 import MembersTab from './MembersTab';
 import AddMemberTab from './AddMemberTab';
 import CreateTeamTab from './CreateTeamTab';
+import ConfirmationModal from './ConfirmationModal';
 import {
   View,
   Text,
@@ -36,6 +37,8 @@ interface AddMemberModalProps {
   onClose: () => void;
   onSuccess: () => void;
   onTeamCreated?: (newTeam: Team) => void;
+  onTeamDeleted?: (teamId: string) => void;
+  currentUserId?: string | null;
 }
 
 const isEmailFormat = (input: string): boolean => {
@@ -48,8 +51,10 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   onClose,
   onSuccess,
   onTeamCreated,
+  onTeamDeleted,
+  currentUserId,
 }) => {
-  const { get, post } = useApi();
+  const { get, post, del } = useApi();
 
   const [activeTab, setActiveTab] = useState<ModalTab>('members');
 
@@ -61,6 +66,8 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   const [teamDetails, setTeamDetails] = useState<TeamDetails | null>(null);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [sortedMembers, setSortedMembers] = useState<TeamMember[]>([]);
+  const [memberActionLoading, setMemberActionLoading] = useState(false);
+  const [memberActionError, setMemberActionError] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResult, setSearchResult] = useState<User | null>(null);
@@ -74,6 +81,42 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
   const [creatingTeam, setCreatingTeam] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
+
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmTheme, setConfirmTheme] = useState<'danger' | 'gold' | 'default'>('danger');
+  const [confirmTitle, setConfirmTitle] = useState('');
+  const [confirmMessage, setConfirmMessage] = useState('');
+  const [confirmLabel, setConfirmLabel] = useState('Confirm');
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const pendingMemberRef = useRef<TeamMember | null>(null);
+  const pendingActionRef = useRef<'promote' | 'remove' | 'demote' | null>(null);
+
+  const isViewerOwner = useMemo(() => {
+    if (!currentUserId || !teamDetails) return false;
+    return teamDetails.owners?.some((o) => o.id === currentUserId) || false;
+  }, [currentUserId, teamDetails]);
+
+  const applyRoleSwap = useCallback(
+    (member: TeamMember, targetRole: 'owner' | 'member') => {
+      setTeamDetails((prev) => {
+        if (!prev) return prev;
+        const owners = prev.owners.filter((o) => o.id !== member.id);
+        const members = prev.members.filter((m) => m.id !== member.id);
+        const nextOwners = targetRole === 'owner' ? [...owners, { ...member, role: 'owner' }] : owners;
+        const nextMembers = targetRole === 'member' ? [...members, { ...member, role: 'member' }] : members;
+        return { ...prev, owners: nextOwners, members: nextMembers } as TeamDetails;
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!teamDetails) {
+      setSortedMembers([]);
+      return;
+    }
+    setSortedMembers(getSortedTeamMembers(teamDetails));
+  }, [teamDetails]);
 
   useEffect(() => {
     let mounted = true;
@@ -191,6 +234,10 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
   const handleAddUser = useCallback(async () => {
     if (!searchResult || !localSelectedTeam) return;
+    if (!isViewerOwner) {
+      setError('Only team owners can add members');
+      return;
+    }
 
     setAdding(true);
     setError(null);
@@ -204,8 +251,6 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
       setSearchQuery('');
 
       fetchTeamDetails(localSelectedTeam.id);
-      setActiveTab('members');
-      onSuccess();
     } catch (err: any) {
       const status = err?.response?.status || err?.status;
       if (status === 409) {
@@ -218,7 +263,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
     } finally {
       setAdding(false);
     }
-  }, [searchResult, localSelectedTeam, post, onSuccess, fetchTeamDetails]);
+  }, [searchResult, localSelectedTeam, post, onSuccess, fetchTeamDetails, isViewerOwner]);
 
   const handleCreateTeam = useCallback(async () => {
     const trimmedName = newTeamName.trim();
@@ -277,20 +322,139 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
     setSearchQuery('');
     setSearchResult(null);
     setTeamDropdownOpen(false);
+    setMemberActionError(null);
   }, []);
 
   const handleTeamSelect = useCallback((t: Team) => {
     setLocalSelectedTeam(t);
     setTeamDropdownOpen(false);
+    setMemberActionError(null);
   }, []);
 
+  const handleTeamUpdated = useCallback(
+    (updatedTeam: Team) => {
+      setTeams((prev) => prev.map((t) => (t.id === updatedTeam.id ? { ...t, ...updatedTeam } : t)));
+      setLocalSelectedTeam((prev) => (prev && prev.id === updatedTeam.id ? { ...prev, ...updatedTeam } : prev));
+      if (updatedTeam.id) {
+        fetchTeamDetails(updatedTeam.id);
+      }
+    },
+    [fetchTeamDetails]
+  );
 
-  // ------------------------ Web View ------------------------
+  const handleTeamDeleted = useCallback(() => {
+    if (!localSelectedTeam) return;
+    const deletedId = localSelectedTeam.id;
+    setTeams((prev) => prev.filter((t) => t.id !== deletedId));
+    setLocalSelectedTeam(null);
+    setTeamDetails(null);
+    setSortedMembers([]);
+    setActiveTab('create-team');
+    onTeamDeleted?.(deletedId);
+  }, [localSelectedTeam, onTeamDeleted]);
+
+  const handlePromoteToOwner = useCallback(
+    (member: TeamMember) => {
+      pendingMemberRef.current = member;
+      pendingActionRef.current = 'promote';
+      setConfirmTheme('gold');
+      setConfirmTitle('Promote to Owner');
+      setConfirmLabel('Promote');
+      setConfirmMessage(
+        'You are about to promote this member to Owner status. This user will gain full administrative privileges, including the ability to add, remove, or promote others. Please note: they will be at your same hierarchy level and will possess the authority to remove you from the team. While this action is reversible, it grants significant control over the team’s assets.'
+      );
+      setConfirmVisible(true);
+      setMemberActionError(null);
+    },
+    []
+  );
+
+  const handleDemoteToMember = useCallback(
+    (member: TeamMember) => {
+      pendingMemberRef.current = member;
+      pendingActionRef.current = 'demote';
+      setConfirmTheme('default');
+      setConfirmTitle('Demote to Member');
+      setConfirmLabel('Demote');
+      setConfirmMessage(
+        'This will revoke Owner permissions for this user while keeping them in the team as a standard member.'
+      );
+      setConfirmVisible(true);
+      setMemberActionError(null);
+    },
+    []
+  );
+
+  const handleRemoveMember = useCallback(
+    (member: TeamMember) => {
+      pendingMemberRef.current = member;
+      pendingActionRef.current = 'remove';
+      setConfirmTheme('danger');
+      setConfirmTitle('Remove User');
+      setConfirmLabel('Remove');
+      setConfirmMessage(
+        'Are you sure you want to remove this user? They will lose all access to this team immediately. Note: This user can be re-invited later by any current Team Owner.'
+      );
+      setConfirmVisible(true);
+      setMemberActionError(null);
+    },
+    []
+  );
+
+  const executePendingAction = useCallback(async () => {
+    const member = pendingMemberRef.current;
+    const action = pendingActionRef.current;
+    if (!member || !action || !localSelectedTeam) return;
+
+    setConfirmLoading(true);
+    setMemberActionLoading(true);
+    setMemberActionError(null);
+    try {
+      if (action === 'promote') {
+        await post(`/teams/${localSelectedTeam.id}/owners`, { userId: member.id });
+        applyRoleSwap(member, 'owner');
+        setSuccessMessage(`${member.username} promoted to owner`);
+      } else if (action === 'demote') {
+        await del(`/teams/${localSelectedTeam.id}/owners/${member.id}`);
+        await post(`/teams/${localSelectedTeam.id}/users`, { userId: member.id });
+        applyRoleSwap({ ...member, role: 'member' }, 'member');
+        setSuccessMessage(`${member.username} is now a member`);
+      } else {
+        const endpoint = member.role === 'owner'
+          ? `/teams/${localSelectedTeam.id}/owners/${member.id}`
+          : `/teams/${localSelectedTeam.id}/users/${member.id}`;
+        await del(endpoint);
+        setTeamDetails((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            owners: prev.owners.filter((o) => o.id !== member.id),
+            members: prev.members.filter((m) => m.id !== member.id),
+          } as TeamDetails;
+        });
+        setSuccessMessage(`${member.username} removed from team`);
+      }
+    } catch (err: any) {
+      const status = err?.response?.status || err?.status;
+      if (status === 403) {
+        setMemberActionError('You do not have permission to perform this action');
+      } else {
+        setMemberActionError('Action failed. Please try again.');
+      }
+    } finally {
+      setConfirmLoading(false);
+      setMemberActionLoading(false);
+      setConfirmVisible(false);
+      pendingMemberRef.current = null;
+      pendingActionRef.current = null;
+    }
+  }, [applyRoleSwap, del, localSelectedTeam, post]);
+
+
   if (isWeb) {
     return (
       <div style={webStyles.overlay} onClick={handleClose}>
         <div style={webStyles.modal} onClick={(e) => e.stopPropagation()}>
-          {/* Header */}
           <div style={webStyles.header}>
             <h2 style={webStyles.title}>Team Management</h2>
             <div style={webStyles.tabBar}>
@@ -309,7 +473,6 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             </div>
           </div>
 
-          {/* Tab Content */}
           <div style={webStyles.content}>
             {activeTab === 'members' && (
               <MembersTab
@@ -324,6 +487,15 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
                 sortedMembers={sortedMembers}
                 onAddMemberClick={() => handleTabChange('add-member')}
                 successMessage={successMessage}
+                isOwner={isViewerOwner}
+                currentUserId={currentUserId}
+                onPromote={handlePromoteToOwner}
+                onDemote={handleDemoteToMember}
+                onRemove={handleRemoveMember}
+                memberActionLoading={memberActionLoading}
+                memberActionError={memberActionError}
+                onTeamUpdated={handleTeamUpdated}
+                onTeamDeleted={handleTeamDeleted}
               />
             )}
 
@@ -343,6 +515,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
                 onAddUser={handleAddUser}
                 error={error}
                 successMessage={successMessage}
+                isOwner={isViewerOwner}
               />
             )}
 
@@ -361,18 +534,32 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             )}
           </div>
 
-          {/* Actions */}
           <div style={webStyles.actions}>
             <button style={webStyles.cancelButton} onClick={handleClose}>
               {successMessage || createSuccess ? 'Close' : 'Cancel'}
             </button>
           </div>
+
+          <ConfirmationModal
+            visible={confirmVisible}
+            title={confirmTitle}
+            message={confirmMessage}
+            confirmLabel={confirmLabel}
+            cancelLabel="Cancel"
+            theme={confirmTheme}
+            loading={confirmLoading}
+            onConfirm={executePendingAction}
+            onCancel={() => {
+              setConfirmVisible(false);
+              pendingMemberRef.current = null;
+              pendingActionRef.current = null;
+            }}
+          />
         </div>
       </div>
     );
   }
 
-  // ------------------------ Mobile View ------------------------
   return (
     <Modal visible transparent animationType="slide" onRequestClose={handleClose}>
       <View style={mobileStyles.overlayContainer}>
@@ -387,7 +574,6 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
         <View style={mobileStyles.bottomSheet}>
           <View style={mobileStyles.handleBar} />
 
-          {/* Header */}
           <View style={mobileStyles.header}>
             <Text style={mobileStyles.title}>Team Management</Text>
             <View style={mobileStyles.tabBar}>
@@ -410,7 +596,6 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Tab Content */}
             {activeTab === 'members' && (
               <MembersTab
                 teams={teams}
@@ -424,6 +609,15 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
                 sortedMembers={sortedMembers}
                 onAddMemberClick={() => handleTabChange('add-member')}
                 successMessage={successMessage}
+                isOwner={isViewerOwner}
+                currentUserId={currentUserId}
+                onPromote={handlePromoteToOwner}
+                onDemote={handleDemoteToMember}
+                onRemove={handleRemoveMember}
+                memberActionLoading={memberActionLoading}
+                memberActionError={memberActionError}
+                onTeamUpdated={handleTeamUpdated}
+                onTeamDeleted={handleTeamDeleted}
               />
             )}
 
@@ -443,6 +637,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
                 onAddUser={handleAddUser}
                 error={error}
                 successMessage={successMessage}
+                isOwner={isViewerOwner}
               />
             )}
 
@@ -460,7 +655,6 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
               />
             )}
 
-            {/* Actions */}
             <View style={mobileStyles.actions}>
               <TouchableOpacity style={mobileStyles.cancelButton} onPress={handleClose}>
                 <Text style={mobileStyles.cancelButtonText}>
@@ -471,13 +665,27 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
             <View style={{ height: 40 }} />
           </ScrollView>
+          <ConfirmationModal
+            visible={confirmVisible}
+            title={confirmTitle}
+            message={confirmMessage}
+            confirmLabel={confirmLabel}
+            cancelLabel="Cancel"
+            theme={confirmTheme}
+            loading={confirmLoading}
+            onConfirm={executePendingAction}
+            onCancel={() => {
+              setConfirmVisible(false);
+              pendingMemberRef.current = null;
+              pendingActionRef.current = null;
+            }}
+          />
         </View>
       </View>
     </Modal>
   );
 };
 
-// ------------------------ Web Styles ------------------------
 const webStyles: Record<string, React.CSSProperties> = {
   overlay: {
     position: 'fixed',
@@ -557,7 +765,6 @@ const webStyles: Record<string, React.CSSProperties> = {
   },
 };
 
-// ------------------------ Mobile Styles ------------------------
 const mobileStyles = StyleSheet.create({
   overlayContainer: {
     flex: 1,

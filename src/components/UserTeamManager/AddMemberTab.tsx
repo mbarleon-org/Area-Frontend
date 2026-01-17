@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 
 interface SearchResult {
@@ -25,6 +26,7 @@ export interface AddMemberTabProps {
   teamDropdownOpen: boolean;
   onDropdownToggle: () => void;
   onTeamSelect: (team: Team) => void;
+  isOwner: boolean;
   searchQuery: string;
   onSearchChange: (text: string) => void;
   searching: boolean;
@@ -42,6 +44,7 @@ const AddMemberTab: React.FC<AddMemberTabProps> = ({
   teamDropdownOpen,
   onDropdownToggle,
   onTeamSelect,
+  isOwner,
   searchQuery,
   onSearchChange,
   searching,
@@ -51,6 +54,80 @@ const AddMemberTab: React.FC<AddMemberTabProps> = ({
   error,
   successMessage,
 }) => {
+  const [showRestrictionHint, setShowRestrictionHint] = React.useState(false);
+  const restrictionTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const restricted = !isOwner;
+  const [inputFocused, setInputFocused] = React.useState(false);
+  const [webShake, setWebShake] = React.useState(false);
+  const shakeAnim = React.useRef(new Animated.Value(0)).current;
+
+  const triggerRestrictionHint = () => {
+    if (!restricted) return;
+    if (restrictionTimerRef.current) {
+      clearTimeout(restrictionTimerRef.current);
+    }
+    setShowRestrictionHint(true);
+    restrictionTimerRef.current = setTimeout(() => setShowRestrictionHint(false), 1800);
+  };
+
+  const runShake = () => {
+    if (!restricted) return;
+    if (isWeb) {
+      setWebShake(true);
+      setTimeout(() => setWebShake(false), 450);
+      return;
+    }
+
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 6, duration: 70, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -6, duration: 90, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 3, duration: 70, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 70, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const handleRestrictedHover = () => {
+    if (!restricted) return;
+    triggerRestrictionHint();
+  };
+
+  const handleRestrictedAttempt = () => {
+    if (!restricted) return;
+    triggerRestrictionHint();
+    runShake();
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (restrictionTimerRef.current) {
+        clearTimeout(restrictionTimerRef.current);
+      }
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!isWeb) return;
+    const styleId = 'add-member-shake-keyframes';
+    if (document.getElementById(styleId)) return;
+    const styleTag = document.createElement('style');
+    styleTag.id = styleId;
+    styleTag.innerHTML = `
+      @keyframes addMemberShake {
+        0% { transform: translateX(0); }
+        20% { transform: translateX(-5px); }
+        40% { transform: translateX(5px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(3px); }
+        100% { transform: translateX(0); }
+      }
+    `;
+    document.head.appendChild(styleTag);
+    return () => {
+      const existing = document.getElementById(styleId);
+      existing?.remove();
+    };
+  }, []);
+
   // ------------------------ Web View ------------------------
   if (isWeb) {
     return (
@@ -71,23 +148,57 @@ const AddMemberTab: React.FC<AddMemberTabProps> = ({
         {/* Search Input */}
         <div style={webStyles.section}>
           <label style={webStyles.label}>Search by email or username</label>
-          <div style={webStyles.inputWrapper}>
+          <div
+            style={{
+              ...webStyles.inputWrapper,
+              ...(restricted ? webStyles.inputWrapperRestricted : {}),
+              ...(isOwner && inputFocused ? webStyles.inputWrapperActive : {}),
+              animation: webShake ? 'addMemberShake 0.45s ease' : undefined,
+              cursor: restricted ? 'not-allowed' : 'text',
+            }}
+            onMouseEnter={handleRestrictedHover}
+            onClick={restricted ? handleRestrictedAttempt : undefined}
+          >
+            {restricted && <div style={webStyles.hatchedOverlay} aria-hidden />}
+            <span
+              style={{
+                ...webStyles.searchIcon,
+                filter: restricted ? 'grayscale(1) saturate(0)' : 'none',
+                opacity: restricted ? 0.65 : 0.9,
+              }}
+            >
+              🔍
+            </span>
             <input
-              style={webStyles.input}
+              style={{
+                ...webStyles.input,
+                ...(restricted ? webStyles.inputRestricted : {}),
+                ...(isOwner && inputFocused ? webStyles.inputActive : {}),
+              }}
               type="text"
               placeholder="john@example.com or johndoe"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              disabled={!selectedTeam}
+              disabled={!selectedTeam || !isOwner}
+              aria-disabled={restricted}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
             />
             {searching && (
               <div style={webStyles.searchingIndicator}>
                 <div style={webStyles.spinner} />
               </div>
             )}
+            {restricted && showRestrictionHint && (
+              <div style={webStyles.restrictionTooltip}>
+                Administrator privileges required to invite members.
+              </div>
+            )}
           </div>
           <p style={webStyles.hint}>
-            Uses @ symbol to detect email vs username automatically.
+            {isOwner
+              ? 'Uses @ symbol to detect email vs username automatically.'
+              : 'Only team owners can invite members.'}
           </p>
         </div>
 
@@ -110,12 +221,12 @@ const AddMemberTab: React.FC<AddMemberTabProps> = ({
             <button
               style={{
                 ...webStyles.addButton,
-                opacity: adding ? 0.6 : 1,
+                opacity: adding || !isOwner ? 0.6 : 1,
               }}
               onClick={onAddUser}
-              disabled={adding}
+              disabled={adding || !isOwner}
             >
-              {adding ? 'Adding...' : 'Add'}
+              {adding ? 'Adding...' : isOwner ? 'Add' : 'Owners only'}
             </button>
           </div>
         )}
@@ -158,17 +269,32 @@ const AddMemberTab: React.FC<AddMemberTabProps> = ({
       {/* Search Input */}
       <View style={mobileStyles.section}>
         <Text style={mobileStyles.label}>Search by email or username</Text>
-        <View style={mobileStyles.inputWrapper}>
+        <Animated.View
+          style={[
+            mobileStyles.inputWrapper,
+            restricted && mobileStyles.inputWrapperRestricted,
+            { transform: [{ translateX: shakeAnim }] },
+          ]}
+          onTouchStart={restricted ? handleRestrictedAttempt : undefined}
+        >
           <TextInput
-            style={[mobileStyles.input, !selectedTeam && mobileStyles.inputDisabled]}
+            style={[
+              mobileStyles.input,
+              !selectedTeam && mobileStyles.inputDisabled,
+              isOwner && inputFocused && mobileStyles.inputActive,
+              restricted && mobileStyles.inputRestricted,
+            ]}
             placeholder="john@example.com or johndoe"
-            placeholderTextColor="#666"
+            placeholderTextColor={restricted ? '#555' : '#888'}
             value={searchQuery}
             onChangeText={onSearchChange}
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
-            editable={!!selectedTeam}
+            editable={!!selectedTeam && isOwner}
+            aria-disabled={restricted}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
           />
           {searching && (
             <ActivityIndicator
@@ -177,8 +303,17 @@ const AddMemberTab: React.FC<AddMemberTabProps> = ({
               style={mobileStyles.searchingIndicator}
             />
           )}
-        </View>
-        <Text style={mobileStyles.hint}>Uses @ to detect email vs username</Text>
+          {restricted && showRestrictionHint && (
+            <View style={mobileStyles.restrictionToast}>
+              <Text style={mobileStyles.restrictionToastText}>
+                Administrator privileges required to invite members.
+              </Text>
+            </View>
+          )}
+        </Animated.View>
+        <Text style={mobileStyles.hint}>
+          {isOwner ? 'Uses @ to detect email vs username' : 'Only owners can send invites'}
+        </Text>
       </View>
 
       {/* Search Result */}
@@ -194,14 +329,14 @@ const AddMemberTab: React.FC<AddMemberTabProps> = ({
             <Text style={mobileStyles.resultEmail}>{searchResult.email}</Text>
           </View>
           <TouchableOpacity
-            style={[mobileStyles.addButton, adding && mobileStyles.addButtonDisabled]}
+            style={[mobileStyles.addButton, (adding || !isOwner) && mobileStyles.addButtonDisabled]}
             onPress={onAddUser}
-            disabled={adding}
+            disabled={adding || !isOwner}
           >
             {adding ? (
               <ActivityIndicator size="small" color="#000" />
             ) : (
-              <Text style={mobileStyles.addButtonText}>Add</Text>
+              <Text style={mobileStyles.addButtonText}>{isOwner ? 'Add' : 'Owners only'}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -241,9 +376,22 @@ const webStyles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
   },
+  inputWrapperRestricted: {
+    filter: 'grayscale(0.75) saturate(0)',
+    background: 'rgba(255,255,255,0.06)',
+    borderRadius: '12px',
+    boxShadow: '0 12px 30px rgba(0,0,0,0.35)',
+    position: 'relative',
+    border: '1px solid rgba(255,255,255,0.12)',
+    backdropFilter: 'blur(4px)',
+  },
+  inputWrapperActive: {
+    boxShadow: '0 10px 30px rgba(109, 211, 255, 0.18)',
+    borderRadius: '12px',
+  },
   input: {
     width: '100%',
-    padding: '14px 16px',
+    padding: '14px 16px 14px 38px',
     paddingRight: '44px',
     background: '#1a1a1a',
     border: '1px solid #333',
@@ -253,6 +401,16 @@ const webStyles: Record<string, React.CSSProperties> = {
     outline: 'none',
     transition: 'border-color 0.2s',
     boxSizing: 'border-box',
+  },
+  inputRestricted: {
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
+    color: '#d0d4db',
+    borderColor: 'rgba(255,255,255,0.16)',
+  },
+  inputActive: {
+    background: '#0f1116',
+    borderColor: '#6dd3ff',
+    boxShadow: '0 0 0 1px rgba(109,211,255,0.5), 0 14px 34px rgba(0, 173, 255, 0.18)',
   },
   searchingIndicator: {
     position: 'absolute',
@@ -265,6 +423,36 @@ const webStyles: Record<string, React.CSSProperties> = {
     borderTopColor: '#fff',
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite',
+  },
+  restrictionTooltip: {
+    position: 'absolute',
+    right: 0,
+    top: 'calc(100% + 6px)',
+    padding: '8px 12px',
+    background: 'rgba(15,15,15,0.95)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '10px',
+    color: '#f0f0f0',
+    fontSize: '12px',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+    pointerEvents: 'none',
+    maxWidth: '220px',
+  },
+  searchIcon: {
+    position: 'absolute',
+    left: '14px',
+    fontSize: '14px',
+    color: '#aaa',
+    pointerEvents: 'none',
+  },
+  hatchedOverlay: {
+    position: 'absolute',
+    inset: 0,
+    borderRadius: '12px',
+    backgroundImage:
+      'repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0, rgba(255,255,255,0.05) 12px, transparent 12px, transparent 20px)',
+    pointerEvents: 'none',
+    mixBlendMode: 'soft-light',
   },
   hint: {
     fontSize: '12px',
@@ -382,6 +570,13 @@ const mobileStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  inputWrapperRestricted: {
+    opacity: 0.75,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    borderRadius: 12,
+  },
   input: {
     flex: 1,
     padding: 14,
@@ -395,6 +590,16 @@ const mobileStyles = StyleSheet.create({
   },
   inputDisabled: {
     opacity: 0.5,
+  },
+  inputRestricted: {
+    color: '#d0d4db',
+  },
+  inputActive: {
+    borderColor: '#6dd3ff',
+    shadowColor: '#6dd3ff',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
   searchingIndicator: {
     position: 'absolute',
@@ -481,6 +686,24 @@ const mobileStyles = StyleSheet.create({
     color: '#2ecc71',
     fontSize: 13,
     fontWeight: '500',
+  },
+  restrictionToast: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    marginTop: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: 'rgba(15,15,15,0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  restrictionToastText: {
+    color: '#f0f0f0',
+    fontSize: 12,
+    textAlign: 'center',
   },
 });
 

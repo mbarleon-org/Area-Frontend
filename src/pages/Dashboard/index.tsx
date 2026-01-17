@@ -48,6 +48,7 @@ const Dashboard: React.FC = () => {
 
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [showAddMember, setShowAddMember] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ id: string; username?: string } | null>(null);
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -102,6 +103,26 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     return fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (!token) {
+      setCurrentUser(null);
+      return;
+    }
+    let mounted = true;
+    get('/users/me')
+      .then((res: any) => {
+        if (!mounted) return;
+        const user = res?.user || res;
+        setCurrentUser(user && user.id ? user : null);
+      })
+      .catch(() => {
+        if (mounted) setCurrentUser(null);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [get, token]);
 
   useEffect(() => {
     setMenuOpenId(null);
@@ -228,7 +249,8 @@ const Dashboard: React.FC = () => {
           <TeamSelector
             selectedTeam={selectedTeam}
             onTeamSelect={setSelectedTeam}
-            onAddMemberPress={() => setShowAddMember(true)}
+            onAddMemberPress={(team) => { setSelectedTeam(team); setShowAddMember(true); }}
+            currentUserId={currentUser?.id}
           />
 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -331,6 +353,12 @@ const Dashboard: React.FC = () => {
             team={selectedTeam}
             onClose={() => setShowAddMember(false)}
             onSuccess={() => setShowAddMember(false)}
+            currentUserId={currentUser?.id ?? null}
+            onTeamCreated={(newTeam) => setSelectedTeam(newTeam)}
+            onTeamDeleted={(teamId) => {
+              if (selectedTeam?.id === teamId) setSelectedTeam(null);
+              setShowAddMember(false);
+            }}
           />
         )}
 
@@ -395,7 +423,8 @@ const Dashboard: React.FC = () => {
               <TeamSelector
                 selectedTeam={selectedTeam}
                 onTeamSelect={setSelectedTeam}
-                onAddMemberPress={() => setShowAddMember(true)}
+                onAddMemberPress={(team) => { setSelectedTeam(team); setShowAddMember(true); }}
+                currentUserId={currentUser?.id}
               />
             </div>
           </div>
@@ -501,6 +530,12 @@ const Dashboard: React.FC = () => {
           team={selectedTeam}
           onClose={() => setShowAddMember(false)}
           onSuccess={() => setShowAddMember(false)}
+          currentUserId={currentUser?.id ?? null}
+          onTeamCreated={(newTeam) => setSelectedTeam(newTeam)}
+          onTeamDeleted={(teamId) => {
+            if (selectedTeam?.id === teamId) setSelectedTeam(null);
+            setShowAddMember(false);
+          }}
         />
       )}
     </>
