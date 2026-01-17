@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, PanResponder } from 'react-native';
 
 type NodeItem = {
@@ -24,17 +24,45 @@ type NodeProps = {
   onPress: () => void;
   onRemove: () => void;
   onUpdate: (updates: Partial<NodeItem>) => void;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
   selected: boolean;
+  gridPx: number;
 };
 
-const Node: React.FC<NodeProps> = ({ node, scale, offset, onPress, onRemove, onUpdate, selected }) => {
+const computeSnapOffset = (worldSize: number, gridPx: number) => {
+  const cells = Math.round(worldSize / gridPx);
+  return (cells % 2 === 0) ? 0 : gridPx / 2;
+};
+
+const Node: React.FC<NodeProps> = ({
+  node,
+  scale,
+  offset,
+  onPress,
+  onUpdate,
+  onDragStart,
+  onDragEnd,
+  selected,
+  gridPx
+}) => {
   const width = node.width || 240;
   const height = node.height || 144;
-  const dragStartPos = useRef({ x: 0, y: 0 });
+
   const isDragging = useRef(false);
+  const pointerOffset = useRef({ x: 0, y: 0 });
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Convert world coordinates to screen coordinates
+  const scaleRef = useRef(scale);
+  const offsetRef = useRef(offset);
+  const currentPos = useRef({ x: node.x, y: node.y });
+
+  useEffect(() => {
+    scaleRef.current = scale;
+    offsetRef.current = offset;
+    currentPos.current = { x: node.x, y: node.y };
+  }, [scale, offset, node.x, node.y]);
+
   const screenX = node.x * scale + offset.x;
   const screenY = node.y * scale + offset.y;
 
@@ -45,11 +73,24 @@ const Node: React.FC<NodeProps> = ({ node, scale, offset, onPress, onRemove, onU
       onMoveShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponderCapture: () => true,
 
-      onPanResponderGrant: (_evt, _gestureState) => {
+      onPanResponderGrant: (evt) => {
+        onDragStart?.();
         isDragging.current = false;
-        dragStartPos.current = { x: node.x, y: node.y };
 
-        // Start long press timer
+        const currentScale = scaleRef.current;
+        const currentOffset = offsetRef.current;
+
+        const touchX = evt.nativeEvent.pageX;
+        const touchY = evt.nativeEvent.pageY;
+
+        const worldTouchX = (touchX - currentOffset.x) / currentScale;
+        const worldTouchY = (touchY - currentOffset.y) / currentScale;
+
+        pointerOffset.current = {
+            x: worldTouchX - currentPos.current.x,
+            y: worldTouchY - currentPos.current.y
+        };
+
         longPressTimer.current = setTimeout(() => {
           if (!isDragging.current) {
             onPress();
@@ -57,44 +98,66 @@ const Node: React.FC<NodeProps> = ({ node, scale, offset, onPress, onRemove, onU
         }, 500);
       },
 
-      onPanResponderMove: (_evt, gestureState) => {
-        // If moved more consider it a drag
-        if (Math.abs(gestureState.dx) > 0 || Math.abs(gestureState.dy) > 5) {
-          isDragging.current = true;
+      onPanResponderMove: (_, gestureState) => {
+        if (!isDragging.current && (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5)) {
+            isDragging.current = true;
+            if (longPressTimer.current) {
+                clearTimeout(longPressTimer.current);
+                longPressTimer.current = null;
+            }
+        }
 
-          if (longPressTimer.current) {
-            clearTimeout(longPressTimer.current);
-            longPressTimer.current = null;
-          }
+        if (isDragging.current) {
+            const currentScale = scaleRef.current;
+            const currentOffset = offsetRef.current;
 
-          // Update node position in world coordinates
-          const newX = dragStartPos.current.x + gestureState.dx / scale;
-          const newY = dragStartPos.current.y + gestureState.dy / scale;
-          onUpdate({ x: newX, y: newY });
+            const currentTouchX = gestureState.moveX;
+            const currentTouchY = gestureState.moveY;
+
+            const worldTouchX = (currentTouchX - currentOffset.x) / currentScale;
+            const worldTouchY = (currentTouchY - currentOffset.y) / currentScale;
+
+            const desiredX = worldTouchX - pointerOffset.current.x;
+            const desiredY = worldTouchY - pointerOffset.current.y;
+
+            const snapOffX = computeSnapOffset(width, gridPx);
+            const snapOffY = computeSnapOffset(height, gridPx);
+
+            const snappedX = Math.round((desiredX - snapOffX) / gridPx) * gridPx + snapOffX;
+            const snappedY = Math.round((desiredY - snapOffY) / gridPx) * gridPx + snapOffY;
+
+            if (snappedX !== currentPos.current.x || snappedY !== currentPos.current.y) {
+              currentPos.current = { x: snappedX, y: snappedY };
+              onUpdate({ x: snappedX, y: snappedY });
+            }
         }
       },
 
       onPanResponderRelease: () => {
-        // Clear long press timer
-        if (longPressTimer.current) {
-          clearTimeout(longPressTimer.current);
-          longPressTimer.current = null;
+        if (longPressTimer.current) clearTimeout(longPressTimer.current);
+
+        if (!isDragging.current) {
+          onPress();
+        } else {
+            const snapOffX = computeSnapOffset(width, gridPx);
+            const snapOffY = computeSnapOffset(height, gridPx);
+            const snappedX = Math.round(((currentPos.current.x) - snapOffX) / gridPx) * gridPx + snapOffX;
+            const snappedY = Math.round(((currentPos.current.y) - snapOffY) / gridPx) * gridPx + snapOffY;
+            currentPos.current = { x: snappedX, y: snappedY };
+            onUpdate({ x: snappedX, y: snappedY });
         }
+
         isDragging.current = false;
+        onDragEnd?.();
       },
 
       onPanResponderTerminate: () => {
-        // Clear long press timer
-        if (longPressTimer.current) {
-          clearTimeout(longPressTimer.current);
-          longPressTimer.current = null;
-        }
+        if (longPressTimer.current) clearTimeout(longPressTimer.current);
         isDragging.current = false;
+        onDragEnd?.();
       },
     })
   ).current;
-
-  console.log('Node', node.id, 'at screen pos:', screenX, screenY, 'scale:', scale);
 
   return (
     <View
@@ -111,26 +174,18 @@ const Node: React.FC<NodeProps> = ({ node, scale, offset, onPress, onRemove, onU
         },
       ]}
     >
-      {/* Icon placeholder */}
       {node.icon && (
         <View style={styles.iconContainer}>
           <Text style={styles.icon}>{node.icon}</Text>
         </View>
       )}
 
-      {/* Label */}
-      <Text style={styles.label} numberOfLines={1}>
-        {node.label || 'Node'}
-      </Text>
+      <Text style={styles.label} numberOfLines={1}>{node.label || 'Node'}</Text>
 
-      {/* Module info */}
       {node.module && (
-        <Text style={styles.moduleInfo} numberOfLines={1}>
-          {node.module.name || ''}
-        </Text>
+        <Text style={styles.moduleInfo} numberOfLines={1}>{node.module.name || ''}</Text>
       )}
 
-      {/* Connection points */}
       {node.connectionPoints?.map((cp, idx) => (
         <View
           key={idx}
@@ -143,7 +198,6 @@ const Node: React.FC<NodeProps> = ({ node, scale, offset, onPress, onRemove, onU
           ]}
         />
       ))}
-
     </View>
   );
 };
@@ -163,21 +217,21 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   iconContainer: {
-    marginBottom: 4,
+    marginBottom: 4
   },
   icon: {
-    fontSize: 32,
+    fontSize: 32
   },
   label: {
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
-    textAlign: 'center',
+    textAlign: 'center'
   },
   moduleInfo: {
     color: '#888',
     fontSize: 10,
-    marginTop: 4,
+    marginTop: 4
   },
   connector: {
     position: 'absolute',
@@ -187,23 +241,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#6366f1',
     borderWidth: 2,
     borderColor: '#fff',
-  },
-  deleteButton: {
-    position: 'absolute',
-    top: -10,
-    right: -10,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#ef4444',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  deleteText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    lineHeight: 20,
   },
 });
 
