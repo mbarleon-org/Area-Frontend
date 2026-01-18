@@ -42,7 +42,20 @@ type EndpointRef = { nodeId?: string; side?: 'left' | 'right' | 'top' | 'bottom'
 
 const MobileCanva: React.FC = () => {
   const location = useLocation();
-  const workflowFromState = (location as any)?.state?.workflow;
+
+  let routeParams: any = null;
+  try {
+    const rnNav = require('@react-navigation/native');
+    const useRouteSafe = rnNav?.useRoute || (() => null);
+    const route = useRouteSafe();
+    routeParams = (route as any)?.params || null;
+  } catch (e) {
+  }
+
+  const workflowFromState = routeParams?.workflow
+    || (location as any)?.state?.workflow
+    || (location as any)?.state?.workflowData
+    || null;
   const { get, post } = useApi();
 
   const initialSize = Dimensions.get('window');
@@ -123,10 +136,27 @@ const MobileCanva: React.FC = () => {
 
   useEffect(() => { fetchCredentials(); }, [fetchCredentials]);
 
+  const extractWorkflowData = (wf: any) => {
+    if (!wf) return {};
+    return (
+      wf?.data?.canvas ||
+      wf?.canvas ||
+      wf?.data ||
+      wf?.datas ||
+      wf ||
+      {}
+    );
+  };
+
   useEffect(() => {
     if (!workflowFromState) return;
-    const wf = workflowFromState;
+    const wf = extractWorkflowData(workflowFromState);
     const safeNodes = Array.isArray(wf.nodes) ? wf.nodes : [];
+    const safeLines = Array.isArray(wf.lines) ? wf.lines : [];
+
+    // Prevent default node injection when data already exists
+    if (safeNodes.length > 0) initialPosSet.current = true;
+
     const normalizedNodes = safeNodes.map((n: any) => {
       const w = n?.width || 240;
       const h = n?.height || 144;
@@ -156,9 +186,11 @@ const MobileCanva: React.FC = () => {
       } as NodeItem;
     });
     setNodes(normalizedNodes);
-    const safeLines = Array.isArray(wf.lines) ? wf.lines : [];
     setLines(safeLines.map((l: any) => ({
-      a: l?.a || {}, b: l?.b || {}, stroke: l?.stroke || '#fff', strokeWidth: l?.strokeWidth || 4,
+      a: l?.a || {},
+      b: l?.b || {},
+      stroke: l?.stroke || '#fff',
+      strokeWidth: l?.strokeWidth || 4,
     })));
   }, [workflowFromState, gridPx]);
 

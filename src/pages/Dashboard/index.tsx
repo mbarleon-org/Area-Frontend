@@ -36,6 +36,19 @@ const Dashboard: React.FC = () => {
   const { get, post, del } = useApi();
   const navigate = useNavigate();
 
+  // Mobile navigation
+  let navigationMobile: any = { navigate: (_: any) => {} };
+  if (!isWeb) {
+    try {
+      const rnNav = require('@react-navigation/native');
+      if (rnNav && rnNav.useNavigation) {
+        navigationMobile = rnNav.useNavigation();
+      }
+    } catch (e) {
+      // Fallback
+    }
+  }
+
   const [activeFilter, setActiveFilter] = useState(FILTERS[0].id);
   const [data, setData] = useState<any[] | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
@@ -134,7 +147,11 @@ const Dashboard: React.FC = () => {
 
   const handleEdit = (item: any) => {
     if (item.type !== 'workflow') return;
-    navigate('/automations', { state: { workflow: item.raw || item } });
+    if (isWeb) {
+      navigate('/automations', { state: { workflow: item.raw || item } });
+    } else {
+      navigationMobile.navigate('Automations', { workflow: item.raw || item });
+    }
   };
 
   const handleDelete = async (item: any) => {
@@ -220,19 +237,6 @@ const Dashboard: React.FC = () => {
 
   // ------------------------ Mobile view ------------------------
   if (!isWeb) {
-    let safeUseNavigation: any = () => ({
-        navigate: (_: any) => { },
-        reset: (_: any) => { }
-      });
-      try {
-    const rnNav = require('@react-navigation/native');
-    if (rnNav && rnNav.useNavigation)
-      safeUseNavigation = rnNav.useNavigation;
-    } catch (e) {
-    }
-    const navigationMobile = (!isWeb && typeof safeUseNavigation === 'function')
-        ? safeUseNavigation()
-        : { navigate: (_: any) => { } };
     return (
       <View style={mobileStyles.mainContainer}>
         <View style={StyleSheet.absoluteFill}>
