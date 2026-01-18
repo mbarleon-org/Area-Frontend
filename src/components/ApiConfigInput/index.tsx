@@ -227,7 +227,7 @@ const mobileStyles = StyleSheet.create({
     borderColor: '#4CAF50',
   },
   saveBtn: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#ffffff',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -241,10 +241,10 @@ const mobileStyles = StyleSheet.create({
     opacity: 0.5,
   },
   saveBtnSuccess: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#d2fad4',
   },
   saveBtnText: {
-    color: '#fff',
+    color: '#000000',
     fontWeight: '600',
     fontSize: 14,
   },
