@@ -554,6 +554,11 @@ const Canvas: React.FC = () => {
         existingWorkflowId={workflowFromState?.id}
         existingWorkflowData={workflowFromState?.data || workflowFromState?.datas || workflowFromState?.canvas}
         onRecenter={() => recenterNodes()}
+        onImportWorkflow={(data) => {
+          setNodes(data.nodes);
+          setLines(data.lines);
+          setTimeout(() => recenterNodes(data.nodes), 50);
+        }}
       />
       <BinButton ref={binButtonRef} />
       {selectedId && (
