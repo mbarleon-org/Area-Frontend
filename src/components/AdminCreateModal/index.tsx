@@ -465,15 +465,15 @@ const mobileStyles = StyleSheet.create({
   },
   addBtn: {
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 40,
     borderRadius: 8,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#ffffff',
   },
   addBtnDisabled: {
     opacity: 0.5,
   },
   addBtnText: {
-    color: '#fff',
+    color: '#000000',
     fontWeight: '600',
   },
 });
@@ -582,15 +582,15 @@ const webStyles: { [k: string]: React.CSSProperties } = {
     padding: '10px 20px',
     borderRadius: 8,
     border: 'none',
-    backgroundColor: '#007AFF',
-    color: '#fff',
+    backgroundColor: '#ffffffc5',
+    color: '#000',
     fontWeight: 600,
     cursor: 'pointer',
     transition: 'all 0.2s ease',
   },
   addBtnHover: {
-    backgroundColor: '#0066DD',
-    boxShadow: '0 4px 12px rgba(0, 122, 255, 0.3)',
+    backgroundColor: '#fff',
+    boxShadow: '0 4px 12px rgba(255, 255, 255, 0.3)',
   },
   addBtnDisabled: {
     opacity: 0.5,

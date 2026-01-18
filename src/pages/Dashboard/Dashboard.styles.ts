@@ -299,7 +299,7 @@ export const mobileStyles = StyleSheet.create({
     padding: 24,
   },
   scrollContainer: {
-    paddingTop: 100,
+    paddingTop: 120,
     paddingHorizontal: 24,
     paddingBottom: 40,
   },

@@ -241,7 +241,7 @@ const mobileStyles = StyleSheet.create({
     backgroundColor: '#050505',
   },
   scrollContainer: {
-    paddingTop: 120,
+    paddingTop: 130,
     paddingHorizontal: 24,
   },
   heroSection: {

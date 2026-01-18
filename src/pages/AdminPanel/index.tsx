@@ -501,7 +501,7 @@ const mobileStyles = StyleSheet.create({
     backgroundColor: "#050505",
   },
   content: {
-    paddingTop: 100,
+    paddingTop: 120,
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
@@ -523,12 +523,12 @@ const mobileStyles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 8,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#fff',
     minWidth: 80,
     marginRight: 8,
   },
   createBtnText: {
-    color: '#fff',
+    color: '#000',
     fontWeight: '600',
     fontSize: 13,
     textAlign: 'center',

@@ -202,9 +202,38 @@ const AdminDetailModal: React.FC<AdminDetailModalProps> = ({ visible, data, onCl
               <Text style={mobileStyles.title}>
                 {data.type.charAt(0).toUpperCase() + data.type.slice(1)} Details
               </Text>
-              <View style={isUserType ? mobileStyles.twoColumnLayout : undefined}>
+              {isUserType ? (
                 <ScrollView
-                  style={[mobileStyles.scrollContent, isUserType && mobileStyles.leftColumn]}
+                  horizontal={true}
+                  style={mobileStyles.horizontalScroll}
+                  showsHorizontalScrollIndicator={false}
+                  pagingEnabled={true}
+                >
+                  <View style={mobileStyles.twoColumnLayout}>
+                    <ScrollView
+                      style={mobileStyles.leftColumn}
+                      showsVerticalScrollIndicator={false}
+                      keyboardShouldPersistTaps="handled"
+                    >
+                      {fields.map(renderField)}
+                    </ScrollView>
+                    {get && post && del && (
+                      <View style={mobileStyles.rightColumn}>
+                        <UserTeamManager
+                          userId={data.id}
+                          userTeams={userTeams}
+                          get={get}
+                          post={post}
+                          del={del}
+                          onTeamsChange={handleTeamsChange}
+                        />
+                      </View>
+                    )}
+                  </View>
+                </ScrollView>
+              ) : (
+                <ScrollView
+                  style={mobileStyles.scrollContent}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
                 >
@@ -216,19 +245,7 @@ const AdminDetailModal: React.FC<AdminDetailModalProps> = ({ visible, data, onCl
                     </View>
                   )}
                 </ScrollView>
-                {isUserType && get && post && del && (
-                  <View style={mobileStyles.rightColumn}>
-                    <UserTeamManager
-                      userId={data.id}
-                      userTeams={userTeams}
-                      get={get}
-                      post={post}
-                      del={del}
-                      onTeamsChange={handleTeamsChange}
-                    />
-                  </View>
-                )}
-              </View>
+              )}
               <View style={mobileStyles.actions}>
                 <TouchableOpacity
                   style={mobileStyles.cancelBtn}
@@ -357,16 +374,20 @@ const mobileStyles = StyleSheet.create({
   },
   twoColumnLayout: {
     flexDirection: 'row',
+    width: 600,
     gap: 20,
   },
   leftColumn: {
-    flex: 1,
+    width: 280,
   },
   rightColumn: {
-    flex: 1,
+    width: 280,
     borderLeftWidth: 1,
     borderLeftColor: 'rgba(255,255,255,0.1)',
     paddingLeft: 20,
+  },
+  horizontalScroll: {
+    height: 400,
   },
   scrollContent: {
     flexGrow: 0,
