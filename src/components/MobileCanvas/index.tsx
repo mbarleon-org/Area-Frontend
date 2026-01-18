@@ -7,7 +7,7 @@ import Node from './Node.tsx';
 import AddNode from './AddNode.tsx';
 import EditMenu from './EditMenu';
 import type { EditMenuHandle } from './EditMenu/EditMenu.types';
-import Svg, { Path, Defs, Pattern, Rect } from 'react-native-svg';
+import Svg, { Path, Defs, Pattern, Rect, Line as SvgLine } from 'react-native-svg';
 import { routeConnection } from './connectionRouter';
 import { getConnectionPointsForModule } from '../../utils/iconHelper';
 
@@ -36,7 +36,7 @@ type NodeItem = {
   credential_id?: string;
 };
 type LineItem = { a: EndpointRef; b: EndpointRef; stroke?: string; strokeWidth?: number };
-type EndpointRef = { nodeId?: string; side?: 'left' | 'right' | 'top' | 'bottom'; offset?: number };
+type EndpointRef = { nodeId?: string; side?: 'left' | 'right' | 'top' | 'bottom'; offset?: number; x?: number; y?: number };
 
 const MobileCanva: React.FC = () => {
   const location = useLocation();
@@ -55,6 +55,11 @@ const MobileCanva: React.FC = () => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [lines, setLines] = useState<LineItem[]>([]);
+
+  const [isDrawMode, setIsDrawMode] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [pendingConnection, setPendingConnection] = useState<EndpointRef | null>(null);
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
 
   const editMenuRef = useRef<EditMenuHandle | null>(null);
 
@@ -188,11 +193,45 @@ const MobileCanva: React.FC = () => {
     setSelectedId((sid) => (sid === nodeId ? null : sid));
   }, []);
 
-  const handleNodePress = useCallback((nodeId: string) => { setSelectedId(nodeId); }, []);
+  const handleNodePress = useCallback((nodeId: string) => {
+    if (isDrawMode) return;
+    console.log('Node pressed:', nodeId);
+    console.log('isDrawMode:', isDrawMode);
+    if (pendingConnection) {
+        setPendingConnection(null);
+        return;
+    }
+    setSelectedId(nodeId);
+  }, [pendingConnection, isDrawMode]);
 
   const handleUpdateNode = useCallback((nodeId: string, updates: Partial<NodeItem>) => {
     setNodes((ns) => ns.map((n) => (n.id === nodeId ? { ...n, ...updates } : n)));
   }, []);
+
+  const handleConnectorPress = useCallback((info: { nodeId: string; side: 'left'|'right'|'top'|'bottom'; offset: number; x: number; y: number }) => {
+    if (!isDrawMode) return;
+
+    if (!pendingConnection) {
+        setPendingConnection({
+            nodeId: info.nodeId,
+            side: info.side,
+            offset: info.offset,
+            x: info.x,
+            y: info.y
+        });
+        setCursorPos({ x: info.x * scale + offset.x, y: info.y * scale + offset.y });
+    } else {
+        if (pendingConnection.nodeId === info.nodeId) return;
+
+        setLines(ls => [...ls, {
+            a: { nodeId: pendingConnection.nodeId, side: pendingConnection.side, offset: pendingConnection.offset },
+            b: { nodeId: info.nodeId, side: info.side, offset: info.offset },
+            stroke: '#fff',
+            strokeWidth: 4
+        }]);
+        setPendingConnection(null);
+    }
+  }, [pendingConnection, scale, offset, isDrawMode]);
 
   const handleCanvasLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -298,6 +337,7 @@ const MobileCanva: React.FC = () => {
 
       onPanResponderMove: (evt, gestureState) => {
         const touches = evt.nativeEvent.touches;
+        setCursorPos({ x: gestureState.moveX, y: gestureState.moveY });
 
         if (touches.length === 2) {
             const touch1 = touches[0];
@@ -366,11 +406,36 @@ const MobileCanva: React.FC = () => {
             const epB = resolveEndpoint(line.b);
             const screenA = { x: epA.x * scale + offset.x, y: epA.y * scale + offset.y };
             const screenB = { x: epB.x * scale + offset.x, y: epB.y * scale + offset.y };
-            const routed = routeConnection(screenA, screenB, epA.side, epB.side, []);
+
+            const obstacleRects = nodes.map(n => ({
+                id: n.id,
+                left: n.x - (n.width || 240)/2,
+                right: n.x + (n.width || 240)/2,
+                top: n.y - (n.height || 144)/2,
+                bottom: n.y + (n.height || 144)/2
+            }));
+
+            const routed = routeConnection(screenA, screenB, epA.side, epB.side, obstacleRects);
             return (
               <Path key={idx} d={routed.d} stroke={line.stroke || '#fff'} strokeWidth={(line.strokeWidth || 4) * scale} fill="none" />
             );
           })}
+
+          {pendingConnection && (() => {
+             const startEp = resolveEndpoint(pendingConnection);
+             const screenStart = { x: startEp.x * scale + offset.x, y: startEp.y * scale + offset.y };
+             return (
+                 <SvgLine
+                    x1={screenStart.x}
+                    y1={screenStart.y}
+                    x2={cursorPos.x}
+                    y2={cursorPos.y}
+                    stroke="#fff"
+                    strokeWidth={2 * scale}
+                    strokeDasharray="5, 5"
+                 />
+             );
+          })()}
         </Svg>
 
         {nodes.map(node => (
@@ -383,14 +448,16 @@ const MobileCanva: React.FC = () => {
             onPress={() => handleNodePress(node.id)}
             onRemove={() => handleRemoveNode(node.id)}
             onUpdate={(updates: Partial<NodeItem>) => handleUpdateNode(node.id, updates)}
+            onConnectorPress={handleConnectorPress}
             selected={selectedId === node.id}
+            isDrawMode={isDrawMode}
             onDragStart={() => { nodeDraggingRef.current = true; }}
             onDragEnd={() => { nodeDraggingRef.current = false; }}
           />
         ))}
       </View>
 
-      {selectedId && (
+      {selectedId && !isDrawMode && (
         <EditMenu
           ref={editMenuRef}
           node={nodes.find(n => n.id === selectedId) || null}
@@ -409,9 +476,51 @@ const MobileCanva: React.FC = () => {
         />
       )}
 
-      <TouchableOpacity style={styles.addButton} onPress={() => setShowAddMenu(true)}>
-        <Text style={styles.addButtonText}>+</Text>
-      </TouchableOpacity>
+      {!isDrawMode && (
+        <>
+          {/* Menu Options */}
+          {isMenuOpen && (
+            <View style={styles.menuOptions}>
+              <TouchableOpacity style={styles.menuOptionItem} onPress={() => {
+                console.log('Entering draw mode');
+                setIsDrawMode(true);
+                setIsMenuOpen(false);
+                setSelectedId(null);
+              }}>
+                <Text style={styles.menuOptionIcon}>✎</Text>
+                <Text style={styles.menuOptionText}>Draw connections</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Menu Button */}
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <Text style={styles.menuButtonText}>≡</Text>
+          </TouchableOpacity>
+
+          {/* Add Node Button */}
+          <TouchableOpacity style={styles.addButton} onPress={() => setShowAddMenu(true)}>
+            <Text style={styles.addButtonText}>+</Text>
+          </TouchableOpacity>
+        </>
+      )}
+
+      {/* Exit Drawing Mode Button */}
+      {isDrawMode && (
+        <TouchableOpacity
+          style={styles.exitButton}
+          onPress={() => {
+            console.log('Exiting draw mode');
+            setIsDrawMode(false);
+            setPendingConnection(null);
+          }}
+        >
+          <Text style={styles.exitButtonText}>✕</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -447,6 +556,78 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     lineHeight: 32
+  },
+  menuButton: {
+    position: 'absolute',
+    bottom: 96,
+    left: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#4a4750',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  menuButtonText: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: 'bold',
+    lineHeight: 28
+  },
+  menuOptions: {
+    position: 'absolute',
+    bottom: 160,
+    left: 24,
+    backgroundColor: '#2a2730',
+    borderRadius: 12,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+    minWidth: 160,
+  },
+  menuOptionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+  },
+  menuOptionIcon: {
+    color: '#fff',
+    fontSize: 20,
+    marginRight: 12,
+  },
+  menuOptionText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  exitButton: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#ff4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  exitButtonText: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: 'bold',
   },
 });
 

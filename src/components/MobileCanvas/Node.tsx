@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, PanResponder, TouchableOpacity } from 'react-native';
 
 type NodeItem = {
   id: string;
@@ -17,6 +17,14 @@ type NodeItem = {
   credential_id?: string;
 };
 
+type ConnectorInfo = {
+  nodeId: string;
+  side: 'left'|'right'|'top'|'bottom';
+  offset: number;
+  x: number;
+  y: number;
+};
+
 type NodeProps = {
   node: NodeItem;
   scale: number;
@@ -26,8 +34,10 @@ type NodeProps = {
   onUpdate: (updates: Partial<NodeItem>) => void;
   onDragStart?: () => void;
   onDragEnd?: () => void;
+  onConnectorPress?: (info: ConnectorInfo) => void;
   selected: boolean;
   gridPx: number;
+  isDrawMode: boolean;
 };
 
 const computeSnapOffset = (worldSize: number, gridPx: number) => {
@@ -43,8 +53,10 @@ const Node: React.FC<NodeProps> = ({
   onUpdate,
   onDragStart,
   onDragEnd,
+  onConnectorPress,
   selected,
-  gridPx
+  gridPx,
+  isDrawMode
 }) => {
   const width = node.width || 240;
   const height = node.height || 144;
@@ -56,25 +68,35 @@ const Node: React.FC<NodeProps> = ({
   const scaleRef = useRef(scale);
   const offsetRef = useRef(offset);
   const currentPos = useRef({ x: node.x, y: node.y });
+  const isDrawModeRef = useRef(isDrawMode);
+  const onPressRef = useRef(onPress);
+  const onUpdateRef = useRef(onUpdate);
+  const onDragStartRef = useRef(onDragStart);
+  const onDragEndRef = useRef(onDragEnd);
 
   useEffect(() => {
     scaleRef.current = scale;
     offsetRef.current = offset;
     currentPos.current = { x: node.x, y: node.y };
-  }, [scale, offset, node.x, node.y]);
+    isDrawModeRef.current = isDrawMode;
+    onPressRef.current = onPress;
+    onUpdateRef.current = onUpdate;
+    onDragStartRef.current = onDragStart;
+    onDragEndRef.current = onDragEnd;
+  }, [scale, offset, node.x, node.y, isDrawMode, onPress, onUpdate, onDragStart, onDragEnd]);
 
   const screenX = node.x * scale + offset.x;
   const screenY = node.y * scale + offset.y;
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onStartShouldSetPanResponderCapture: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponderCapture: () => true,
+      onStartShouldSetPanResponder: () => !isDrawModeRef.current,
+      onStartShouldSetPanResponderCapture: () => !isDrawModeRef.current,
+      onMoveShouldSetPanResponder: () => !isDrawModeRef.current,
+      onMoveShouldSetPanResponderCapture: () => !isDrawModeRef.current,
 
       onPanResponderGrant: (evt) => {
-        onDragStart?.();
+        onDragStartRef.current?.();
         isDragging.current = false;
 
         const currentScale = scaleRef.current;
@@ -93,7 +115,7 @@ const Node: React.FC<NodeProps> = ({
 
         longPressTimer.current = setTimeout(() => {
           if (!isDragging.current) {
-            onPress();
+            onPressRef.current();
           }
         }, 500);
       },
@@ -128,7 +150,7 @@ const Node: React.FC<NodeProps> = ({
 
             if (snappedX !== currentPos.current.x || snappedY !== currentPos.current.y) {
               currentPos.current = { x: snappedX, y: snappedY };
-              onUpdate({ x: snappedX, y: snappedY });
+              onUpdateRef.current({ x: snappedX, y: snappedY });
             }
         }
       },
@@ -137,24 +159,24 @@ const Node: React.FC<NodeProps> = ({
         if (longPressTimer.current) clearTimeout(longPressTimer.current);
 
         if (!isDragging.current) {
-          onPress();
+          onPressRef.current();
         } else {
             const snapOffX = computeSnapOffset(width, gridPx);
             const snapOffY = computeSnapOffset(height, gridPx);
             const snappedX = Math.round(((currentPos.current.x) - snapOffX) / gridPx) * gridPx + snapOffX;
             const snappedY = Math.round(((currentPos.current.y) - snapOffY) / gridPx) * gridPx + snapOffY;
             currentPos.current = { x: snappedX, y: snappedY };
-            onUpdate({ x: snappedX, y: snappedY });
+            onUpdateRef.current({ x: snappedX, y: snappedY });
         }
 
         isDragging.current = false;
-        onDragEnd?.();
+        onDragEndRef.current?.();
       },
 
       onPanResponderTerminate: () => {
         if (longPressTimer.current) clearTimeout(longPressTimer.current);
         isDragging.current = false;
-        onDragEnd?.();
+        onDragEndRef.current?.();
       },
     })
   ).current;
@@ -186,18 +208,43 @@ const Node: React.FC<NodeProps> = ({
         <Text style={styles.moduleInfo} numberOfLines={1}>{node.module.name || ''}</Text>
       )}
 
-      {node.connectionPoints?.map((cp, idx) => (
-        <View
-          key={idx}
-          style={[
-            styles.connector,
-            cp.side === 'left' && { left: -6, top: '50%', marginTop: 6 + (cp.offset * scale) },
-            cp.side === 'right' && { right: -6, top: '50%', marginTop: 6 + (cp.offset * scale) },
-            cp.side === 'top' && { top: -6, left: '50%', marginLeft: 6 + (cp.offset * scale) },
-            cp.side === 'bottom' && { bottom: -6, left: '50%', marginLeft: 6 + (cp.offset * scale) },
-          ]}
-        />
-      ))}
+      {node.connectionPoints?.map((cp, idx) => {
+        let relX = 0;
+        let relY = 0;
+        if (cp.side === 'left') { relX = -width / 2; relY = cp.offset; }
+        else if (cp.side === 'right') { relX = width / 2; relY = cp.offset; }
+        else if (cp.side === 'top') { relY = -height / 2; relX = cp.offset; }
+        else if (cp.side === 'bottom') { relY = height / 2; relX = cp.offset; }
+
+        const worldX = node.x + relX;
+        const worldY = node.y + relY;
+
+        return (
+          <TouchableOpacity
+            key={idx}
+            disabled={!isDrawMode}
+            activeOpacity={0.7}
+            hitSlop={{ top: 25, bottom: 25, left: 25, right: 25 }}
+            onPress={(e) => {
+                e.stopPropagation();
+                onConnectorPress?.({
+                    nodeId: node.id,
+                    side: cp.side,
+                    offset: cp.offset,
+                    x: worldX,
+                    y: worldY
+                });
+            }}
+            style={[
+              styles.connector,
+              cp.side === 'left' && { left: -6, top: '50%', marginTop: 6 + (cp.offset * scale) },
+              cp.side === 'right' && { right: -6, top: '50%', marginTop: 6 + (cp.offset * scale) },
+              cp.side === 'top' && { top: -6, left: '50%', marginLeft: 6 + (cp.offset * scale) },
+              cp.side === 'bottom' && { bottom: -6, left: '50%', marginLeft: 6 + (cp.offset * scale) },
+            ]}
+          />
+        );
+      })}
     </View>
   );
 };
@@ -240,7 +287,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: '#ffffff',
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: '#4a4750',
+    zIndex: 10,
   },
 });
 

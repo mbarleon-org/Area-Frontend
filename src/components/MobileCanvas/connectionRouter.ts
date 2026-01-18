@@ -226,6 +226,17 @@ function getSimpleOrthogonalPath(p0: Point, p3: Point): Point[] {
     ];
 }
 
+function isLineBlocked(p0: Point, p1: Point, obstacles: Rect[]): boolean {
+  const minX = Math.min(p0.x, p1.x);
+  const maxX = Math.max(p0.x, p1.x);
+  const minY = Math.min(p0.y, p1.y);
+  const maxY = Math.max(p0.y, p1.y);
+
+  return obstacles.some(r => {
+    return !(r.left > maxX || r.right < minX || r.top > maxY || r.bottom < minY);
+  });
+}
+
 export function routeConnection(
   p0: Point,
   p3: Point,
@@ -235,6 +246,21 @@ export function routeConnection(
   _sourceNodeId?: string,
   _targetNodeId?: string
 ): RoutedConnection {
+
+  // Check for straight line
+  const isHorizontal = Math.abs(p0.y - p3.y) < 1;
+  const isVertical = Math.abs(p0.x - p3.x) < 1;
+
+  if (isHorizontal || isVertical) {
+      // Check if blocked
+      if (!isLineBlocked(p0, p3, allObstacles)) {
+          return {
+              type: 'orthogonal',
+              d: `M ${p0.x} ${p0.y} L ${p3.x} ${p3.y}`,
+              points: [p0, p3]
+          };
+      }
+  }
 
   const obstaclesForBezier = allObstacles;
 
