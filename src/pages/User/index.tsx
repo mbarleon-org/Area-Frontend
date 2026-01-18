@@ -2,6 +2,7 @@ import React from "react";
 import Navbar from "../../components/Navbar";
 import { isWeb } from "../../utils/IsWeb";
 import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import Svg, { Defs, Rect, RadialGradient as SvgRadialGradient, Stop } from 'react-native-svg';
 import { useToken } from "../../hooks/useToken";
 import { useInRouterContext, useNavigate } from "../../utils/router";
 import { useApi } from "../../utils/UseApi";
@@ -97,6 +98,17 @@ const User: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
+        <View style={StyleSheet.absoluteFill}>
+          <Svg height="100%" width="100%">
+            <Defs>
+              <SvgRadialGradient id="grad" cx="50%" cy="-10%" rx="80%" ry="60%" fx="50%" fy="-10%" gradientUnits="userSpaceOnUse">
+                <Stop offset="0" stopColor="#333" stopOpacity="1" />
+                <Stop offset="1" stopColor="#050505" stopOpacity="1" />
+              </SvgRadialGradient>
+            </Defs>
+            <Rect x="0" y="0" width="100%" height="100%" fill="url(#grad)" />
+          </Svg>
+        </View>
         <Navbar />
 
         <ScrollView
