@@ -79,6 +79,8 @@ const Register: React.FC = () => {
     try {
       await post('/auth/register', { username, email, password: needPassword ? password : undefined });
       showToast({ message: needPassword ? 'Account created successfully. You can now log in.' : 'An email has been sent to your address with instructions.', duration: 5000, barColor: '#4CAF50', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+      setUsername('');
+      setEmail('');
       setPassword('');
     } catch (err) {
       showToast({ message: 'An error occurred while creating the account.', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
