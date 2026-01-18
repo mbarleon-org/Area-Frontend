@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { getConnectionPointsForModule } from '../../utils/iconHelper';
 
 type ModuleEntry = { name: string; data: any };
 type CredentialItem = { id: string; provider?: string; type?: string; name?: string };
@@ -31,7 +32,6 @@ const AddNode: React.FC<AddNodeProps> = ({ modules, onClose, onAdd, offset, scal
     const w = 240;
     const h = 144;
 
-    // Calculate center of screen in world coordinates
     const screenCenterX = 200;
     const screenCenterY = 300;
     const worldX = (screenCenterX - offset.x) / scale;
@@ -42,17 +42,8 @@ const AddNode: React.FC<AddNodeProps> = ({ modules, onClose, onAdd, offset, scal
     const x = Math.round((worldX - snapOffX) / gridPx) * gridPx + snapOffX;
     const y = Math.round((worldY - snapOffY) / gridPx) * gridPx + snapOffY;
 
-    const connectionPoints: Array<{ side: 'left' | 'right' | 'top' | 'bottom'; offset: number }> = [];
-    if (m.inputs) {
-      Object.keys(m.inputs).forEach((_, idx) => {
-        connectionPoints.push({ side: 'left' as const, offset: (idx - Object.keys(m.inputs).length / 2 + 0.5) * 24 });
-      });
-    }
-    if (m.outputs) {
-      Object.keys(m.outputs).forEach((_, idx) => {
-        connectionPoints.push({ side: 'right' as const, offset: (idx - Object.keys(m.outputs).length / 2 + 0.5) * 24 });
-      });
-    }
+    const moduleName = m.name || module.name;
+    const connectionPoints = getConnectionPointsForModule(moduleName);
 
     const newNode = {
       id: `n${Date.now()}`,
@@ -60,7 +51,7 @@ const AddNode: React.FC<AddNodeProps> = ({ modules, onClose, onAdd, offset, scal
       y,
       width: w,
       height: h,
-      label: m.name || module.name,
+      label: moduleName,
       icon: m.icon,
       module: m,
       connectionPoints,

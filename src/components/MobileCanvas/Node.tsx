@@ -191,10 +191,10 @@ const Node: React.FC<NodeProps> = ({
           key={idx}
           style={[
             styles.connector,
-            cp.side === 'left' && { left: -6, top: '50%', marginTop: -6 },
-            cp.side === 'right' && { right: -6, top: '50%', marginTop: -6 },
-            cp.side === 'top' && { top: -6, left: '50%', marginLeft: -6 },
-            cp.side === 'bottom' && { bottom: -6, left: '50%', marginLeft: -6 },
+            cp.side === 'left' && { left: -6, top: '50%', marginTop: 6 + (cp.offset * scale) },
+            cp.side === 'right' && { right: -6, top: '50%', marginTop: 6 + (cp.offset * scale) },
+            cp.side === 'top' && { top: -6, left: '50%', marginLeft: 6 + (cp.offset * scale) },
+            cp.side === 'bottom' && { bottom: -6, left: '50%', marginLeft: 6 + (cp.offset * scale) },
           ]}
         />
       ))}
@@ -235,10 +235,10 @@ const styles = StyleSheet.create({
   },
   connector: {
     position: 'absolute',
-    width: 12,
-    height: 12,
+    width: 9,
+    height: 9,
     borderRadius: 6,
-    backgroundColor: '#6366f1',
+    backgroundColor: '#ffffff',
     borderWidth: 2,
     borderColor: '#fff',
   },

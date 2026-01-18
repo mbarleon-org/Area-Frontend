@@ -9,6 +9,7 @@ import EditMenu from './EditMenu';
 import type { EditMenuHandle } from './EditMenu/EditMenu.types';
 import Svg, { Path, Defs, Pattern, Rect } from 'react-native-svg';
 import { routeConnection } from './connectionRouter';
+import { getConnectionPointsForModule } from '../../utils/iconHelper';
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
@@ -122,11 +123,15 @@ const MobileCanva: React.FC = () => {
       const snapOffY = computeSnapOffset(h, gridPx);
       const x = Math.round(((n?.x ?? 0) - snapOffX) / gridPx) * gridPx + snapOffX;
       const y = Math.round(((n?.y ?? 0) - snapOffY) / gridPx) * gridPx + snapOffY;
+
+      const moduleName = n?.module?.name || n?.label || "";
+      const cPoints = n?.connectionPoints || getConnectionPointsForModule(moduleName);
+
       return {
         id: n?.id || `n${Date.now()}`,
         x, y, width: w, height: h,
         label: n?.label, icon: n?.icon, module: n?.module,
-        connectionPoints: n?.connectionPoints, inputs: n?.inputs, outputs: n?.outputs,
+        connectionPoints: cPoints, inputs: n?.inputs, outputs: n?.outputs,
         options: n?.options, credential_id: n?.credential_id,
       } as NodeItem;
     });
@@ -153,7 +158,10 @@ const MobileCanva: React.FC = () => {
       const snapOffY = computeSnapOffset(h, gridPx);
       const x = Math.round((rawWorldX - snapOffX) / gridPx) * gridPx + snapOffX;
       const y = Math.round((rawWorldY - snapOffY) / gridPx) * gridPx + snapOffY;
-      setNodes([{ id: 'n1', x, y, width: w, height: h, label: 'Start' }]);
+
+      const defaultPoints = getConnectionPointsForModule('Start');
+
+      setNodes([{ id: 'n1', x, y, width: w, height: h, label: 'Start', connectionPoints: defaultPoints }]);
       initialPosSet.current = true;
     }, 100);
     return () => clearTimeout(timer);
@@ -166,7 +174,11 @@ const MobileCanva: React.FC = () => {
     const snapOffY = computeSnapOffset(h, gridPx);
     const snappedX = Math.round(((node?.x ?? 0) - snapOffX) / gridPx) * gridPx + snapOffX;
     const snappedY = Math.round(((node?.y ?? 0) - snapOffY) / gridPx) * gridPx + snapOffY;
-    setNodes((ns) => [...ns, { ...node, x: snappedX, y: snappedY, width: w, height: h }]);
+
+    const moduleName = node?.module?.name || node?.label || "";
+    const cPoints = node?.connectionPoints || getConnectionPointsForModule(moduleName);
+
+    setNodes((ns) => [...ns, { ...node, x: snappedX, y: snappedY, width: w, height: h, connectionPoints: cPoints }]);
     setShowAddMenu(false);
   }, [gridPx]);
 
