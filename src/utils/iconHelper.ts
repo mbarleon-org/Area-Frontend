@@ -1,11 +1,13 @@
+import { assetPath } from "./assets";
+import { isWeb } from "./IsWeb";
+
 const MODULE_ICONS: Record<string, any> = {
-  gmail: require("../../public/node_icons/gmail_logo.png"),
-  imap: require("../../public/node_icons/imap_logo.png"),
-  redis: require("../../public/node_icons/redis_logo.png"),
+  gmail: (!isWeb ? require("../../public/node_icons/gmail_logo.png") : assetPath("node_icons/gmail_logo.png")),
+  imap: (!isWeb ? require("../../public/node_icons/imap_logo.png") : assetPath("node_icons/imap_logo.png")),
+  redis: (!isWeb ? require("../../public/node_icons/redis_logo.png") : assetPath("node_icons/redis_logo.png")),
 };
 
 export const getIconForModule = (moduleName: string): any | null => {
-  if (!moduleName) return null;
   const lower = moduleName.toLowerCase();
 
   if (lower.includes("gmail")) return MODULE_ICONS.gmail;
