@@ -109,9 +109,7 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
   );
 
   const renderCrown = (visible: boolean) => {
-    console.log('Crown visible:', visible);
     if (!visible) return null;
-    console.log('Rendering crown');
     return <span style={webStyles.crown} aria-label="Owner">👑</span>;
   };
 
