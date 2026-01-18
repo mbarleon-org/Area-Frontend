@@ -10,6 +10,8 @@ import type { EditMenuHandle } from './EditMenu/EditMenu.types';
 import Svg, { Path, Defs, Pattern, Rect, Line as SvgLine, G } from 'react-native-svg';
 import { routeConnection } from './connectionRouter';
 import { getConnectionPointsForModule, getIconForModule } from '../../utils/iconHelper';
+import SaveWorkflowModalMobile from './SaveWorkflowModalMobile';
+import { convertCanvasToWorkflow, validateCanvasData, validateWorkflow } from '../../utils/workflowConverter';
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
@@ -41,7 +43,7 @@ type EndpointRef = { nodeId?: string; side?: 'left' | 'right' | 'top' | 'bottom'
 const MobileCanva: React.FC = () => {
   const location = useLocation();
   const workflowFromState = (location as any)?.state?.workflow;
-  const { get } = useApi();
+  const { get, post } = useApi();
 
   const initialSize = Dimensions.get('window');
   const initialCanvasSize: CanvasSize = { width: initialSize.width, height: initialSize.height };
@@ -61,6 +63,9 @@ const MobileCanva: React.FC = () => {
   const [pendingConnection, setPendingConnection] = useState<EndpointRef | null>(null);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [pressedLineIndex, setPressedLineIndex] = useState<number | null>(null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState<string[] | null>(null);
 
   const editMenuRef = useRef<EditMenuHandle | null>(null);
 
@@ -413,6 +418,42 @@ const MobileCanva: React.FC = () => {
     return { x: 0, y: 0, side: 'right' as const };
   }, [nodes]);
 
+  const handleSaveWorkflow = useCallback(async (config: { name: string; description: string; enabled: boolean }) => {
+    setSaveLoading(true);
+    setSaveError(null);
+
+    try {
+      const canvasValidation = validateCanvasData(nodes, lines);
+      if (!canvasValidation.valid) {
+        setSaveError(canvasValidation.errors);
+        setSaveLoading(false);
+        return;
+      }
+
+      const workflow = convertCanvasToWorkflow(nodes, lines, {
+        name: config.name,
+        description: config.description,
+        enabled: config.enabled,
+        existingData: workflowFromState?.data || workflowFromState?.datas || workflowFromState?.canvas,
+      });
+
+      const validation = validateWorkflow(workflow);
+      if (!validation.valid) {
+        setSaveError(validation.errors);
+        setSaveLoading(false);
+        return;
+      }
+
+      await post('/workflows', workflow);
+      setShowSaveModal(false);
+    } catch (err: any) {
+      const message = err?.response?.data?.message || err?.message || 'Failed to save workflow';
+      setSaveError([message]);
+    } finally {
+      setSaveLoading(false);
+    }
+  }, [get, lines, nodes, workflowFromState]);
+
   return (
     <View style={styles.container} {...panResponder.panHandlers}>
       <View style={styles.canvas} onLayout={handleCanvasLayout}>
@@ -507,10 +548,29 @@ const MobileCanva: React.FC = () => {
         />
       )}
 
+      <SaveWorkflowModalMobile
+        isOpen={showSaveModal}
+        onClose={() => { setShowSaveModal(false); setSaveError(null); }}
+        onSave={handleSaveWorkflow}
+        initialName={workflowFromState?.pretty_name || workflowFromState?.name || ''}
+        initialDescription={workflowFromState?.description || ''}
+        initialEnabled={workflowFromState?.enabled ?? true}
+        loading={saveLoading}
+        error={saveError}
+      />
+
       {!isDrawMode && (
         <>
           {isMenuOpen && (
             <View style={styles.menuOptions}>
+              <TouchableOpacity style={styles.menuOptionItem} onPress={() => {
+                setIsMenuOpen(false);
+                setShowSaveModal(true);
+                setSaveError(null);
+              }}>
+                <Text style={styles.menuOptionIcon}>💾</Text>
+                <Text style={styles.menuOptionText}>Save workflow</Text>
+              </TouchableOpacity>
               <TouchableOpacity style={styles.menuOptionItem} onPress={() => {
                 setIsDrawMode(true);
                 setIsMenuOpen(false);
