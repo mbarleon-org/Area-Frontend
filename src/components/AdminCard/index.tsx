@@ -67,16 +67,15 @@ const AdminCard: React.FC<AdminCardProps> = ({ data, onMenuPress, onView, onDele
   if (!isWeb) {
     return (
       <View style={mobileStyles.card}>
-        <View style={mobileStyles.cardHeader}>
+        <View style={mobileStyles.cardContent}>
           <View style={mobileStyles.fieldsContainer}>
             {data.fields.map((field, idx) => {
-              const w = widthMap[field.label] || '100%';
               return (
-                <View key={idx} style={[mobileStyles.fieldCell as any, { width: w as any }]}>
+                <View key={idx} style={mobileStyles.fieldRow}>
                   <Text style={mobileStyles.fieldLabel}>{field.label}</Text>
                   <Text
                     style={mobileStyles.fieldValue}
-                    numberOfLines={1}
+                    numberOfLines={2}
                     ellipsizeMode="tail"
                   >
                     {typeof field.value === 'boolean' ? (field.value ? 'Yes' : 'No') : String(field.value)}
@@ -195,21 +194,21 @@ const AdminCard: React.FC<AdminCardProps> = ({ data, onMenuPress, onView, onDele
 
 const mobileStyles = StyleSheet.create({
   card: {
-    backgroundColor: '#1E1E1E',
-    borderColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: '#0a0a0a',
+    borderColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
+    borderRadius: 10,
+    padding: 14,
     marginBottom: 12,
   },
-  cardHeader: {
+  cardContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
   fieldsContainer: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 8,
   },
   fieldCell: {
     paddingVertical: 6,
@@ -220,34 +219,40 @@ const mobileStyles = StyleSheet.create({
   fieldRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 6,
+    alignItems: 'flex-start',
+    paddingVertical: 7,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.06)',
+    gap: 8,
   },
   fieldLabel: {
-    color: '#888',
-    fontSize: 13,
-    fontWeight: '500',
+    color: '#999',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    flex: 1,
+    maxWidth: '40%',
   },
   fieldValue: {
     color: '#fff',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    maxWidth: '60%',
+    flex: 1,
     textAlign: 'right',
   },
   menuBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 2,
   },
   menuIcon: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
   },
   menuOverlay: {
@@ -257,10 +262,10 @@ const mobileStyles = StyleSheet.create({
     alignItems: 'center',
   },
   menuDropdown: {
-    backgroundColor: '#1f1f24',
+    backgroundColor: '#111',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.08)',
     minWidth: 180,
     overflow: 'hidden',
   },
@@ -279,25 +284,24 @@ const mobileStyles = StyleSheet.create({
 
 const webStyles: { [k: string]: React.CSSProperties } = {
   card: {
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
-    border: '1px solid rgba(255,255,255,0.04)',
-    borderRadius: 8,
-    padding: '16px 20px',
+    background: '#0a0a0a',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: 10,
+    padding: '18px 24px',
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
     position: 'relative',
-    transition: 'transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease',
+    transition: 'transform 0.18s ease, border-color 0.18s ease, background 0.18s ease',
     marginBottom: 12,
     boxSizing: 'border-box',
   },
   cardHover: {
-    transform: 'scale(1.01)',
-    border: '1px solid rgba(255,255,255,0.14)',
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+    transform: 'translateY(-2px)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    background: '#111',
   },
   fieldsContainer: {
     display: 'flex',
@@ -361,10 +365,10 @@ const webStyles: { [k: string]: React.CSSProperties } = {
     position: 'absolute',
     top: 36,
     right: 0,
-    background: '#1f1f24',
-    border: '1px solid rgba(255,255,255,0.12)',
+    background: '#111',
+    border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 8,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
     minWidth: 120,
     zIndex: 10,
     display: 'flex',

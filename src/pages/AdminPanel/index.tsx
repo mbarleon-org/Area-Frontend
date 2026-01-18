@@ -15,7 +15,6 @@ import { usersApi } from "../../services/admin/usersApi";
 import { teamsApi } from "../../services/admin/teamsApi";
 import { workflowsApi } from "../../services/admin/workflowsApi";
 import { credentialsApi } from "../../services/admin/credentialsApi";
-
 if (isWeb) import("../../index.css");
 
 const AdminPanel: React.FC = () => {
@@ -372,6 +371,7 @@ const AdminPanel: React.FC = () => {
   return (
     <>
       <Navbar />
+      <div style={webStyles.spotlight} />
       <div style={webStyles.page}>
         <div style={webStyles.card}>
           <div style={webStyles.headerRow}>
@@ -498,7 +498,7 @@ const AdminPanel: React.FC = () => {
 const mobileStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#151316",
+    backgroundColor: "#050505",
   },
   content: {
     paddingTop: 100,
@@ -509,24 +509,29 @@ const mobileStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 4,
+    marginBottom: 8,
+    gap: 8,
   },
   title: {
     color: "#fff",
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "700",
-    marginBottom: 4,
+    marginBottom: 2,
+    flex: 1,
   },
   createBtn: {
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     borderRadius: 8,
     backgroundColor: '#007AFF',
+    minWidth: 80,
+    marginRight: 8,
   },
   createBtnText: {
     color: '#fff',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 13,
+    textAlign: 'center',
   },
   filterScroll: {
     flexGrow: 0,
@@ -593,24 +598,36 @@ const mobileStyles = StyleSheet.create({
 });
 
 const webStyles: { [k: string]: React.CSSProperties } = {
+  spotlight: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '80vh',
+    background: 'radial-gradient(ellipse at top, rgba(255,255,255,0.08), transparent 70%)',
+    pointerEvents: 'none',
+    zIndex: 0,
+  },
   page: {
-    height: "100vh",
+    minHeight: "100vh",
     overflowY: "auto",
-    background: "#151316",
+    background: "#050505",
     color: "#fff",
     boxSizing: "border-box",
-    marginLeft: "100px",
-    width: "100%",
-    padding: "30px",
+    marginLeft: "80px",
+    width: "calc(100% - 80px)",
+    padding: "40px",
+    position: "relative",
+    zIndex: 1,
   },
   card: {
-    background: "rgba(26,26,28,0.85)",
+    background: "#0a0a0a",
     border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 14,
-    padding: "32px",
-    boxShadow: "0 18px 45px rgba(0,0,0,0.45)",
+    borderRadius: 12,
+    padding: "40px",
+    boxShadow: "none",
     width: "100%",
-    minHeight: "calc(100vh - 60px)",
+    minHeight: "calc(100vh - 80px)",
     maxHeight: "none",
     boxSizing: "border-box",
     display: "flex",
@@ -623,24 +640,25 @@ const webStyles: { [k: string]: React.CSSProperties } = {
     alignItems: 'flex-start',
   },
   title: {
-    margin: "0 0 20px 0",
-    fontSize: "28px",
+    margin: "0 0 16px 0",
+    fontSize: "48px",
     fontWeight: 800,
+    letterSpacing: "-0.03em",
   },
   createBtn: {
-    padding: '12px 20px',
+    padding: '12px 24px',
     borderRadius: 8,
     border: 'none',
-    backgroundColor: '#007AFF',
-    color: '#fff',
-    fontWeight: 600,
+    backgroundColor: '#fff',
+    color: '#000',
+    fontWeight: 700,
     fontSize: 14,
     cursor: 'pointer',
     transition: 'all 0.2s ease',
   },
   createBtnHover: {
-    backgroundColor: '#0066DD',
-    boxShadow: '0 4px 12px rgba(0, 122, 255, 0.3)',
+    backgroundColor: '#f0f0f0',
+    transform: 'scale(1.02)',
   },
   filterBar: {
     display: "flex",
@@ -691,8 +709,8 @@ const webStyles: { [k: string]: React.CSSProperties } = {
   pageBtn: {
     padding: '10px 16px',
     borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.2)',
-    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.15)',
+    background: '#111',
     color: '#fff',
     cursor: 'pointer',
     transition: 'all 0.15s ease',
