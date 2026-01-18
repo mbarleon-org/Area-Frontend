@@ -4,7 +4,7 @@ import { isWeb } from '../../utils/IsWeb';
 import { getFieldsForType } from '../../constants/AdminFieldConfig';
 import type { FieldConfig } from '../../constants/AdminFieldConfig';
 import type { AdminCardData } from '../../types/AdminTypes';
-import UserTeamManager from '../UserTeamManager';
+import UserTeamManager from '../AdminUserTeamManager';
 
 interface AdminDetailModalProps {
   visible: boolean;
