@@ -7,7 +7,7 @@ import Node from './Node.tsx';
 import AddNode from './AddNode.tsx';
 import EditMenu from './EditMenu';
 import type { EditMenuHandle } from './EditMenu/EditMenu.types';
-import Svg, { Path, Defs, Pattern, Rect, Line as SvgLine } from 'react-native-svg';
+import Svg, { Path, Defs, Pattern, Rect, Line as SvgLine, G } from 'react-native-svg';
 import { routeConnection } from './connectionRouter';
 import { getConnectionPointsForModule } from '../../utils/iconHelper';
 
@@ -195,8 +195,6 @@ const MobileCanva: React.FC = () => {
 
   const handleNodePress = useCallback((nodeId: string) => {
     if (isDrawMode) return;
-    console.log('Node pressed:', nodeId);
-    console.log('isDrawMode:', isDrawMode);
     if (pendingConnection) {
         setPendingConnection(null);
         return;
@@ -219,7 +217,7 @@ const MobileCanva: React.FC = () => {
             x: info.x,
             y: info.y
         });
-        setCursorPos({ x: info.x * scale + offset.x, y: info.y * scale + offset.y });
+        setCursorPos({ x: info.x, y: info.y });
     } else {
         if (pendingConnection.nodeId === info.nodeId) return;
 
@@ -231,7 +229,7 @@ const MobileCanva: React.FC = () => {
         }]);
         setPendingConnection(null);
     }
-  }, [pendingConnection, scale, offset, isDrawMode]);
+  }, [pendingConnection, isDrawMode]);
 
   const handleCanvasLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -337,7 +335,10 @@ const MobileCanva: React.FC = () => {
 
       onPanResponderMove: (evt, gestureState) => {
         const touches = evt.nativeEvent.touches;
-        setCursorPos({ x: gestureState.moveX, y: gestureState.moveY });
+
+        const worldCursorX = (gestureState.moveX - offsetRef.current.x) / scaleRef.current;
+        const worldCursorY = (gestureState.moveY - offsetRef.current.y) / scaleRef.current;
+        setCursorPos({ x: worldCursorX, y: worldCursorY });
 
         if (touches.length === 2) {
             const touch1 = touches[0];
@@ -392,6 +393,9 @@ const MobileCanva: React.FC = () => {
         return { x: wx, y: wy, side: ep.side || 'right' };
       }
     }
+    if (ep.x !== undefined && ep.y !== undefined) {
+        return { x: ep.x, y: ep.y, side: ep.side || 'left' };
+    }
     return { x: 0, y: 0, side: 'right' as const };
   }, [nodes]);
 
@@ -401,41 +405,47 @@ const MobileCanva: React.FC = () => {
         {gridOverlay}
 
         <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
-          {lines.map((line, idx) => {
-            const epA = resolveEndpoint(line.a);
-            const epB = resolveEndpoint(line.b);
-            const screenA = { x: epA.x * scale + offset.x, y: epA.y * scale + offset.y };
-            const screenB = { x: epB.x * scale + offset.x, y: epB.y * scale + offset.y };
+          <G transform={`translate(${offset.x}, ${offset.y}) scale(${scale})`}>
+            {lines.map((line, idx) => {
+              const start = resolveEndpoint(line.a);
+              const end = resolveEndpoint(line.b);
 
-            const obstacleRects = nodes.map(n => ({
-                id: n.id,
-                left: n.x - (n.width || 240)/2,
-                right: n.x + (n.width || 240)/2,
-                top: n.y - (n.height || 144)/2,
-                bottom: n.y + (n.height || 144)/2
-            }));
+              const obstacleRects = nodes.map(n => ({
+                  id: n.id,
+                  left: n.x - (n.width || 240)/2,
+                  right: n.x + (n.width || 240)/2,
+                  top: n.y - (n.height || 144)/2,
+                  bottom: n.y + (n.height || 144)/2
+              }));
 
-            const routed = routeConnection(screenA, screenB, epA.side, epB.side, obstacleRects);
-            return (
-              <Path key={idx} d={routed.d} stroke={line.stroke || '#fff'} strokeWidth={(line.strokeWidth || 4) * scale} fill="none" />
-            );
-          })}
+              const routed = routeConnection(
+                  { x: start.x, y: start.y },
+                  { x: end.x, y: end.y },
+                  line.a.side as any,
+                  line.b.side as any,
+                  obstacleRects
+              );
 
-          {pendingConnection && (() => {
-             const startEp = resolveEndpoint(pendingConnection);
-             const screenStart = { x: startEp.x * scale + offset.x, y: startEp.y * scale + offset.y };
-             return (
-                 <SvgLine
-                    x1={screenStart.x}
-                    y1={screenStart.y}
-                    x2={cursorPos.x}
-                    y2={cursorPos.y}
-                    stroke="#fff"
-                    strokeWidth={2 * scale}
-                    strokeDasharray="5, 5"
-                 />
-             );
-          })()}
+              return (
+                <Path key={idx} d={routed.d} stroke={line.stroke || '#fff'} strokeWidth={4} fill="none" />
+              );
+            })}
+
+            {pendingConnection && (() => {
+               const startEp = resolveEndpoint(pendingConnection);
+               return (
+                   <SvgLine
+                      x1={startEp.x}
+                      y1={startEp.y}
+                      x2={cursorPos.x}
+                      y2={cursorPos.y}
+                      stroke="#aa1818"
+                      strokeWidth={4}
+                      strokeDasharray="10, 10"
+                   />
+               );
+            })()}
+          </G>
         </Svg>
 
         {nodes.map(node => (
@@ -478,11 +488,9 @@ const MobileCanva: React.FC = () => {
 
       {!isDrawMode && (
         <>
-          {/* Menu Options */}
           {isMenuOpen && (
             <View style={styles.menuOptions}>
               <TouchableOpacity style={styles.menuOptionItem} onPress={() => {
-                console.log('Entering draw mode');
                 setIsDrawMode(true);
                 setIsMenuOpen(false);
                 setSelectedId(null);
@@ -493,7 +501,6 @@ const MobileCanva: React.FC = () => {
             </View>
           )}
 
-          {/* Menu Button */}
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() => setIsMenuOpen(!isMenuOpen)}
@@ -501,7 +508,6 @@ const MobileCanva: React.FC = () => {
             <Text style={styles.menuButtonText}>≡</Text>
           </TouchableOpacity>
 
-          {/* Add Node Button */}
           <TouchableOpacity style={styles.addButton} onPress={() => setShowAddMenu(true)}>
             <Text style={styles.addButtonText}>+</Text>
           </TouchableOpacity>
@@ -513,7 +519,6 @@ const MobileCanva: React.FC = () => {
         <TouchableOpacity
           style={styles.exitButton}
           onPress={() => {
-            console.log('Exiting draw mode');
             setIsDrawMode(false);
             setPendingConnection(null);
           }}

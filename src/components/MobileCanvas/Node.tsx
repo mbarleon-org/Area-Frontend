@@ -237,10 +237,10 @@ const Node: React.FC<NodeProps> = ({
             }}
             style={[
               styles.connector,
-              cp.side === 'left' && { left: -6, top: '50%', marginTop: 6 + (cp.offset * scale) },
-              cp.side === 'right' && { right: -6, top: '50%', marginTop: 6 + (cp.offset * scale) },
-              cp.side === 'top' && { top: -6, left: '50%', marginLeft: 6 + (cp.offset * scale) },
-              cp.side === 'bottom' && { bottom: -6, left: '50%', marginLeft: 6 + (cp.offset * scale) },
+              cp.side === 'left' && { left: -6, top: '50%', marginTop: 7.5 + (cp.offset * scale) },
+              cp.side === 'right' && { right: -6, top: '50%', marginTop: 7.5 + (cp.offset * scale) },
+              cp.side === 'top' && { top: -6, left: '50%', marginLeft: 7.5 + (cp.offset * scale) },
+              cp.side === 'bottom' && { bottom: -6, left: '50%', marginLeft: 7.5 + (cp.offset * scale) },
             ]}
           />
         );
