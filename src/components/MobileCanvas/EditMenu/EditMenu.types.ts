@@ -1,4 +1,5 @@
 import React from 'react';
+import type { TextInput } from 'react-native';
 
 // --- Node Types ---
 export type NodeItem = {
@@ -90,7 +91,7 @@ export type EditMenuFieldProps = {
   placeholder?: string;
   type?: 'text' | 'password';
   required?: boolean;
-  inputRef?: React.RefObject<HTMLInputElement | null>;
+  inputRef?: React.RefObject<TextInput | null>;
 };
 
 export type GmailConnectionProps = {
@@ -140,7 +141,7 @@ export type UseEditMenuLogicReturn = {
   provider: string | null;
 
   // Refs
-  nameRef: React.RefObject<HTMLInputElement | null>;
+  nameRef: React.RefObject<TextInput | null>;
 
   // Setters
   setName: (name: string) => void;
