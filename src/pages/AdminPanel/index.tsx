@@ -15,7 +15,6 @@ import { usersApi } from "../../services/admin/usersApi";
 import { teamsApi } from "../../services/admin/teamsApi";
 import { workflowsApi } from "../../services/admin/workflowsApi";
 import { credentialsApi } from "../../services/admin/credentialsApi";
-
 if (isWeb) import("../../index.css");
 
 const AdminPanel: React.FC = () => {
@@ -509,24 +508,29 @@ const mobileStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 4,
+    marginBottom: 8,
+    gap: 8,
   },
   title: {
     color: "#fff",
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "700",
-    marginBottom: 4,
+    marginBottom: 2,
+    flex: 1,
   },
   createBtn: {
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     borderRadius: 8,
     backgroundColor: '#007AFF',
+    minWidth: 80,
+    marginRight: 8,
   },
   createBtnText: {
     color: '#fff',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 13,
+    textAlign: 'center',
   },
   filterScroll: {
     flexGrow: 0,

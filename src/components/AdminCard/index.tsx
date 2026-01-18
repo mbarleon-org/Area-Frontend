@@ -67,16 +67,15 @@ const AdminCard: React.FC<AdminCardProps> = ({ data, onMenuPress, onView, onDele
   if (!isWeb) {
     return (
       <View style={mobileStyles.card}>
-        <View style={mobileStyles.cardHeader}>
+        <View style={mobileStyles.cardContent}>
           <View style={mobileStyles.fieldsContainer}>
             {data.fields.map((field, idx) => {
-              const w = widthMap[field.label] || '100%';
               return (
-                <View key={idx} style={[mobileStyles.fieldCell as any, { width: w as any }]}>
+                <View key={idx} style={mobileStyles.fieldRow}>
                   <Text style={mobileStyles.fieldLabel}>{field.label}</Text>
                   <Text
                     style={mobileStyles.fieldValue}
-                    numberOfLines={1}
+                    numberOfLines={2}
                     ellipsizeMode="tail"
                   >
                     {typeof field.value === 'boolean' ? (field.value ? 'Yes' : 'No') : String(field.value)}
@@ -196,20 +195,20 @@ const AdminCard: React.FC<AdminCardProps> = ({ data, onMenuPress, onView, onDele
 const mobileStyles = StyleSheet.create({
   card: {
     backgroundColor: '#1E1E1E',
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
+    borderRadius: 10,
+    padding: 14,
     marginBottom: 12,
   },
-  cardHeader: {
+  cardContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
   fieldsContainer: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 8,
   },
   fieldCell: {
     paddingVertical: 6,
@@ -220,34 +219,40 @@ const mobileStyles = StyleSheet.create({
   fieldRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 6,
+    alignItems: 'flex-start',
+    paddingVertical: 7,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.06)',
+    gap: 8,
   },
   fieldLabel: {
-    color: '#888',
-    fontSize: 13,
-    fontWeight: '500',
+    color: '#999',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    flex: 1,
+    maxWidth: '40%',
   },
   fieldValue: {
     color: '#fff',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    maxWidth: '60%',
+    flex: 1,
     textAlign: 'right',
   },
   menuBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 2,
   },
   menuIcon: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
   },
   menuOverlay: {
