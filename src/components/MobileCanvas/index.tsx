@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { View, StyleSheet, Dimensions, PanResponder, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, Dimensions, PanResponder, TouchableOpacity, Text, Share } from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
 import { useApi } from '../../utils/UseApi';
 import { useLocation } from '../../utils/router';
@@ -454,6 +454,21 @@ const MobileCanva: React.FC = () => {
     }
   }, [get, lines, nodes, workflowFromState]);
 
+  const handleExportWorkflow = useCallback(() => {
+    const workflow = convertCanvasToWorkflow(nodes, lines, {
+      name: 'Exported Workflow',
+      description: 'Exported from canvas',
+      existingData: workflowFromState?.data || workflowFromState?.datas || workflowFromState?.canvas,
+    });
+
+    const json = JSON.stringify(workflow, null, 2);
+
+    Share.share({
+      title: 'Workflow JSON',
+      message: json,
+    }).catch(() => {});
+  }, [lines, nodes, workflowFromState]);
+
   return (
     <View style={styles.container} {...panResponder.panHandlers}>
       <View style={styles.canvas} onLayout={handleCanvasLayout}>
@@ -570,6 +585,13 @@ const MobileCanva: React.FC = () => {
               }}>
                 <Text style={styles.menuOptionIcon}>💾</Text>
                 <Text style={styles.menuOptionText}>Save workflow</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuOptionItem} onPress={() => {
+                setIsMenuOpen(false);
+                handleExportWorkflow();
+              }}>
+                <Text style={styles.menuOptionIcon}>⤓</Text>
+                <Text style={styles.menuOptionText}>Export as JSON</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.menuOptionItem} onPress={() => {
                 setIsDrawMode(true);
