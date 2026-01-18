@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import './index.css'
+import './MobileInteractions.css'
 import App from './App'
 
 if (typeof document !== 'undefined') {

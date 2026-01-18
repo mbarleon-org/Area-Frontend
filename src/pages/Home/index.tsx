@@ -1,339 +1,236 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Navbar from "../../components/Navbar";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { isWeb } from "../../utils/IsWeb";
-import { useApi } from '../../utils/UseApi';
-import { useToken } from '../../hooks/useToken';
-import { useNavigate } from '../../utils/router';
 import ApiConfigInput from '../../components/ApiConfigInput';
+import Svg, { Defs, Pattern, Rect, Path } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 
-if (isWeb) import('../../index.css');
-
-const FILTERS = [
-  { id: 'public_workflows', label: 'Public Workflows', endpoint: '/workflows/public' },
-  { id: 'my_workflows', label: 'My Workflows', endpoint: '/workflows' },
-  { id: 'public_credentials', label: 'Public Credentials', endpoint: '/credentials/public' },
-  { id: 'my_credentials', label: 'My Credentials', endpoint: '/credentials' },
+const CARDS_DATA = [
+  {
+    id: '01',
+    title: 'Architecture',
+    body: 'Connect credentials, browse workflows in the Dashboard, and edit them directly in the canvas editor. Validation and export to JSON are built-in.'
+  },
+  {
+    id: '02',
+    title: 'Ecosystem',
+    body: 'Manage public and personal workflows with a single tap. Access the Automation builder and Admin tools for complete user & team management.'
+  },
+  {
+    id: '03',
+    title: 'Canvas Engine',
+    body: 'Experience a fluid drag-and-drop interface with snap-to-grid, pan, & zoom. Securely connect inputs/outputs with visual validation and dynamic credential loading.'
+  }
 ];
 
 const Home: React.FC = () => {
-  const { token } = useToken();
-  const { get, post, del } = useApi();
-  const navigate = useNavigate();
-  const [activeFilter, setActiveFilter] = useState(FILTERS[0].id);
-  const [data, setData] = useState<any[] | null>(null);
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
-  const [hoveredToggleId, setHoveredToggleId] = useState<string | null>(null);
-  const [hoveredMoreId, setHoveredMoreId] = useState<string | null>(null);
-  const [confirmTarget, setConfirmTarget] = useState<{ id: string; title: string } | null>(null);
   const [showConfig, setShowConfig] = useState(false);
 
-  const fetchData = useCallback(() => {
-    if (!token)
-      return;
-    let mounted = true;
-    const currentFilter = FILTERS.find(f => f.id === activeFilter) || FILTERS[0];
+  const scrollY = useRef(new Animated.Value(0)).current;
 
-    setData(null);
-    get(currentFilter.endpoint)
-      .then((res: any) => {
-        if (!mounted)
-          return;
-        const list = res?.workflows || res?.credentials || [];
-        const isWorkflow = currentFilter.id.includes('workflow');
-        const parseTimestamp = (value: any) => {
-          if (typeof value === 'number')
-            return value;
-          if (typeof value === 'string') {
-            const parsed = Date.parse(value);
-            return Number.isFinite(parsed) ? parsed : 0;
-          }
-          return 0;
-        };
-        const getUpdatedAt = (item: any) => parseTimestamp(
-          item?.updated_at ?? item?.updatedAt ?? item?.data?.updated_at ?? item?.datas?.updated_at ?? item?.canvas?.updated_at
-        );
-
-        const sortedList = Array.isArray(list)
-          ? (isWorkflow ? [...list].sort((a, b) => getUpdatedAt(b) - getUpdatedAt(a)) : list)
-          : [];
-
-        const normalizedData = Array.isArray(sortedList) ? sortedList.map((item: any) => ({
-          id: item.id || Math.random(),
-          title: item.pretty_name || item.name || 'Unnamed',
-          subtitle: item.version ? `v${item.version}` : (item.provider || ''),
-          description: item.description || 'No description available',
-          enabled: item.enabled !== undefined ? item.enabled : true,
-          raw: item,
-          type: isWorkflow ? 'workflow' : 'credential',
-        })) : [];
-        setData(normalizedData);
-      })
-      .catch(() => {
-        if (mounted) setData([]);
-      });
-    return () => { mounted = false; };
-  }, [activeFilter, get, token]);
+  const webGridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const cleanup = fetchData();
-    return cleanup;
-  }, [fetchData]);
+    if (!isWeb || !webGridRef.current) return;
 
-  const isWorkflowFilter = activeFilter.includes('workflow');
-  const isMyWorkflows = activeFilter === 'my_workflows';
+    const onScroll = () => {
+      if (webGridRef.current) {
+        const posY = -(window.scrollY * 0.5);
+        webGridRef.current.style.backgroundPosition = `0px ${posY}px`;
+      }
+    };
 
-  const handleEdit = (item: any) => {
-    if (!isWorkflowFilter)
-      return;
-    navigate('/automations', { state: { workflow: item.raw || item } });
-  };
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
-  const handleDelete = async (item: any) => {
-    if (!isMyWorkflows)
-      return;
-    setConfirmTarget({ id: item.id, title: item.title || item.name || 'this workflow' });
-  };
+  // ------------------------ Mobile view ------------------------
+  if (!isWeb) {
+    // Create an infinite looping grid animation
+    const infiniteGridStyle = {
+      transform: [{
+        translateY: Animated.modulo(scrollY, 80).interpolate({
+            inputRange: [0, 80],
+            outputRange: [0, -40]
+        })
+      }]
+    };
 
-  const handleConfirmDelete = async () => {
-    if (!confirmTarget)
-      return;
-    try {
-      await del(`/workflows/${confirmTarget.id}`);
-      setConfirmTarget(null);
-      setMenuOpenId(null);
-      fetchData();
-    } catch (err) {
-      console.error('Failed to delete workflow', err);
-    }
-  };
+    return (
+      <View style={mobileStyles.mainContainer}>
+        {/* Background Layer with Parallax Grid and Gradient */}
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Animated.View style={[StyleSheet.absoluteFill, infiniteGridStyle]}>
+            <Svg height="120%" width="100%">
+              <Defs>
+                <Pattern
+                  id="grid"
+                  x="0"
+                  y="0"
+                  width="40"
+                  height="40"
+                  patternUnits="userSpaceOnUse"
+                >
+                  <Path
+                    d="M 40 0 L 0 0 L 0 40"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="1"
+                    strokeOpacity="0.15"
+                  />
+                </Pattern>
+              </Defs>
+              <Rect x="0" y="0" width="100%" height="100%" fill="url(#grid)" />
+            </Svg>
+          </Animated.View>
 
-  const handleToggleEnable = async (item: any) => {
-    if (!isWorkflowFilter)
-      return;
-    const action = item.enabled ? 'disable' : 'enable';
-    try {
-      await post(`/workflows/${item.id}/${action}`, {});
-      setData((prev) => prev ? prev.map((d) => d.id === item.id ? { ...d, enabled: !d.enabled } : d) : prev);
-    } catch (err) {
-      console.error('Failed to toggle workflow', err);
-    }
-  };
+          <LinearGradient
+            colors={['transparent', '#050505']}
+            locations={[0.2, 1.0]}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
 
-  // ------------------------ Not Logged In View ------------------------
-  if (!token) {
-    if (!isWeb) {
-      return (
-        <View style={mobileStyles.mainContainer}>
-          <Navbar />
-          <View style={mobileStyles.centerContainer}>
-            <Text style={mobileStyles.title}>Welcome to the AREA Home Page</Text>
-            <Text style={mobileStyles.subtitle}>Please log in to access your workflows and credentials.</Text>
+        <Navbar />
 
-            {/* Server Configuration Toggle */}
+        <Animated.ScrollView
+          contentContainerStyle={mobileStyles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={16}
+        >
+          <View style={mobileStyles.heroSection}>
+            <View style={mobileStyles.pillContainer}>
+              <Text style={mobileStyles.pillText}>BETA v1.0</Text>
+            </View>
+            <Text style={mobileStyles.heroTitle}>gOOnTech <Text style={{color: '#666'}}>.</Text></Text>
+            <Text style={mobileStyles.heroSubtitle}>
+              The minimal automation platform designed for builders.
+              Design, run, and monitor your services, map data, and deploy workflows with confidence.
+            </Text>
+          </View>
+
+          <View style={mobileStyles.configWrapper}>
+            <View style={mobileStyles.configHeader}>
+              <Text style={mobileStyles.configTitle}>Mobile Configuration</Text>
+              <Text style={mobileStyles.configDesc}>
+                Enter your server address below to connect the app. Save it to access your services securely.
+              </Text>
+            </View>
+
             <TouchableOpacity
+              activeOpacity={0.8}
               onPress={() => setShowConfig(!showConfig)}
-              style={mobileStyles.configToggle}
+              style={[
+                mobileStyles.configButton,
+                showConfig && mobileStyles.configButtonActive
+              ]}
             >
-              <Text style={mobileStyles.configToggleText}>
-                {showConfig ? '▲ Hide Server Config' : '▼ Server Config'}
+              <Text style={mobileStyles.configButtonText}>
+                {showConfig ? 'Close Configuration' : 'Configure Server'}
               </Text>
             </TouchableOpacity>
 
             {showConfig && (
-              <View style={mobileStyles.configContainer}>
+              <View style={mobileStyles.configInputContainer}>
                 <ApiConfigInput showReset={true} />
               </View>
             )}
           </View>
-        </View>
-      );
-    }
-    return (
-      <>
-        <Navbar />
-        <div style={webStyles.pageContainer}>
-          <h2 style={webStyles.title}>Welcome to the AREA Home Page</h2>
-        </div>
-      </>
-    );
-  }
 
-  // ------------------------ Mobile View ------------------------
-  if (!isWeb) {
-    return (
-      <View style={mobileStyles.mainContainer}>
-        <Navbar />
-        <ScrollView contentContainerStyle={mobileStyles.scrollContainer}>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={mobileStyles.filterScroll}>
-            {FILTERS.map((f) => {
-              const isActive = activeFilter === f.id;
-              return (
-                <TouchableOpacity
-                  key={f.id}
-                  onPress={() => setActiveFilter(f.id)}
-                  style={[mobileStyles.filterBtn, isActive && mobileStyles.filterBtnActive]}
-                >
-                  <Text style={[mobileStyles.filterText, isActive && mobileStyles.filterTextActive]}>
-                    {f.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          {data && data.length === 0 && (
-            <Text style={{ color: '#aaa', textAlign: 'center', marginTop: 20 }}>
-              No items found.
-            </Text>
-          )}
-
-          {data && data.map((item: any) => (
-            <View key={item.id} style={mobileStyles.card}>
-              <View style={mobileStyles.cardHeader}>
-                <Text style={mobileStyles.cardTitle}>{item.title}</Text>
-                {item.subtitle ? <Text style={mobileStyles.version}>{item.subtitle}</Text> : null}
-              </View>
-
-              <Text style={mobileStyles.cardBody}>{item.description}</Text>
-
-              <View style={[
-                mobileStyles.footerRow,
-              ]}>
-                <View style={[
-                  mobileStyles.statusBadge,
-                  item.enabled ? mobileStyles.statusEnabled : mobileStyles.statusDisabled
-                ]}>
-                  <Text style={[
-                    mobileStyles.statusText,
-                    item.enabled ? mobileStyles.textEnabled : mobileStyles.textDisabled
-                  ]}>
-                    {item.enabled ? "Enabled" : "Disabled"}
-                  </Text>
+          <View style={mobileStyles.grid}>
+            {CARDS_DATA.map((card) => (
+              <View key={card.id} style={mobileStyles.card}>
+                <View style={mobileStyles.cardHeaderMobile}>
+                  <Text style={mobileStyles.cardIconMobile}>{card.id}</Text>
+                  <Text style={mobileStyles.cardTitle}>{card.title}</Text>
                 </View>
-                {isWorkflowFilter && (
-                  <TouchableOpacity
-                    style={mobileStyles.toggleBtn}
-                    onPress={() => handleToggleEnable(item)}
-                  >
-                    <Text style={mobileStyles.toggleBtnText}>
-                      {item.enabled ? 'Disable' : 'Enable'}
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                <Text style={mobileStyles.cardBody}>
+                  {card.body}
+                </Text>
               </View>
-            </View>
-          ))}
-        </ScrollView>
+            ))}
+          </View>
+
+          <View style={{ height: 40 }} />
+        </Animated.ScrollView>
       </View>
     );
   }
 
-  // ------------------------ Web View ------------------------
+  // ------------------------ Web view ---------------------------
   return (
     <>
       <Navbar />
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0' }}>
-        <div style={{ width: '100%', maxWidth: 900 }}>
 
-          <div style={webStyles.filterBar}>
-            {FILTERS.map((f) => {
-              const isActive = activeFilter === f.id;
-              return (
-                <button
-                  key={f.id}
-                  onClick={() => setActiveFilter(f.id)}
-                  style={{
-                    ...webStyles.filterBtn,
-                    ...(isActive ? webStyles.filterBtnActive : {})
-                  }}
-                >
-                  {f.label}
-                </button>
-              );
-            })}
+      <style>
+        {`
+          ::selection {
+            background-color: #ffffff;
+            color: #000000;
+          }
+
+          @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .animate-fade-up {
+            animation: fadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+          }
+          .delay-1 { animation-delay: 0.1s; }
+          .delay-2 { animation-delay: 0.2s; }
+          .delay-3 { animation-delay: 0.3s; }
+
+          .hover-card {
+            transition: all 0.3s ease;
+          }
+          .hover-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255,255,255,0.2) !important;
+            background: rgba(255,255,255,0.03) !important;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+          }
+        `}
+      </style>
+
+      <div style={webStyles.pageShell}>
+        <div ref={webGridRef} style={webStyles.gridBackground} />
+
+        <div style={webStyles.container}>
+          <div style={webStyles.heroSection} className="animate-fade-up">
+            <div style={webStyles.pill}>Beta v1.0</div>
+            <h1 style={webStyles.heroTitle}>
+              gOOnTech <span style={{color: '#666'}}>.</span>
+            </h1>
+            <p style={webStyles.heroSubtitle}>
+              The minimal automation platform designed for builders.<br />
+              Design, run, and monitor your services, map data, and deploy workflows with confidence.
+            </p>
           </div>
 
-          {data && data.length === 0 && (
-            <div style={{ color: '#aaa', textAlign: 'center', marginTop: '20px' }}>No items found.</div>
-          )}
-
-          {data && data.map((item: any) => (
-            <div key={item.id} style={webStyles.column}>
-              <div style={webStyles.itemWrapper}>
-                <div
-                  style={{
-                    ...webStyles.card,
-                    ...(hoveredCardId === item.id ? webStyles.cardHover : {}),
-                  }}
-                  onMouseEnter={() => setHoveredCardId(item.id)}
-                  onMouseLeave={() => setHoveredCardId((prev) => (prev === item.id ? null : prev))}
-                >
-                    <div style={webStyles.cardHeader}>
-                      <div style={webStyles.cardTitle}>{item.title}</div>
-                      <div style={webStyles.headerRight}>
-                        {item.subtitle && <div style={{...webStyles.status, ...(item.enabled ? webStyles.statusEnabled : webStyles.statusDisabled)}}>{item.enabled ? "Enabled" : "Disabled"}</div>}
-                        {isMyWorkflows && (
-                          <div style={webStyles.moreWrapper}>
-                            <button
-                              style={{
-                                ...webStyles.moreBtn,
-                                ...(hoveredMoreId === item.id ? webStyles.moreBtnHover : {}),
-                              }}
-                              onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === item.id ? null : item.id); }}
-                              onMouseEnter={() => setHoveredMoreId(item.id)}
-                              onMouseLeave={() => setHoveredMoreId((prev) => (prev === item.id ? null : prev))}
-                            >
-                              ⋯
-                            </button>
-                            {menuOpenId === item.id && (
-                              <div style={webStyles.dropdown}>
-                                <button style={webStyles.dropdownItem} onClick={() => { handleEdit(item); setMenuOpenId(null); }}>Edit</button>
-                                <button style={webStyles.dropdownItem} onClick={() => { handleDelete(item); }}>Delete</button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div style={webStyles.cardBody}>{item.description}</div>
-                    <div style={webStyles.cardFooterRow}>
-                      {isWorkflowFilter && (
-                        <button
-                          style={{
-                            ...webStyles.toggleBtn,
-                            ...(item.enabled ? webStyles.toggleDisable : webStyles.toggleEnable),
-                            ...(hoveredToggleId === item.id ? (item.enabled ? webStyles.toggleHoverEnabled : webStyles.toggleHoverDisabled) : {}),
-                          }}
-                          onMouseEnter={() => setHoveredToggleId(item.id)}
-                          onMouseLeave={() => setHoveredToggleId((prev) => (prev === item.id ? null : prev))}
-                          onClick={() => handleToggleEnable(item)}
-                        >
-                          {item.enabled ? 'Disable' : 'Enable'}
-                        </button>
-                      )}
-                    </div>
+          <div style={webStyles.grid} className="animate-fade-up delay-2">
+            {CARDS_DATA.map((card, index) => (
+              <div
+                key={card.id}
+                style={index === 2 ? webStyles.cardWide : webStyles.card}
+                className="hover-card"
+              >
+                <div style={webStyles.cardHeader}>
+                  <span style={webStyles.cardIcon}>{card.id}</span>
+                  <h3 style={webStyles.cardTitle}>{card.title}</h3>
                 </div>
+                <p style={webStyles.cardBody}>
+                  {card.body}
+                </p>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
-
-      {confirmTarget && (
-        <div style={webStyles.confirmOverlay} onClick={() => setConfirmTarget(null)}>
-          <div style={webStyles.confirmModal} onClick={(e) => e.stopPropagation()}>
-            <div style={webStyles.confirmTitle}>Delete workflow?</div>
-            <div style={webStyles.confirmText}>You are about to delete "{confirmTarget.title}". This action cannot be undone.</div>
-            <div style={webStyles.confirmActions}>
-              <button style={webStyles.confirmCancel} onClick={() => setConfirmTarget(null)}>Cancel</button>
-              <button style={webStyles.confirmDelete} onClick={handleConfirmDelete}>Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
@@ -341,384 +238,250 @@ const Home: React.FC = () => {
 const mobileStyles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#151316',
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    backgroundColor: '#050505',
   },
   scrollContainer: {
-    paddingTop: 100,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingTop: 120,
+    paddingHorizontal: 24,
   },
-  title: {
+  heroSection: {
+    marginBottom: 40,
+    alignItems: 'flex-start',
+  },
+  pillContainer: {
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 100,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  pillText: {
     color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
-  subtitle: {
+  heroTitle: {
+    color: '#fff',
+    fontSize: 48,
+    fontWeight: '800',
+    letterSpacing: -1,
+    marginBottom: 16,
+  },
+  heroSubtitle: {
     color: '#888',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 10,
+    fontSize: 16,
+    lineHeight: 24,
+    maxWidth: '95%',
   },
-  configToggle: {
-    marginTop: 30,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  configToggleText: {
-    color: '#666',
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  configContainer: {
-    width: '90%',
-    maxWidth: 400,
-    marginTop: 15,
+  configWrapper: {
+    marginBottom: 40,
+    backgroundColor: '#0F0F0F',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#222',
     padding: 20,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
   },
-  filterScroll: {
-    flexGrow: 0,
-    marginBottom: 20,
-    height: 40,
+  configHeader: {
+    marginBottom: 16,
   },
-  filterBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  filterBtnActive: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  filterText: {
-    color: '#888',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  filterTextActive: {
+  configTitle: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 6,
   },
-  card: {
-    backgroundColor: '#1E1E1E',
-    borderColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
+  configDesc: {
+    color: '#666',
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  configButton: {
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
+  configButtonActive: {
+    backgroundColor: '#bbbbbb',
+  },
+  configButtonText: {
+    color: '#000',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  configInputContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#222',
+  },
+  grid: {
+    gap: 16,
+  },
+  card: {
+    backgroundColor: '#0A0A0A',
+    borderWidth: 1,
+    borderColor: '#1A1A1A',
+    borderRadius: 12,
+    padding: 24,
+  },
+  cardHeaderMobile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  cardIconMobile: {
+    color: '#444',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#333',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontFamily: 'monospace',
+  },
   cardTitle: {
     color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-    flex: 1,
-    marginRight: 10,
-  },
-  version: {
-    color: '#bbb',
-    fontSize: 12,
+    fontSize: 18,
+    fontWeight: '700',
   },
   cardBody: {
-    color: 'rgba(255,255,255,0.8)',
+    color: '#999',
     fontSize: 14,
-    marginBottom: 12,
-    lineHeight: 20,
+    lineHeight: 22,
   },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 12,
-  },
-  statusEnabled: {
-    backgroundColor: 'rgba(46, 204, 113, 0.12)'
-  },
-  statusDisabled: {
-    backgroundColor: 'rgba(231, 76, 60, 0.12)'
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600'
-  },
-  textEnabled: {
-    color: '#2ecc71'
-  },
-  textDisabled: {
-    color: '#e74c3c'
-  },
-  toggleBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: '#2c3e50',
-  },
-  toggleBtnText: {
-    color: '#fff',
-    fontWeight: '600'
-  }
 });
 
 const webStyles: any = {
-  column: {
+  pageShell: {
+    width: '100%',
+    minHeight: '100vh',
+    backgroundColor: '#050505',
+    color: '#fff',
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px',
-    width: '100%',
-    maxWidth: '900px',
+    alignItems: 'center',
+    position: 'relative',
+    overflowY: 'auto',
+    overflowX: 'hidden',
   },
-  pageContainer: {
+  gridBackground: {
     position: 'fixed',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100vw',
-    height: '100vh',
-    boxSizing: 'border-box',
-    backgroundColor: '#151316',
-    color: '#fff',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundImage: `
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)
+    `,
+    backgroundSize: '40px 40px',
+    maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
+    pointerEvents: 'none',
+    zIndex: 0,
   },
-  itemWrapper: {
+  container: {
+    zIndex: 1,
     width: '100%',
+    maxWidth: '1024px',
+    padding: '120px 24px 60px',
     display: 'flex',
+    flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: '8px 0',
   },
-  title: {
-    color: '#fff',
-    fontSize: '24px',
-    fontWeight: 700,
+  heroSection: {
+    textAlign: 'center',
+    marginBottom: '80px',
+    maxWidth: '700px',
+    opacity: 0,
+  },
+  pill: {
+    display: 'inline-block',
+    padding: '6px 16px',
+    borderRadius: '50px',
+    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.02)',
+    fontSize: '11px',
+    fontWeight: '600',
+    letterSpacing: '2px',
+    textTransform: 'uppercase',
+    color: '#888',
+    marginBottom: '24px',
+  },
+  heroTitle: {
+    fontSize: 'clamp(40px, 8vw, 80px)',
+    fontWeight: 800,
+    lineHeight: 1.15,
+    margin: '0 0 24px',
+    letterSpacing: '-0.04em',
+    background: 'linear-gradient(to bottom, #fff, #999)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+  },
+  heroSubtitle: {
+    fontSize: '18px',
+    lineHeight: 1.6,
+    color: '#888',
     margin: 0,
-    textAlign: 'center' as any,
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '24px',
     width: '100%',
+    opacity: 0,
   },
   card: {
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
-    border: '1px solid rgba(255,255,255,0.04)',
-    borderRadius: 8,
-    padding: '12px 16px',
+    background: '#0a0a0a',
+    border: '1px solid #1a1a1a',
+    borderRadius: '16px',
+    padding: '32px',
     display: 'flex',
     flexDirection: 'column',
-    width: '100%',
-    position: 'relative',
-    transition: 'transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease',
+    cursor: 'default',
   },
-  cardHover: {
-    transform: 'scale(1.01)',
-    border: '1px solid rgba(255,255,255,0.14)',
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+  cardWide: {
+    background: '#0a0a0a',
+    border: '1px solid #1a1a1a',
+    borderRadius: '16px',
+    padding: '32px',
+    gridColumn: '1 / -1',
+    cursor: 'default',
   },
   cardHeader: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    marginBottom: '16px',
     gap: '12px',
-    marginBottom: '8px',
+  },
+  cardIcon: {
+    fontFamily: 'monospace',
+    fontSize: '12px',
+    color: '#444',
+    border: '1px solid #333',
+    padding: '2px 6px',
+    borderRadius: '4px',
   },
   cardTitle: {
+    fontSize: '20px',
     fontWeight: 600,
-    fontSize: '14px',
-  },
-  headerRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  version: {
-    fontSize: '12px',
-    padding: '4px 8px',
-    borderRadius: 12,
-    background: 'rgba(255,255,255,0.08)',
-  },
-  statusEnabled: {
-    background: 'rgba(46, 204, 113, 0.12)',
-    color: '#2ecc71',
-  },
-  statusDisabled: {
-    background: 'rgba(231, 76, 60, 0.12)',
-    color: '#e74c3c',
+    color: '#fff',
+    margin: 0,
   },
   cardBody: {
-    fontSize: '13px',
-    opacity: 0.9,
-    marginBottom: '8px',
-  },
-  cardFooterRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: '12px',
-    marginTop: '8px',
-  },
-  filterBar: {
-    display: 'flex',
-    gap: '12px',
-    marginBottom: '24px',
-    paddingBottom: '12px',
-    borderBottom: '1px solid rgba(255,255,255,0.1)',
-    overflowX: 'auto',
-  },
-  filterBtn: {
-    background: 'transparent',
-    border: 'none',
+    fontSize: '15px',
+    lineHeight: 1.7,
     color: '#888',
-    cursor: 'pointer',
-    padding: '8px 16px',
-    fontSize: '14px',
-    fontWeight: 600,
-    borderRadius: '4px',
-    transition: 'all 0.2s',
-  },
-  filterBtnActive: {
-    color: '#fff',
-    background: 'rgba(255,255,255,0.1)',
-  },
-  moreWrapper: {
-    position: 'relative',
-  },
-  moreBtn: {
-    background: 'transparent',
-    border: '1px solid rgba(255,255,255,0.15)',
-    color: '#fff',
-    borderRadius: 6,
-    width: 28,
-    height: 28,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    transition: 'background 0.15s ease, border-color 0.15s ease',
-  },
-  moreBtnHover: {
-    background: 'rgba(255,255,255,0.08)',
-    border: '1px solid rgba(255,255,255,0.35)',
-  },
-  dropdown: {
-    position: 'absolute',
-    top: 32,
-    right: 0,
-    background: '#1f1f24',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 8,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-    minWidth: 140,
-    zIndex: 10,
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  dropdownItem: {
-    padding: '10px 12px',
-    background: 'transparent',
-    color: '#fff',
-    border: 'none',
-    textAlign: 'left' as any,
-    cursor: 'pointer',
-  },
-  toggleBtn: {
-    padding: '6px 12px',
-    borderRadius: 10,
-    border: '1px solid rgba(255,255,255,0.14)',
-    background: 'transparent',
-    color: '#fff',
-    cursor: 'pointer',
-    transition: 'all 0.18s ease',
-  },
-  toggleEnable: {
-    border: '1px solid rgba(46, 204, 113, 0.5)',
-  },
-  toggleDisable: {
-    border: '1px solid rgba(231, 76, 60, 0.5)',
-  },
-  toggleHoverEnabled: {
-    background: 'rgba(231, 76, 60, 0.5)',
-    color: '#fff',
-    boxShadow: '0 6px 18px rgba(0,0,0,0.28)',
-  },
-  toggleHoverDisabled: {
-    background: 'rgba(46, 204, 113, 0.5)',
-    color: '#fff',
-    boxShadow: '0 6px 18px rgba(0,0,0,0.28)',
-  },
-  confirmOverlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.55)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 3000,
-  },
-  confirmModal: {
-    background: '#1f1f24',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 10,
-    padding: 20,
-    width: '90%',
-    maxWidth: 420,
-    boxShadow: '0 12px 32px rgba(0,0,0,0.45)',
-    color: '#fff',
-  },
-  confirmTitle: {
-    fontSize: 18,
-    fontWeight: 700,
-    marginBottom: 8,
-  },
-  confirmText: {
-    fontSize: 14,
-    opacity: 0.9,
-    marginBottom: 16,
-  },
-  confirmActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: 10,
-  },
-  confirmCancel: {
-    padding: '8px 14px',
-    borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.18)',
-    background: 'transparent',
-    color: '#fff',
-    cursor: 'pointer',
-  },
-  confirmDelete: {
-    padding: '8px 14px',
-    borderRadius: 8,
-    border: '1px solid rgba(231,76,60,0.45)',
-    background: 'rgba(231,76,60,0.7)',
-    color: '#fff',
-    cursor: 'pointer',
-  },
-  status: {
-    fontSize: 12,
-    padding: '4px 8px',
-    borderRadius: 12,
+    margin: 0,
   },
 };
 

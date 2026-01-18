@@ -100,16 +100,6 @@ const Navbar: React.FC = () => {
                   <Feather name="grid" size={20} color="#fff" style={mobileStyles.icon} />
                   <Text style={mobileStyles.menuText}>Dashboard</Text>
                 </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => goTo('/apps')} style={mobileStyles.menuItem}>
-                  <Feather name="box" size={20} color="#fff" style={mobileStyles.icon} />
-                  <Text style={mobileStyles.menuText}>Apps</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => goTo('/explore')} style={mobileStyles.menuItem}>
-                  <Feather name="compass" size={20} color="#fff" style={mobileStyles.icon} />
-                  <Text style={mobileStyles.menuText}>Explore</Text>
-                </TouchableOpacity>
               </View>
 
               <View style={mobileStyles.divider} />
@@ -162,12 +152,6 @@ const Navbar: React.FC = () => {
             Dashboard
           </NavLinkWrapper>
         </div>
-        <NavLinkWrapper to="/apps" style={({ isActive }: any) => ({ ...webStyles.item, opacity: isActive ? 1 : 0.85 })}>
-          Apps
-        </NavLinkWrapper>
-        <NavLinkWrapper to="/explore" style={({ isActive }: any) => ({ ...webStyles.item, opacity: isActive ? 1 : 0.85 })}>
-          Explore
-        </NavLinkWrapper>
       </nav>
       <nav style={webStyles.loginContainer} aria-label="Login container">
         <div style={webStyles.loginWrapper}>
@@ -215,7 +199,7 @@ const webStyles: any = {
     left: 0,
     width: "100px",
     height: "100vh",
-    backgroundColor: "#141414",
+    backgroundColor: "#0b0b0b",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -306,7 +290,7 @@ const mobileStyles: any = {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: "#141414",
+    backgroundColor: "#0b0b0b",
     paddingTop: 40,
     paddingBottom: 15,
     paddingHorizontal: 20,
