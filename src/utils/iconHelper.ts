@@ -1,17 +1,22 @@
-import { assetPath } from "./assets";
+const MODULE_ICONS: Record<string, any> = {
+  gmail: require("../../public/node_icons/gmail_logo.png"),
+  imap: require("../../public/node_icons/imap_logo.png"),
+  redis: require("../../public/node_icons/redis_logo.png"),
+};
 
-export const getIconForModule = (moduleName: string): string | null => {
+export const getIconForModule = (moduleName: string): any | null => {
+  if (!moduleName) return null;
   const lower = moduleName.toLowerCase();
-  // Custom choose icon based on module type/name
-  if (lower.includes("gmail")) return assetPath("/node_icons/gmail_logo.png");
-  if (lower.includes("imap")) return assetPath("/node_icons/imap_logo.png");
-  if (lower.includes("redis")) return assetPath("/node_icons/redis_logo.png");
+
+  if (lower.includes("gmail")) return MODULE_ICONS.gmail;
+  if (lower.includes("imap")) return MODULE_ICONS.imap;
+  if (lower.includes("redis")) return MODULE_ICONS.redis;
+
   return null;
 };
 
 export const getConnectionPointsForModule = (moduleName: string) => {
   const lower = moduleName.toLowerCase();
-  // Custom connection points based on module type/name
   if (lower.includes("redis")) {
     return [
       { side: 'left' as const, offset: 0 },

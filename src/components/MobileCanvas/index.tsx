@@ -9,7 +9,7 @@ import EditMenu from './EditMenu';
 import type { EditMenuHandle } from './EditMenu/EditMenu.types';
 import Svg, { Path, Defs, Pattern, Rect, Line as SvgLine, G } from 'react-native-svg';
 import { routeConnection } from './connectionRouter';
-import { getConnectionPointsForModule } from '../../utils/iconHelper';
+import { getConnectionPointsForModule, getIconForModule } from '../../utils/iconHelper';
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
@@ -132,13 +132,22 @@ const MobileCanva: React.FC = () => {
 
       const moduleName = n?.module?.name || n?.label || "";
       const cPoints = n?.connectionPoints || getConnectionPointsForModule(moduleName);
+      const nodeIcon = n?.icon || getIconForModule(moduleName);
 
       return {
         id: n?.id || `n${Date.now()}`,
-        x, y, width: w, height: h,
-        label: n?.label, icon: n?.icon, module: n?.module,
-        connectionPoints: cPoints, inputs: n?.inputs, outputs: n?.outputs,
-        options: n?.options, credential_id: n?.credential_id,
+        x,
+        y,
+        width: w,
+        height: h,
+        label: n?.label,
+        icon: nodeIcon,
+        module: n?.module,
+        connectionPoints: cPoints,
+        inputs: n?.inputs,
+        outputs: n?.outputs,
+        options: n?.options,
+        credential_id: n?.credential_id,
       } as NodeItem;
     });
     setNodes(normalizedNodes);
@@ -432,7 +441,7 @@ const MobileCanva: React.FC = () => {
               );
 
               return (
-                <Path key={idx} d={routed.d} stroke={pressedLineIndex === idx ? '#ff8b8b' : line.stroke || '#fff'} strokeWidth={4} fill="none"
+                <Path key={idx} d={routed.d} stroke={pressedLineIndex === idx && isDrawMode ? '#ff8b8b' : line.stroke || '#fff'} strokeWidth={4} fill="none"
                   onPressIn={() => setPressedLineIndex(idx)}
                   onPressOut={() => setPressedLineIndex(null)}
                   onPress={() => {

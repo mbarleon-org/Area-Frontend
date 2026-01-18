@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput } from 'react-native';
-import { getConnectionPointsForModule } from '../../utils/iconHelper';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Image } from 'react-native';
+import { getConnectionPointsForModule, getIconForModule } from '../../utils/iconHelper';
 
 type ModuleEntry = { name: string; data: any };
 type CredentialItem = { id: string; provider?: string; type?: string; name?: string };
@@ -45,6 +45,8 @@ const AddNode: React.FC<AddNodeProps> = ({ modules, onClose, onAdd, offset, scal
     const moduleName = m.name || module.name;
     const connectionPoints = getConnectionPointsForModule(moduleName);
 
+    const resolvedIcon = getIconForModule(moduleName);
+
     const newNode = {
       id: `n${Date.now()}`,
       x,
@@ -52,7 +54,7 @@ const AddNode: React.FC<AddNodeProps> = ({ modules, onClose, onAdd, offset, scal
       width: w,
       height: h,
       label: moduleName,
-      icon: m.icon,
+      icon: resolvedIcon,
       module: m,
       connectionPoints,
       inputs: {},
@@ -61,6 +63,13 @@ const AddNode: React.FC<AddNodeProps> = ({ modules, onClose, onAdd, offset, scal
     };
 
     onAdd(newNode);
+  };
+
+  const renderListIcon = (moduleName: string) => {
+    const iconSource = getIconForModule(moduleName);
+    if (!iconSource) return null;
+    const source = (typeof iconSource === 'string') ? { uri: iconSource } : iconSource;
+    return <Image source={source} style={styles.listIconImage} resizeMode="contain" />;
   };
 
   return (
@@ -100,9 +109,9 @@ const AddNode: React.FC<AddNodeProps> = ({ modules, onClose, onAdd, offset, scal
                   style={styles.moduleItem}
                   onPress={() => handleSelectModule(module)}
                 >
-                  {module.data?.icon && (
-                    <Text style={styles.moduleIcon}>{module.data.icon}</Text>
-                  )}
+                  <View style={styles.iconWrapper}>
+                     {renderListIcon(module.name)}
+                  </View>
                   <View style={styles.moduleInfo}>
                     <Text style={styles.moduleName}>{module.data?.name || module.name}</Text>
                     {module.data?.description && (
@@ -199,6 +208,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginTop: 40,
+  },
+  iconWrapper: {
+    width: 32,
+    height: 32,
+    marginRight: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listIconImage: {
+    width: '100%',
+    height: '100%',
   },
 });
 
