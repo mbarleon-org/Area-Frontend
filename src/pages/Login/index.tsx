@@ -96,7 +96,7 @@ const Login: React.FC = () => {
                 placeholderTextColor="#888"
               />
 
-              <TouchableOpacity onPress={() => console.log("Forgot password?")}>
+              <TouchableOpacity onPress={() => navigation.reset ? navigation.reset({ index: 0, routes: [{ name: 'PasswordReset' }] }) : navigation.navigate('PasswordReset')}>
                 <Text style={mobileStyles.forgot}>Forgot password ?</Text>
               </TouchableOpacity>
 
@@ -186,7 +186,7 @@ const Login: React.FC = () => {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
               />
-              <a style={webStyles.forgot}>Forgot password ?</a>
+              <a href="/password_reset" style={webStyles.forgot}>Forgot password ?</a>
               <button style={webStyles.button} type="submit">
                 Login
               </button>
@@ -399,6 +399,7 @@ const webStyles: { [k: string]: React.CSSProperties } = {
     width: "100%",
     textAlign: "right",
     fontSize: "12px",
+    textDecoration: "none",
   },
   button: {
     width: "100%",

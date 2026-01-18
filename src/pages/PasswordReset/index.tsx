@@ -3,73 +3,64 @@ import Navbar from '../../components/Navbar';
 import { isWeb } from '../../utils/IsWeb';
 import { useApi } from '../../utils/UseApi';
 import { useToast } from '../../components/Toast';
-import { useCookies } from 'react-cookie';
 
-function decodeJwtPayload(token: string) {
+let safeUseNavigation: any = () => ({
+  navigate: (_: any) => { },
+  reset: (_: any) => { }
+});
+
+if (!isWeb) {
   try {
-    const parts = token.split('.');
-    if (parts.length < 2)
-      return null;
-    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    let raw = '';
-    if (typeof atob === 'function') {
-      raw = atob(payload + '=='.slice((2 - payload.length * 3) & 3));
-    } else if (typeof (globalThis as any).Buffer === 'function') {
-      raw = (globalThis as any).Buffer.from(payload, 'base64').toString('utf8');
-    } else {
-      const binStr = payload.replace(/=+$/, '');
-      raw = decodeURIComponent(binStr.split('').map(function (c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-    }
-    return JSON.parse(raw);
+    const rnNav = require('@react-navigation/native');
+    if (rnNav && rnNav.useNavigation) safeUseNavigation = rnNav.useNavigation;
   } catch (e) {
-    return null;
+    // ignore
   }
 }
 
 const PasswordReset: React.FC = () => {
   const { post } = useApi();
   const { showToast } = useToast();
-  const [password, setPassword] = React.useState('');
-  const [confirm, setConfirm] = React.useState('');
+  const [email, setEmail] = React.useState('');
   const [loading, setLoading] = React.useState(false);
-  const [tokenData, setTokenData] = React.useState<any>(null);
-  const [_cookies, setCookie] = useCookies(['token']);
+
+  const navigation = safeUseNavigation();
 
   React.useEffect(() => {
-    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams('');
-    const token = params.get('token') || '';
-    const context = params.get('context') || '';
-    if (!token || !context) return;
-    setCookie('token', token, { path: '/' });
-    const payload = decodeJwtPayload(token);
-    setTokenData({ token, payload, context });
+    if (typeof document !== 'undefined') {
+      document.body.style.margin = "0";
+      document.body.style.padding = "0";
+      document.body.style.backgroundColor = "#151316";
+      document.body.style.overflow = "auto";
+    }
   }, []);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!tokenData) {
-      showToast({ message: 'Missing token', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!emailPattern.test(email)) {
+      showToast({ message: 'Enter valid email <test@example.com>', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: isWeb ? 'top' : 'bottom', transitionSide: 'left' });
       return;
     }
-    const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/;
-    if (password.length < 8 || !passwordPattern.test(password)) {
-      showToast({ message: "Password must be at least 8 characters long, and contain a letter (both upper and lowercase), a number, and a special character.", duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
-      return;
-    }
-    if (password !== confirm) {
-      showToast({ message: 'Passwords do not match', duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
-      return;
-    }
+
     setLoading(true);
     try {
-      await post('/auth/set_password', { password, context: tokenData.context });
-      showToast({ message: 'Password set successfully. You can now log in.', duration: 5000, barColor: '#4CAF50', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
-      setPassword('');
-      setConfirm('');
-    } catch (err) {
-      showToast({ message: 'Failed to set password. The link may be expired or invalid.', duration: 7000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: 'top', transitionSide: 'left' });
+      //reset_password
+      await post('/auth/reset_password', { email });
+      showToast({ message: 'An email has been sent to your address with instructions to reset your password.', duration: 5000, barColor: '#4CAF50', backgroundColor: '#222', textColor: '#fff', position: isWeb ? 'top' : 'bottom', transitionSide: 'left' });
+      setEmail('');
+    } catch (err: any) {
+      console.error('Password reset error:', err);
+      let errorMessage = 'An error occurred while sending the reset email.';
+      if (err?.response?.status === 404) {
+        errorMessage = 'Password reset feature is not available yet. Please contact support.';
+      } else if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err?.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      }
+      showToast({ message: errorMessage, duration: 5000, barColor: '#cd1d1d', backgroundColor: '#222', textColor: '#fff', position: isWeb ? 'top' : 'bottom', transitionSide: 'left' });
     } finally {
       setLoading(false);
     }
@@ -81,26 +72,46 @@ const PasswordReset: React.FC = () => {
     const { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } = RN;
     return (
       <KeyboardAvoidingView
-        style={mobileStyles.container}
+        style={mobileStyles.fullScreen}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
         <Navbar />
         <ScrollView
-          contentContainerStyle={mobileStyles.scrollContent}
+          contentContainerStyle={mobileStyles.container}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={mobileStyles.content}>
-            <Text style={mobileStyles.title}>Set your password</Text>
-            {tokenData && tokenData.payload ? (
-              <Text style={mobileStyles.email}>{tokenData.payload.email || tokenData.payload.username}</Text>
-            ) : null}
-            <TextInput placeholder="New password" secureTextEntry value={password} onChangeText={setPassword} style={mobileStyles.input} placeholderTextColor="#888" />
-            <TextInput placeholder="Confirm password" secureTextEntry value={confirm} onChangeText={setConfirm} style={mobileStyles.input} placeholderTextColor="#888" />
-            <TouchableOpacity onPress={handleSubmit} style={mobileStyles.button}>
-              <Text style={mobileStyles.buttonText}>{loading ? 'Saving...' : 'Set password'}</Text>
-            </TouchableOpacity>
+          <View style={mobileStyles.card}>
+            <View style={mobileStyles.PasswordReset}>
+              <Text style={mobileStyles.heading}>Reset Password</Text>
+              <Text style={mobileStyles.description}>
+                Enter your email address and we'll send you instructions to reset your password.
+              </Text>
+
+              <TextInput
+                placeholder="Enter your email"
+                style={mobileStyles.input}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                placeholderTextColor="#888"
+              />
+
+              <TouchableOpacity
+                style={mobileStyles.button}
+                onPress={() => handleSubmit()}
+                disabled={loading}
+              >
+                <Text style={mobileStyles.buttonText}>
+                  {loading ? 'Sending...' : 'Send Reset Link'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => navigation.reset ? navigation.reset({ index: 0, routes: [{ name: 'Login' }] }) : navigation.navigate('Login')}>
+                <Text style={mobileStyles.backToLogin}>Back to Login</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -112,14 +123,29 @@ const PasswordReset: React.FC = () => {
     <>
       <Navbar />
       <div style={webStyles.container}>
-        <div style={webStyles.card}>
-          <h2 style={webStyles.setPassword}>Set your password</h2>
-          {tokenData && tokenData.payload ? <div style={webStyles.email}>{tokenData.payload.email || tokenData.payload.username}</div> : null}
-          <form onSubmit={handleSubmit} style={webStyles.form}>
-            <input type="password" placeholder="New password" value={password} onChange={e => setPassword(e.target.value)} style={ webStyles.passwordField } />
-            <input type="password" placeholder="Confirm password" value={confirm} onChange={e => setConfirm(e.target.value)} style={ webStyles.passwordField } />
-            <button type="submit" style={ webStyles.submitButton }>{loading ? 'Saving...' : 'Set password'}</button>
-          </form>
+        <div style={webStyles.cardContainer}>
+          <div style={webStyles.card}>
+            <form style={webStyles.PasswordReset} onSubmit={handleSubmit}>
+              <h2 style={{ margin: '0 0 10px 0' }}>Reset Password</h2>
+              <p style={webStyles.description}>
+                Enter your email address and we'll send you instructions to reset your password.
+              </p>
+
+              <input
+                type="email"
+                placeholder="Enter your email"
+                style={webStyles.input}
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+              />
+
+              <button style={webStyles.button} type="submit" disabled={loading}>
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+
+              <a href="/login" style={webStyles.backToLogin}>Back to Login</a>
+            </form>
+          </div>
         </div>
       </div>
     </>
@@ -127,39 +153,71 @@ const PasswordReset: React.FC = () => {
 };
 
 const mobileStyles: any = {
-  container: {
+  fullScreen: {
     flex: 1,
-    backgroundColor: '#151316ff',
+    backgroundColor: "#151316ff",
+    paddingTop: 80,
   },
-  scrollContent: {
+  container: {
     flexGrow: 1,
     justifyContent: 'center',
-  },
-  content: {
-    padding: 20,
     alignItems: 'center',
-    justifyContent: 'center',
+    padding: 20,
   },
-  title: {
-    color: '#fff',
-    fontSize: 20,
+  card: {
+    backgroundColor: "#1f1f1f",
+    borderRadius: 16,
+    padding: 25,
+    width: '100%',
+    maxWidth: 400,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+    elevation: 8,
+  },
+  PasswordReset: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 15,
+  },
+  heading: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: "#fff",
+    marginBottom: 5,
+  },
+  description: {
+    fontSize: 14,
+    color: "#888",
+    textAlign: 'center',
     marginBottom: 10,
   },
   input: {
     width: '100%',
     padding: 12,
-    backgroundColor: '#1f1f1f',
-    color: '#fff',
+    fontSize: 14,
     borderRadius: 8,
-    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#333",
+    backgroundColor: "#161616ff",
+    color: "#fff",
   },
   button: {
-    backgroundColor: '#4CAF50',
+    width: '100%',
     padding: 12,
     borderRadius: 8,
+    backgroundColor: "#4CAF50",
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 5,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  backToLogin: {
+    color: "#fff",
+    marginTop: 15,
   },
 };
 
@@ -178,56 +236,64 @@ const webStyles: { [k: string]: React.CSSProperties } = {
     position: "relative",
     zIndex: 1,
   },
+  cardContainer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    padding: "20px",
+    boxSizing: "border-box",
+  },
   card: {
     backgroundColor: "#1f1f1f",
     borderRadius: "16px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
     padding: "40px",
     minWidth: "400px",
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
     maxWidth: "100%",
     boxSizing: "border-box",
   },
-  setPassword: {
+  PasswordReset: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     gap: "20px",
-    marginBottom: "44px",
     color: "#fff",
   },
-  email: {
-    color: "#ccc",
-    alignSelf: "flex-start",
+  description: {
+    fontSize: "14px",
+    color: "#888",
+    textAlign: "center",
+    margin: "0 0 10px 0",
+  },
+  input: {
     width: "100%",
-    textAlign: "left",
-    fontSize: "16px",
-    paddingBottom: "10px",
-    marginLeft: "4px",
+    padding: "12px",
+    fontSize: "14px",
+    borderRadius: "8px",
+    border: "1px solid #333",
+    backgroundColor: "#161616",
+    color: "#fff",
+    boxSizing: "border-box",
   },
-  passwordField: {
-    width: '100%',
-    padding: 10,
-    borderRadius: 8,
-    border: '1px solid #333',
-    background: '#161616',
-    color: '#fff'
+  button: {
+    width: "100%",
+    padding: "12px",
+    fontSize: "14px",
+    borderRadius: "8px",
+    border: "none",
+    backgroundColor: "#4CAF50",
+    color: "#fff",
+    cursor: "pointer",
+    boxSizing: "border-box",
+    fontWeight: "bold",
   },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  },
-  submitButton: {
-    width: '100%',
-    padding: 12,
-    background: '#4CAF50',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
+  backToLogin: {
+    color: "#fff",
+    cursor: "pointer",
+    textDecoration: "none",
+    marginTop: "10px",
   },
 };
 
