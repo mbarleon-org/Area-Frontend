@@ -281,7 +281,7 @@ const User: React.FC = () => {
 const mobileStyles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: "#151316ff",
+    backgroundColor: '#050505',
   },
   scrollContent: {
     flexGrow: 1,
@@ -420,9 +420,9 @@ const webStyles: { [k: string]: React.CSSProperties } = {
     justifyContent: "flex-start",
     padding: "0",
     margin: "0",
-    paddingTop: "30px",
-    paddingLeft: "150px",
-    backgroundColor: "#151316ff",
+    paddingTop: "40px",
+    paddingLeft: "120px",
+    backgroundColor: "#050505",
     color: "#fff",
   },
   icon:{
@@ -445,14 +445,15 @@ const webStyles: { [k: string]: React.CSSProperties } = {
   },
   editButton: {
     width: "100%",
-    padding: "10px 24px",
+    padding: "12px 24px",
     borderRadius: "8px",
     border: "none",
-    color: "#fff",
+    backgroundColor: "#fff",
+    color: "#000",
     cursor: "pointer",
     marginTop: "16px",
-    boxShadow: "3px",
-    textShadow: "2px 2px 8px #000",
+    fontWeight: 700,
+    transition: "all 0.2s ease",
   },
   logoutButton: {
     width: "auto",
@@ -495,13 +496,13 @@ const webStyles: { [k: string]: React.CSSProperties } = {
   },
   input: {
     width: "100%",
-    padding: "10px 16px",
+    padding: "12px 16px",
     borderRadius: "8px",
-    border: "1px solid #444",
+    border: "1px solid rgba(255,255,255,0.1)",
     marginTop: "20px",
     marginBottom: "12px",
     fontSize: "1.1em",
-    background: "#222",
+    background: "#111",
     color: "#fff",
     outline: "none",
   },
