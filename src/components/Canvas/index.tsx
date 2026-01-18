@@ -13,6 +13,11 @@ import type { Side } from "./connectionMath";
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
+const computeSnapOffset = (worldSize: number, gridPx: number) => {
+  const cells = Math.round(worldSize / gridPx);
+  return (cells % 2 === 0) ? 0 : gridPx / 2;
+};
+
 const Canvas: React.FC = () => {
   const location = useLocation();
   const workflowFromState = (location as any)?.state?.workflow;
@@ -94,15 +99,7 @@ const Canvas: React.FC = () => {
   }, [nodes]);
 
   const [modules, setModules] = useState<Array<{ name: string; data: any }>>([]);
-
-  if (!isWeb) {
-    const { View, Text } = require('react-native');
-    return (
-      <View style={{ flex: 1, padding: 24, backgroundColor: '#151316ff', justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: '#fff' }}>Canvas is only available on web.</Text>
-      </View>
-    );
-  }
+  // ------------------------------Web view------------------------------------
 
   const fetchCredentials = useCallback(async () => {
     try {
@@ -119,11 +116,6 @@ const Canvas: React.FC = () => {
       else console.error('Failed to load credentials', err);
     }
   }, [get]);
-
-  const computeSnapOffset = (worldSize: number, gridPx: number) => {
-    const cells = Math.round(worldSize / gridPx);
-    return (cells % 2 === 0) ? 0 : gridPx / 2;
-  };
 
   const handleAddNode = useCallback(() => setShowAddMenu(true), []);
 
