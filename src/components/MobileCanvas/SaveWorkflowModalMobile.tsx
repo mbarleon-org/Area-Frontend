@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView, Switch, ActivityIndicator } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView, Switch, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 
 type Props = {
   isOpen: boolean;
@@ -49,8 +49,12 @@ const SaveWorkflowModalMobile: React.FC<Props> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View style={styles.modal}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.modal}>
           <View style={styles.header}>
             <Text style={styles.title}>Save Workflow</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -117,6 +121,7 @@ const SaveWorkflowModalMobile: React.FC<Props> = ({
           </View>
         </View>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

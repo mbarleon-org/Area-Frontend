@@ -7,6 +7,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import type { EditMenuProps, EditMenuHandle } from './EditMenu.types';
 import { useEditMenuLogic } from './useEditMenuLogic';
@@ -51,8 +53,12 @@ const EditMenu = forwardRef<EditMenuHandle, EditMenuProps>(
         animationType="slide"
         onRequestClose={logic.handleRequestClose}
       >
-        <View style={styles.overlay}>
-          <View style={styles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.overlay}>
+            <View style={styles.container}>
             {/* HEADER */}
             <View style={styles.header}>
               <Text style={styles.title}>Edit Node</Text>
@@ -173,6 +179,7 @@ const EditMenu = forwardRef<EditMenuHandle, EditMenuProps>(
             </ScrollView>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
     );
   }

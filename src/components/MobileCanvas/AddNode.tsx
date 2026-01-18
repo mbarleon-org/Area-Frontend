@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { getConnectionPointsForModule, getIconForModule } from '../../utils/iconHelper';
 
 type ModuleEntry = { name: string; data: any };
@@ -79,8 +79,12 @@ const AddNode: React.FC<AddNodeProps> = ({ modules, onClose, onAdd, offset, scal
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Add Module</Text>
@@ -126,6 +130,7 @@ const AddNode: React.FC<AddNodeProps> = ({ modules, onClose, onAdd, offset, scal
           </ScrollView>
         </View>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
