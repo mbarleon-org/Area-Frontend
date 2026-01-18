@@ -9,6 +9,8 @@ import {
   Modal,
   ScrollView,
   Animated,
+  KeyboardAvoidingView,
+  Platform,
   Dimensions,
 } from 'react-native';
 
@@ -204,46 +206,51 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
         animationType="fade"
         onRequestClose={() => setIsOpen(false)}
       >
-        <TouchableOpacity
-          style={mobileStyles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setIsOpen(false)}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
         >
-          <View style={mobileStyles.modalContent} onStartShouldSetResponder={() => true}>
-            <Text style={mobileStyles.modalTitle}>Select Team</Text>
-            <ScrollView style={mobileStyles.teamList} showsVerticalScrollIndicator={false}>
-              {teams.length === 0 && !loading && (
-                <Text style={mobileStyles.emptyText}>No teams available</Text>
-              )}
-              {teams.map((team) => (
-                <TouchableOpacity
-                  key={team.id}
-                  style={[
-                    mobileStyles.teamItem,
-                    selectedTeam?.id === team.id && mobileStyles.teamItemSelected,
-                  ]}
-                  onPress={() => handleSelect(team)}
-                  activeOpacity={0.7}
-                >
-                  <Text
+          <TouchableOpacity
+            style={mobileStyles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setIsOpen(false)}
+          >
+            <View style={mobileStyles.modalContent} onStartShouldSetResponder={() => true}>
+              <Text style={mobileStyles.modalTitle}>Select Team</Text>
+              <ScrollView style={mobileStyles.teamList} showsVerticalScrollIndicator={false}>
+                {teams.length === 0 && !loading && (
+                  <Text style={mobileStyles.emptyText}>No teams available</Text>
+                )}
+                {teams.map((team) => (
+                  <TouchableOpacity
+                    key={team.id}
                     style={[
-                      mobileStyles.teamItemText,
-                      selectedTeam?.id === team.id && mobileStyles.teamItemTextSelected,
+                      mobileStyles.teamItem,
+                      selectedTeam?.id === team.id && mobileStyles.teamItemSelected,
                     ]}
+                    onPress={() => handleSelect(team)}
+                    activeOpacity={0.7}
                   >
-                    {isOwnedByViewer(team) ? '👑 ' : ''}{team.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <TouchableOpacity
-              style={mobileStyles.closeButton}
-              onPress={() => setIsOpen(false)}
-            >
-              <Text style={mobileStyles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
+                    <Text
+                      style={[
+                        mobileStyles.teamItemText,
+                        selectedTeam?.id === team.id && mobileStyles.teamItemTextSelected,
+                      ]}
+                    >
+                      {isOwnedByViewer(team) ? '👑 ' : ''}{team.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <TouchableOpacity
+                style={mobileStyles.closeButton}
+                onPress={() => setIsOpen(false)}
+              >
+                <Text style={mobileStyles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

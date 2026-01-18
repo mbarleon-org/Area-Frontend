@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
   Dimensions,
 } from 'react-native';
 
@@ -168,14 +170,18 @@ const RoleActionMenu: React.FC<RoleActionMenuProps> = ({
         animationType="slide"
         onRequestClose={() => setMenuOpen(false)}
       >
-        <View style={mobileStyles.bottomSheetOverlay}>
-          <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={() => setMenuOpen(false)}
-          />
-          <View style={mobileStyles.bottomSheet}>
-            <View style={mobileStyles.handleBar} />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <View style={mobileStyles.bottomSheetOverlay}>
+            <TouchableOpacity
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
+              onPress={() => setMenuOpen(false)}
+            />
+            <View style={mobileStyles.bottomSheet}>
+              <View style={mobileStyles.handleBar} />
 
             {/* Member Info Header */}
             <View style={mobileStyles.memberHeader}>
@@ -206,7 +212,7 @@ const RoleActionMenu: React.FC<RoleActionMenuProps> = ({
               )}
 
               {/* Demote to Member */}
-              {member.role === 'owner' && (
+              {member.role === 'owner' && !isCurrentUser && (
                 <TouchableOpacity
                   style={mobileStyles.actionItemNeutral}
                   onPress={handleDemote}
@@ -238,15 +244,16 @@ const RoleActionMenu: React.FC<RoleActionMenuProps> = ({
               )}
             </View>
 
-            {/* Cancel */}
-            <TouchableOpacity
-              style={mobileStyles.cancelButton}
-              onPress={() => setMenuOpen(false)}
-            >
-              <Text style={mobileStyles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
+              {/* Cancel */}
+              <TouchableOpacity
+                style={mobileStyles.cancelButton}
+                onPress={() => setMenuOpen(false)}
+              >
+                <Text style={mobileStyles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

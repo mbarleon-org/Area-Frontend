@@ -484,7 +484,7 @@ const Dashboard: React.FC = () => {
                         {item.subtitle && <span style={webStyles.versionPill}>{item.subtitle}</span>}
                         {(isMyWorkflows || isMyCredentials) && (
                           <div style={webStyles.moreWrapper}>
-                            <button style={webStyles.moreBtn} className="btn-icon-hover" onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === item.id ? null : item.id); }}>⋯</button>
+                            <button style={webStyles.moreBtn} className="btn-icon-hover" onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === item.id ? null : item.id); }}>⋮</button>
                             {menuOpenId === item.id && (
                               <div style={webStyles.dropdown}>
                                 {item.type === 'workflow' && (
