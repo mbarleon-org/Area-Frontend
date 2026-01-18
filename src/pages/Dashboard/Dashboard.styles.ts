@@ -408,7 +408,7 @@ export const mobileStyles = StyleSheet.create({
   },
   moreBtnText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 11,
     lineHeight: 10
   },
   mobileDropdown: {

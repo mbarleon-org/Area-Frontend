@@ -10,6 +10,7 @@ import User from "../../pages/User";
 import NotFound from "../../pages/NotFound";
 import AdminPanel from "../../pages/AdminPanel";
 import Guard from "../../components/Guard";
+import ForgotPassword from "../../pages/ForgotPassword";
 
 interface Router {
   path: string;
@@ -46,6 +47,13 @@ const ROUTES: Router[] = [
     element: <Register />,
     label: "Register",
     navbar: true,
+    security: "public",
+  },
+  {
+    path: "/forgot_password",
+    element: <ForgotPassword />,
+    label: "ForgotPassword",
+    navbar: false,
     security: "public",
   },
   {

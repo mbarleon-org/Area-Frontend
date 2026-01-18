@@ -14,12 +14,14 @@ type Props = {
   initialEnabled?: boolean;
   existingWorkflowId?: string;
   existingWorkflowData?: any;
+  onImportWorkflow?: (data: { nodes: NodeItem[]; lines: LineItem[] }) => void;
 };
 
-const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter, saveModalOpen, setSaveModalOpen, initialName, initialDescription, initialEnabled, existingWorkflowId, existingWorkflowData }) => {
+const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter, saveModalOpen, setSaveModalOpen, initialName, initialDescription, initialEnabled, existingWorkflowId, existingWorkflowData, onImportWorkflow }) => {
   const { post } = useApi();
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveError, setSaveError] = useState<string[] | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSaveWorkflow = async (config: { name: string; description: string; enabled: boolean }) => {
     setSaveLoading(true);
@@ -91,6 +93,9 @@ const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter, saveModal
           a.click();
           URL.revokeObjectURL(url);
         }},
+        { label: 'Import as JSON', action: () => {
+          fileInputRef.current?.click();
+        }},
       ]
     },
     {
@@ -123,8 +128,42 @@ const TopBar: React.FC<Props> = ({ nodes = [], lines = [], onRecenter, saveModal
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openMenu]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const content = evt.target?.result as string;
+        const data = JSON.parse(content);
+
+        const canvasData = data?.data?.canvas || data?.canvas || data?.data || data || {};
+        const importedNodes = Array.isArray(canvasData.nodes) ? canvasData.nodes : [];
+        const importedLines = Array.isArray(canvasData.lines) ? canvasData.lines : [];
+
+        if (onImportWorkflow) {
+          onImportWorkflow({ nodes: importedNodes, lines: importedLines });
+        }
+      } catch (err) {
+        console.error('Failed to parse JSON file:', err);
+        alert('Invalid JSON file. Please select a valid workflow JSON file.');
+      }
+    };
+    reader.readAsText(file);
+
+    e.target.value = '';
+  };
+
   return (
     <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,application/json"
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
       <div style={styles.container} aria-hidden={false}>
         <div style={styles.items}>
           {menus.map(menu => (

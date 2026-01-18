@@ -21,6 +21,8 @@ import {
   Keyboard,
   ScrollView,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 
 interface User {
@@ -562,16 +564,20 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={handleClose}>
-      <View style={mobileStyles.overlayContainer}>
-        <TouchableOpacity
-          style={mobileStyles.overlayBackdrop}
-          activeOpacity={1}
-          onPress={() => {
-            Keyboard.dismiss();
-            handleClose();
-          }}
-        />
-        <View style={mobileStyles.bottomSheet}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <View style={mobileStyles.overlayContainer}>
+          <TouchableOpacity
+            style={mobileStyles.overlayBackdrop}
+            activeOpacity={1}
+            onPress={() => {
+              Keyboard.dismiss();
+              handleClose();
+            }}
+          />
+          <View style={mobileStyles.bottomSheet}>
           <View style={mobileStyles.handleBar} />
 
           <View style={mobileStyles.header}>
@@ -680,8 +686,9 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
               pendingActionRef.current = null;
             }}
           />
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

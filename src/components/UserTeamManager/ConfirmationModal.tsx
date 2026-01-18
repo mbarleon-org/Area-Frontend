@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
   ActivityIndicator,
 } from 'react-native';
 
@@ -142,105 +144,110 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   // ------------------------ Mobile View ------------------------
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onCancel}>
-      <View style={mobileStyles.overlay}>
-        <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          activeOpacity={1}
-          onPress={onCancel}
-        />
-        <View
-          style={[
-            mobileStyles.modal,
-            {
-              borderColor:
-                theme === 'gold'
-                  ? 'rgba(245, 175, 25, 0.4)'
-                  : theme === 'danger'
-                  ? 'rgba(231, 76, 60, 0.3)'
-                  : 'rgba(255, 255, 255, 0.1)',
-            },
-          ]}
-        >
-          {/* Icon */}
-          {icon && (
-            <View
-              style={[
-                mobileStyles.iconContainer,
-                {
-                  backgroundColor:
-                    theme === 'gold'
-                      ? 'rgba(245, 175, 25, 0.15)'
-                      : theme === 'danger'
-                      ? 'rgba(231, 76, 60, 0.15)'
-                      : 'rgba(255, 255, 255, 0.05)',
-                },
-              ]}
-            >
-              <Text style={mobileStyles.iconText}>{icon}</Text>
-            </View>
-          )}
-
-          {/* Title */}
-          <Text
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <View style={mobileStyles.overlay}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={onCancel}
+          />
+          <View
             style={[
-              mobileStyles.title,
+              mobileStyles.modal,
               {
-                color:
+                borderColor:
                   theme === 'gold'
-                    ? '#f5af19'
+                    ? 'rgba(245, 175, 25, 0.4)'
                     : theme === 'danger'
-                    ? '#e74c3c'
-                    : '#fff',
+                    ? 'rgba(231, 76, 60, 0.3)'
+                    : 'rgba(255, 255, 255, 0.1)',
               },
             ]}
           >
-            {title}
-          </Text>
+            {/* Icon */}
+            {icon && (
+              <View
+                style={[
+                  mobileStyles.iconContainer,
+                  {
+                    backgroundColor:
+                      theme === 'gold'
+                        ? 'rgba(245, 175, 25, 0.15)'
+                        : theme === 'danger'
+                        ? 'rgba(231, 76, 60, 0.15)'
+                        : 'rgba(255, 255, 255, 0.05)',
+                  },
+                ]}
+              >
+                <Text style={mobileStyles.iconText}>{icon}</Text>
+              </View>
+            )}
 
-          {/* Message */}
-          <Text style={mobileStyles.message}>{message}</Text>
-
-          {/* Actions */}
-          <View style={mobileStyles.actions}>
-            <TouchableOpacity
-              style={mobileStyles.cancelButton}
-              onPress={onCancel}
-              disabled={loading}
-            >
-              <Text style={mobileStyles.cancelButtonText}>{cancelLabel}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            {/* Title */}
+            <Text
               style={[
-                mobileStyles.confirmButton,
+                mobileStyles.title,
                 {
-                  backgroundColor:
+                  color:
                     theme === 'gold'
                       ? '#f5af19'
                       : theme === 'danger'
                       ? '#e74c3c'
                       : '#fff',
-                  opacity: loading ? 0.7 : 1,
                 },
               ]}
-              onPress={onConfirm}
-              disabled={loading}
             >
-              {loading ? (
-                <ActivityIndicator size="small" color={theme === 'default' ? '#000' : '#fff'} />
-              ) : (
-                <Text
-                  style={[
-                    mobileStyles.confirmButtonText,
-                    { color: theme === 'default' ? '#000' : '#fff' },
-                  ]}
-                >
-                  {confirmLabel}
-                </Text>
-              )}
-            </TouchableOpacity>
+              {title}
+            </Text>
+
+            {/* Message */}
+            <Text style={mobileStyles.message}>{message}</Text>
+
+            {/* Actions */}
+            <View style={mobileStyles.actions}>
+              <TouchableOpacity
+                style={mobileStyles.cancelButton}
+                onPress={onCancel}
+                disabled={loading}
+              >
+                <Text style={mobileStyles.cancelButtonText}>{cancelLabel}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  mobileStyles.confirmButton,
+                  {
+                    backgroundColor:
+                      theme === 'gold'
+                        ? '#f5af19'
+                        : theme === 'danger'
+                        ? '#e74c3c'
+                        : '#fff',
+                    opacity: loading ? 0.7 : 1,
+                  },
+                ]}
+                onPress={onConfirm}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color={theme === 'default' ? '#000' : '#fff'} />
+                ) : (
+                  <Text
+                    style={[
+                      mobileStyles.confirmButtonText,
+                      { color: theme === 'default' ? '#000' : '#fff' },
+                    ]}
+                  >
+                    {confirmLabel}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

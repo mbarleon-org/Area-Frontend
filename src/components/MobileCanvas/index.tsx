@@ -1,5 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { View, StyleSheet, Dimensions, PanResponder, TouchableOpacity, Text, Share } from 'react-native';
+import { View, StyleSheet, Dimensions, PanResponder, TouchableOpacity, Text, Share, Alert, Platform } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import type { LayoutChangeEvent } from 'react-native';
 import { useApi } from '../../utils/UseApi';
 import { useLocation } from '../../utils/router';
@@ -496,20 +498,104 @@ const MobileCanva: React.FC = () => {
     }
   }, [get, lines, nodes, workflowFromState]);
 
-  const handleExportWorkflow = useCallback(() => {
-    const workflow = convertCanvasToWorkflow(nodes, lines, {
-      name: 'Exported Workflow',
-      description: 'Exported from canvas',
-      existingData: workflowFromState?.data || workflowFromState?.datas || workflowFromState?.canvas,
-    });
+  const handleExportWorkflow = useCallback(async () => {
+    try {
+      const workflow = convertCanvasToWorkflow(nodes, lines, {
+        name: 'Exported Workflow',
+        description: 'Exported from canvas',
+        existingData: workflowFromState?.data || workflowFromState?.datas || workflowFromState?.canvas,
+      });
 
-    const json = JSON.stringify(workflow, null, 2);
+      const json = JSON.stringify(workflow, null, 2);
+      const fileName = `workflow-${Date.now()}.json`;
+      const baseDir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
+      if (!baseDir) throw new Error('No writable directory available');
+      const fileUri = `${baseDir}${fileName}`;
 
-    Share.share({
-      title: 'Workflow JSON',
-      message: json,
-    }).catch(() => {});
+      await FileSystem.writeAsStringAsync(fileUri, json);
+
+      if (Platform.OS === 'android') {
+        const contentUri = await FileSystem.getContentUriAsync(fileUri);
+        await Share.share({
+          title: 'Workflow JSON',
+          url: contentUri,
+          message: 'Workflow JSON file',
+        });
+      } else {
+        await Share.share({
+          title: 'Workflow JSON',
+          url: fileUri,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to export workflow as JSON file:', err);
+      Alert.alert('Export Error', 'Unable to export workflow as JSON file.');
+    }
   }, [lines, nodes, workflowFromState]);
+
+  const handleImportWorkflow = useCallback(async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) return;
+
+      const file = result.assets[0];
+      const response = await fetch(file.uri);
+      const content = await response.text();
+      const data = JSON.parse(content);
+
+      const canvasData = data?.data?.canvas || data?.canvas || data?.data || data || {};
+      const importedNodes = Array.isArray(canvasData.nodes) ? canvasData.nodes : [];
+      const importedLines = Array.isArray(canvasData.lines) ? canvasData.lines : [];
+
+      const normalizedNodes = importedNodes.map((n: any) => {
+        const w = n?.width || 240;
+        const h = n?.height || 144;
+        const snapOffX = computeSnapOffset(w, gridPx);
+        const snapOffY = computeSnapOffset(h, gridPx);
+        const x = Math.round(((n?.x ?? 0) - snapOffX) / gridPx) * gridPx + snapOffX;
+        const y = Math.round(((n?.y ?? 0) - snapOffY) / gridPx) * gridPx + snapOffY;
+
+        const moduleName = n?.module?.name || n?.label || '';
+        const cPoints = n?.connectionPoints || getConnectionPointsForModule(moduleName);
+        const nodeIcon = n?.icon || getIconForModule(moduleName);
+
+        return {
+          id: n?.id || `n${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          x,
+          y,
+          width: w,
+          height: h,
+          label: n?.label,
+          icon: nodeIcon,
+          module: n?.module,
+          connectionPoints: cPoints,
+          inputs: n?.inputs,
+          outputs: n?.outputs,
+          options: n?.options,
+          credential_id: n?.credential_id,
+        } as NodeItem;
+      });
+
+      const normalizedLines = importedLines.map((l: any) => ({
+        a: l?.a || {},
+        b: l?.b || {},
+        stroke: l?.stroke || '#fff',
+        strokeWidth: l?.strokeWidth || 4,
+      }));
+
+      setNodes(normalizedNodes);
+      setLines(normalizedLines);
+      initialPosSet.current = true;
+
+    } catch (err) {
+      console.error('Failed to import JSON file:', err);
+      Alert.alert('Import Error', 'Invalid JSON file. Please select a valid workflow JSON file.');
+    }
+  }, [gridPx]);
 
   return (
     <View style={styles.container} {...panResponder.panHandlers}>
@@ -634,6 +720,13 @@ const MobileCanva: React.FC = () => {
               }}>
                 <Text style={styles.menuOptionIcon}>⤓</Text>
                 <Text style={styles.menuOptionText}>Export as JSON</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuOptionItem} onPress={() => {
+                setIsMenuOpen(false);
+                handleImportWorkflow();
+              }}>
+                <Text style={styles.menuOptionIcon}>⤒</Text>
+                <Text style={styles.menuOptionText}>Import as JSON</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.menuOptionItem} onPress={() => {
                 setIsDrawMode(true);
