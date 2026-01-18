@@ -70,6 +70,7 @@ const MobileCanva: React.FC = () => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const showAddMenuRef = useRef(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedIdRef = useRef<string | null>(null);
   const [lines, setLines] = useState<LineItem[]>([]);
 
   const [isDrawMode, setIsDrawMode] = useState(false);
@@ -102,7 +103,8 @@ const MobileCanva: React.FC = () => {
     scaleRef.current = scale;
     offsetRef.current = offset;
     showAddMenuRef.current = showAddMenu;
-  }, [scale, offset, showAddMenu]);
+    selectedIdRef.current = selectedId;
+  }, [scale, offset, showAddMenu, selectedId]);
 
   const gridPx = 24;
 
@@ -310,7 +312,7 @@ const MobileCanva: React.FC = () => {
             <Path
               d={`M ${smallSize} 0 L 0 0 0 ${smallSize}`}
               fill="none"
-              stroke="rgba(255,255,255,0.04)"
+              stroke="rgba(255, 255, 255, 0.06)"
               strokeWidth={1}
             />
           </Pattern>
@@ -326,7 +328,7 @@ const MobileCanva: React.FC = () => {
             <Path
               d={`M ${largeSize} 0 L 0 0 0 ${largeSize}`}
               fill="none"
-              stroke="rgba(255,255,255,0.08)"
+              stroke="rgba(255,255,255,0.10)"
               strokeWidth={1}
             />
           </Pattern>
@@ -341,7 +343,7 @@ const MobileCanva: React.FC = () => {
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: (evt) => {
-        if (showAddMenuRef.current) return false;
+        if (showAddMenuRef.current || selectedIdRef.current) return false;
         const touchCount = evt.nativeEvent.touches.length;
         if (nodeDraggingRef.current) return false;
         if (touchCount === 1 && !showAddMenuRef.current) {
@@ -351,12 +353,12 @@ const MobileCanva: React.FC = () => {
         return touchCount === 2;
       },
       onStartShouldSetPanResponderCapture: (evt) => {
-        if (showAddMenuRef.current) return false;
+        if (showAddMenuRef.current || selectedIdRef.current) return false;
         if (nodeDraggingRef.current) return false;
         return evt.nativeEvent.touches.length === 2;
       },
       onMoveShouldSetPanResponder: (evt, gestureState) => {
-        if (showAddMenuRef.current) return false;
+        if (showAddMenuRef.current || selectedIdRef.current) return false;
         if (nodeDraggingRef.current) return false;
         const touchCount = evt.nativeEvent.touches.length;
         if (touchCount === 2) return true;
@@ -364,13 +366,13 @@ const MobileCanva: React.FC = () => {
         return !showAddMenuRef.current && (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5);
       },
       onMoveShouldSetPanResponderCapture: (evt) => {
-        if (showAddMenuRef.current) return false;
+        if (showAddMenuRef.current || selectedIdRef.current) return false;
         if (nodeDraggingRef.current) return false;
         return evt.nativeEvent.touches.length === 2;
       },
 
       onPanResponderGrant: (evt, gestureState) => {
-        if (showAddMenuRef.current) return false;
+        if (showAddMenuRef.current || selectedIdRef.current) return false;
         const touches = evt.nativeEvent.touches;
         if (touches.length === 2) {
             const touch1 = touches[0];
@@ -392,7 +394,7 @@ const MobileCanva: React.FC = () => {
       },
 
       onPanResponderMove: (evt, gestureState) => {
-        if (showAddMenuRef.current) return false;
+                if (showAddMenuRef.current || selectedIdRef.current) return false;
         const touches = evt.nativeEvent.touches;
 
         const worldCursorX = (gestureState.moveX - offsetRef.current.x) / scaleRef.current;
@@ -676,7 +678,7 @@ const MobileCanva: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#151316'
+    backgroundColor: '#050505'
   },
   canvas: {
     flex: 1,
@@ -690,7 +692,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#6366f1',
+    backgroundColor: '#ffffffc5',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -700,7 +702,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   addButtonText: {
-    color: '#fff',
+    color: '#000000',
     fontSize: 32,
     fontWeight: 'bold',
     lineHeight: 32
@@ -712,7 +714,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#4a4750',
+    backgroundColor: '#111012',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -722,7 +724,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   menuButtonText: {
-    color: '#fff',
+    color: '#ffffffc5',
     fontSize: 28,
     fontWeight: 'bold',
     lineHeight: 28
@@ -731,7 +733,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 160,
     left: 24,
-    backgroundColor: '#2a2730',
+    backgroundColor: '#0b0a0a',
     borderRadius: 12,
     padding: 8,
     shadowColor: '#000',
@@ -747,12 +749,12 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   menuOptionIcon: {
-    color: '#fff',
+    color: '#ffffffc5',
     fontSize: 20,
     marginRight: 12,
   },
   menuOptionText: {
-    color: '#fff',
+    color: '#ffffffc5',
     fontSize: 16,
     fontWeight: '600',
   },

@@ -8,10 +8,12 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   container: {
-    backgroundColor: '#1f1d24',
+    backgroundColor: '#111',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '85%',
+    borderColor: '#333',
+    borderWidth: 1,
   },
 
   // --- HEADER ---
@@ -24,7 +26,7 @@ export const styles = StyleSheet.create({
     borderBottomColor: '#333',
   },
   title: {
-    color: '#fff',
+    color: '#ffffffc5',
     fontSize: 20,
     fontWeight: 'bold',
   },
@@ -36,7 +38,7 @@ export const styles = StyleSheet.create({
     padding: 8,
   },
   closeText: {
-    color: '#6366f1',
+    color: '#ffffffc5',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -62,15 +64,15 @@ export const styles = StyleSheet.create({
   },
   tabActive: {
     borderBottomWidth: 2,
-    borderBottomColor: '#6366f1',
+    borderBottomColor: '#ffffffc5',
   },
   tabText: {
-    color: '#666',
+    color: '#ffffffc5',
     fontSize: 14,
     fontWeight: '600',
   },
   tabTextActive: {
-    color: '#6366f1',
+    color: '#ffffffc5',
   },
 
   // --- CONTENT ---
@@ -86,7 +88,7 @@ export const styles = StyleSheet.create({
 
   // --- INPUT FIELDS ---
   label: {
-    color: '#aaa',
+    color: '#ffffffc5',
     fontSize: 14,
     marginBottom: 8,
     fontWeight: '500',
@@ -95,13 +97,13 @@ export const styles = StyleSheet.create({
     color: '#ff6b6b',
   },
   input: {
-    backgroundColor: '#2a2730',
+    backgroundColor: '#1a1a1a',
     borderRadius: 8,
     padding: 12,
-    color: '#fff',
+    color: '#ffffffc5',
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#3a3740',
+    borderColor: '#333',
   },
   textarea: {
     minHeight: 120,
@@ -110,7 +112,7 @@ export const styles = StyleSheet.create({
 
   // --- INFO BOX ---
   infoBox: {
-    backgroundColor: '#2a2730',
+    backgroundColor: '#1a1a1a',
     borderRadius: 8,
     padding: 12,
     marginTop: 12,
@@ -128,7 +130,7 @@ export const styles = StyleSheet.create({
 
   // --- CONNECTION BOX ---
   connectionBox: {
-    backgroundColor: '#252526',
+    backgroundColor: '#1a1a1a',
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
@@ -137,7 +139,7 @@ export const styles = StyleSheet.create({
     marginTop: 8,
   },
   connectionTitle: {
-    color: '#fff',
+    color: '#ffffffc5',
     fontWeight: '600',
     marginBottom: 12,
     fontSize: 14,
@@ -162,19 +164,19 @@ export const styles = StyleSheet.create({
     fontSize: 16,
   },
   connectedText: {
-    color: '#fff',
+    color: '#ffffffc5',
     fontSize: 13,
   },
   disconnectBtn: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: '#333',
     borderRadius: 4,
     paddingVertical: 4,
     paddingHorizontal: 8,
   },
   disconnectBtnText: {
-    color: '#bbb',
+    color: '#ffffffc5',
     fontSize: 11,
   },
   hintText: {
@@ -191,7 +193,7 @@ export const styles = StyleSheet.create({
 
   // --- PICKER / SELECT ---
   picker: {
-    backgroundColor: '#2a2730',
+    backgroundColor: '#1e1e1e',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#007acc',
@@ -204,7 +206,7 @@ export const styles = StyleSheet.create({
 
   // --- CONNECT BUTTON ---
   connectBtn: {
-    backgroundColor: '#007acc',
+    backgroundColor: '#ffffffc5',
     padding: 12,
     borderRadius: 6,
     alignItems: 'center',
@@ -214,7 +216,7 @@ export const styles = StyleSheet.create({
     opacity: 0.6,
   },
   connectBtnText: {
-    color: '#fff',
+    color: '#000',
     fontWeight: '600',
     fontSize: 14,
   },
@@ -255,23 +257,25 @@ export const styles = StyleSheet.create({
   },
   addInput: {
     flex: 1,
-    backgroundColor: '#2a2730',
+    backgroundColor: '#1e1e1e',
     borderRadius: 6,
     padding: 10,
     color: '#fff',
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#3a3740',
+    borderColor: '#333',
   },
   addBtn: {
-    backgroundColor: '#333',
+    backgroundColor: '#121212',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 6,
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
   },
   addBtnText: {
-    color: '#fff',
+    color: '#ffffffc5',
     fontSize: 13,
     fontWeight: '600',
   },

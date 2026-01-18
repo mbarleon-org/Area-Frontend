@@ -137,11 +137,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   container: {
-    backgroundColor: '#1f1d24',
+    backgroundColor: '#111',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '80%',
     paddingBottom: 20,
+    borderColor: '#333',
+    borderWidth: 1,
   },
   header: {
     flexDirection: 'row',
@@ -152,7 +154,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#333',
   },
   title: {
-    color: '#fff',
+    color: '#ffffffc5',
     fontSize: 20,
     fontWeight: 'bold',
   },
@@ -163,17 +165,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeText: {
-    color: '#aaa',
+    color: '#ffffffc5',
     fontSize: 32,
     lineHeight: 32,
   },
   searchInput: {
     margin: 16,
     padding: 12,
-    backgroundColor: '#2a2730',
+    backgroundColor: '#1a1a1a',
     borderRadius: 8,
     color: '#fff',
     fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   moduleList: {
     paddingHorizontal: 16,
@@ -182,9 +186,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#2a2730',
+    backgroundColor: '#rgba(255,255,255,0.02)',
     borderRadius: 8,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   moduleIcon: {
     fontSize: 32,
@@ -200,7 +206,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   moduleDesc: {
-    color: '#888',
+    color: '#444',
     fontSize: 14,
   },
   emptyText: {

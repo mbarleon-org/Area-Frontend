@@ -105,7 +105,7 @@ const SaveWorkflowModalMobile: React.FC<Props> = ({
 
           <View style={styles.actions}>
             <TouchableOpacity style={[styles.button, styles.secondary]} onPress={onClose} disabled={loading}>
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={styles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.primary, (!name.trim() || loading) && styles.disabled]}
@@ -124,7 +124,7 @@ const SaveWorkflowModalMobile: React.FC<Props> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   modal: {
     width: '100%',
     maxWidth: 520,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#111',
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
@@ -145,19 +145,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
-    color: '#fff',
+    color: '#ffffffc5',
     fontSize: 18,
     fontWeight: '700',
   },
   close: {
-    color: '#aaa',
+    color: '#ffffffc5',
     fontSize: 20,
   },
   field: {
     marginBottom: 14,
   },
   label: {
-    color: '#ccc',
+    color: '#ffffffc5',
     fontSize: 14,
     marginBottom: 6,
     fontWeight: '600',
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     color: '#fff',
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#1a1a1a',
     fontSize: 14,
   },
   textarea: {
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primary: {
-    backgroundColor: '#007acc',
+    backgroundColor: '#ffffff',
   },
   secondary: {
     backgroundColor: 'rgba(255,255,255,0.08)',
@@ -219,7 +219,12 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   buttonText: {
-    color: '#fff',
+    color: '#000000',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  cancelBtnText: {
+    color: '#ffffffc5',
     fontSize: 14,
     fontWeight: '600',
   },

@@ -195,7 +195,7 @@ const Node: React.FC<NodeProps> = ({
           top: screenY - screenHeight / 2,
           width: screenWidth,
           height: screenHeight,
-          borderColor: selected ? '#6366f1' : '#4a4750',
+          borderColor: selected ? '#ababb4' : '#403e467f',
           borderWidth: selected ? 3 : 2,
         },
       ]}
@@ -286,7 +286,7 @@ const Node: React.FC<NodeProps> = ({
 const styles = StyleSheet.create({
   node: {
     position: 'absolute',
-    backgroundColor: '#2a2730',
+    backgroundColor: 'rgb(16, 16, 16)',
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -301,10 +301,11 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: '35%',
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(24, 24, 24, 0.72)',
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    boxShadow: '0 0 10px rgba(0, 0, 0, 0.56)',
   },
   textContainer: {
     height: '100%',
@@ -333,7 +334,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: '#ffffff',
     borderWidth: 2,
-    borderColor: '#4a4750',
+    borderColor: '#403e46',
     zIndex: 10,
   },
 });
