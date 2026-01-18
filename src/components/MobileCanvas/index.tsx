@@ -60,6 +60,7 @@ const MobileCanva: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [pendingConnection, setPendingConnection] = useState<EndpointRef | null>(null);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const [pressedLineIndex, setPressedLineIndex] = useState<number | null>(null);
 
   const editMenuRef = useRef<EditMenuHandle | null>(null);
 
@@ -294,7 +295,10 @@ const MobileCanva: React.FC = () => {
       onStartShouldSetPanResponder: (evt) => {
         const touchCount = evt.nativeEvent.touches.length;
         if (nodeDraggingRef.current) return false;
-        if (touchCount === 1 && !showAddMenu) return true;
+        if (touchCount === 1 && !showAddMenu) {
+          if (isDrawMode) return false;
+          return true;
+        }
         return touchCount === 2;
       },
       onStartShouldSetPanResponderCapture: (evt) => {
@@ -305,6 +309,7 @@ const MobileCanva: React.FC = () => {
         if (nodeDraggingRef.current) return false;
         const touchCount = evt.nativeEvent.touches.length;
         if (touchCount === 2) return true;
+        if (isDrawMode) return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
         return !showAddMenu && (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5);
       },
       onMoveShouldSetPanResponderCapture: (evt) => {
@@ -404,7 +409,7 @@ const MobileCanva: React.FC = () => {
       <View style={styles.canvas} onLayout={handleCanvasLayout}>
         {gridOverlay}
 
-        <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg style={StyleSheet.absoluteFill} pointerEvents={isDrawMode ? "auto" : "none"}>
           <G transform={`translate(${offset.x}, ${offset.y}) scale(${scale})`}>
             {lines.map((line, idx) => {
               const start = resolveEndpoint(line.a);
@@ -427,7 +432,14 @@ const MobileCanva: React.FC = () => {
               );
 
               return (
-                <Path key={idx} d={routed.d} stroke={line.stroke || '#fff'} strokeWidth={4} fill="none" />
+                <Path key={idx} d={routed.d} stroke={pressedLineIndex === idx ? '#ff8b8b' : line.stroke || '#fff'} strokeWidth={4} fill="none"
+                  onPressIn={() => setPressedLineIndex(idx)}
+                  onPressOut={() => setPressedLineIndex(null)}
+                  onPress={() => {
+                    setLines(ls => ls.filter((_, i) => i !== idx));
+                    setPressedLineIndex(null);
+                  }}
+                />
               );
             })}
 
