@@ -68,6 +68,7 @@ const MobileCanva: React.FC = () => {
   const [credentials, setCredentials] = useState<CredentialItem[]>([]);
   const [modules, setModules] = useState<Array<{ name: string; data: any }>>([]);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const showAddMenuRef = useRef(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [lines, setLines] = useState<LineItem[]>([]);
 
@@ -100,7 +101,8 @@ const MobileCanva: React.FC = () => {
   useEffect(() => {
     scaleRef.current = scale;
     offsetRef.current = offset;
-  }, [scale, offset]);
+    showAddMenuRef.current = showAddMenu;
+  }, [scale, offset, showAddMenu]);
 
   const gridPx = 24;
 
@@ -339,31 +341,36 @@ const MobileCanva: React.FC = () => {
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: (evt) => {
+        if (showAddMenuRef.current) return false;
         const touchCount = evt.nativeEvent.touches.length;
         if (nodeDraggingRef.current) return false;
-        if (touchCount === 1 && !showAddMenu) {
+        if (touchCount === 1 && !showAddMenuRef.current) {
           if (isDrawMode) return false;
           return true;
         }
         return touchCount === 2;
       },
       onStartShouldSetPanResponderCapture: (evt) => {
-         if (nodeDraggingRef.current) return false;
-         return evt.nativeEvent.touches.length === 2;
+        if (showAddMenuRef.current) return false;
+        if (nodeDraggingRef.current) return false;
+        return evt.nativeEvent.touches.length === 2;
       },
       onMoveShouldSetPanResponder: (evt, gestureState) => {
+        if (showAddMenuRef.current) return false;
         if (nodeDraggingRef.current) return false;
         const touchCount = evt.nativeEvent.touches.length;
         if (touchCount === 2) return true;
         if (isDrawMode) return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
-        return !showAddMenu && (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5);
+        return !showAddMenuRef.current && (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5);
       },
       onMoveShouldSetPanResponderCapture: (evt) => {
+        if (showAddMenuRef.current) return false;
         if (nodeDraggingRef.current) return false;
         return evt.nativeEvent.touches.length === 2;
       },
 
       onPanResponderGrant: (evt, gestureState) => {
+        if (showAddMenuRef.current) return false;
         const touches = evt.nativeEvent.touches;
         if (touches.length === 2) {
             const touch1 = touches[0];
@@ -385,6 +392,7 @@ const MobileCanva: React.FC = () => {
       },
 
       onPanResponderMove: (evt, gestureState) => {
+        if (showAddMenuRef.current) return false;
         const touches = evt.nativeEvent.touches;
 
         const worldCursorX = (gestureState.moveX - offsetRef.current.x) / scaleRef.current;
@@ -643,7 +651,7 @@ const MobileCanva: React.FC = () => {
             <Text style={styles.menuButtonText}>≡</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.addButton} onPress={() => setShowAddMenu(true)}>
+          <TouchableOpacity style={styles.addButton} onPress={() => {setShowAddMenu(true); setIsMenuOpen(false);}}>
             <Text style={styles.addButtonText}>+</Text>
           </TouchableOpacity>
         </>
