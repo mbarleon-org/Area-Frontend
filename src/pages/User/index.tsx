@@ -205,14 +205,15 @@ const User: React.FC = () => {
 
   // ------------------------ Web View ------------------------
   return (
-    <>
+    <div style={webStyles.pageWrapper}>
       <Navbar />
+      <div style={webStyles.spotlight} />
       {isAdmin && (<button
         style={{
           ...webStyles.adminButton,
           ...webStyles.adminTopRight,
           background: adminHover ? '#dcdcdc' : 'transparent',
-          color: adminHover ? '#151316' : '#fff',
+          color: adminHover ? '#000' : '#fff',
           border: '1px solid #dcdcdc',
         }}
         onMouseEnter={() => setAdminHover(true)}
@@ -225,9 +226,7 @@ const User: React.FC = () => {
         style={{
           ...webStyles.logoutButton,
           ...webStyles.logoutTopRight,
-          background: logoutHover
-            ? "linear-gradient(90deg, #c0392b 0%, #e74c3c 100%)"
-            : "linear-gradient(90deg, #e74c3c 0%, #c0392b 100%)"
+          background: logoutHover ? '#c0392b' : '#e74c3c'
         }}
         onMouseEnter={() => setLogoutHover(true)}
         onMouseLeave={() => setLogoutHover(false)}
@@ -266,9 +265,7 @@ const User: React.FC = () => {
             <button
               style={{
                 ...webStyles.editButton,
-                background: editHover
-                  ? "linear-gradient(90deg, #4CAF50 0%, #196d1cff 100%)"
-                  : "linear-gradient(90deg, #196d1cff 0%, #4CAF50 100%)"
+                background: editHover ? '#f0f0f0' : '#fff'
               }}
               onMouseEnter={() => setEditHover(true)}
               onMouseLeave={() => setEditHover(false)}
@@ -286,7 +283,7 @@ const User: React.FC = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
@@ -425,17 +422,50 @@ const mobileStyles = StyleSheet.create({
 });
 
 const webStyles: { [k: string]: React.CSSProperties } = {
+  pageWrapper: {
+    position: 'relative',
+    minHeight: '100vh',
+    width: '100vw',
+    backgroundColor: '#050505',
+    overflow: 'hidden',
+  },
+  spotlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '80vh',
+    background: 'radial-gradient(ellipse at top, rgba(255,255,255,0.08), transparent 70%)',
+    pointerEvents: 'none',
+    zIndex: 0,
+  },
   container: {
     minHeight: "100vh",
     display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "flex-start",
+    alignItems: "center",
+    justifyContent: "center",
     padding: "0",
     margin: "0",
-    paddingTop: "40px",
-    paddingLeft: "120px",
-    backgroundColor: "#050505",
+    width: "100vw",
     color: "#fff",
+    position: "relative",
+    zIndex: 1,
+  },
+  user: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "24px",
+    maxWidth: "600px",
+    width: "100%",
+    padding: "40px",
+  },
+  info: {
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    textAlign: "center",
   },
   icon:{
     maxHeight: "20vh",
@@ -457,26 +487,28 @@ const webStyles: { [k: string]: React.CSSProperties } = {
   },
   editButton: {
     width: "100%",
-    padding: "12px 24px",
+    padding: "12px 30px",
     borderRadius: "8px",
     border: "none",
     backgroundColor: "#fff",
     color: "#000",
     cursor: "pointer",
-    marginTop: "16px",
+    marginTop: "20px",
     fontWeight: 700,
+    fontSize: "16px",
     transition: "all 0.2s ease",
   },
   logoutButton: {
     width: "auto",
     minWidth: 100,
-    padding: "10px 24px",
+    padding: "12px 30px",
     borderRadius: "8px",
     border: "none",
+    backgroundColor: "#e74c3c",
     color: "#fff",
     cursor: "pointer",
-    fontWeight: 600,
-    letterSpacing: "1px",
+    fontWeight: 700,
+    fontSize: "14px",
     transition: "background 0.3s",
     zIndex: 10,
   },
@@ -495,13 +527,13 @@ const webStyles: { [k: string]: React.CSSProperties } = {
   adminButton: {
     width: "auto",
     minWidth: 100,
-    padding: "10px 24px",
+    padding: "12px 30px",
     borderRadius: "8px",
     border: "1px solid #dcdcdc",
     color: "#fff",
     cursor: "pointer",
-    fontWeight: 600,
-    letterSpacing: "1px",
+    fontWeight: 700,
+    fontSize: "14px",
     transition: "background 0.18s ease, color 0.18s ease",
     zIndex: 11,
     background: 'transparent',

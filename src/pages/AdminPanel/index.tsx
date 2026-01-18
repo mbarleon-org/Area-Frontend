@@ -371,6 +371,7 @@ const AdminPanel: React.FC = () => {
   return (
     <>
       <Navbar />
+      <div style={webStyles.spotlight} />
       <div style={webStyles.page}>
         <div style={webStyles.card}>
           <div style={webStyles.headerRow}>
@@ -597,8 +598,18 @@ const mobileStyles = StyleSheet.create({
 });
 
 const webStyles: { [k: string]: React.CSSProperties } = {
+  spotlight: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '80vh',
+    background: 'radial-gradient(ellipse at top, rgba(255,255,255,0.08), transparent 70%)',
+    pointerEvents: 'none',
+    zIndex: 0,
+  },
   page: {
-    height: "100vh",
+    minHeight: "100vh",
     overflowY: "auto",
     background: "#050505",
     color: "#fff",
@@ -606,6 +617,8 @@ const webStyles: { [k: string]: React.CSSProperties } = {
     marginLeft: "80px",
     width: "calc(100% - 80px)",
     padding: "40px",
+    position: "relative",
+    zIndex: 1,
   },
   card: {
     background: "#0a0a0a",
