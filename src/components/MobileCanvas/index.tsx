@@ -439,7 +439,7 @@ const MobileCanva: React.FC = () => {
                       y1={startEp.y}
                       x2={cursorPos.x}
                       y2={cursorPos.y}
-                      stroke="#aa1818"
+                      stroke="#fff"
                       strokeWidth={4}
                       strokeDasharray="10, 10"
                    />
